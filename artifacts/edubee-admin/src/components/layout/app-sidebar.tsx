@@ -543,8 +543,8 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
   });
 
   const ownerBrand = isDelegatedPath ? (delegationData?.data?.[0] ?? null) : null;
-  const displayLogoUrl    = ownerBrand?.ownerLogoUrl    ?? (isDarkMode ? (tenantTheme.logoDarkUrl || tenantTheme.logoUrl) : tenantTheme.logoUrl);
-  const displayFaviconUrl = ownerBrand?.ownerFaviconUrl ?? tenantTheme.faviconUrl;
+  const displayLogoUrl    = ownerBrand?.ownerLogoUrl    ?? (isDarkMode ? (tenantTheme.logoDarkUrl    || tenantTheme.logoUrl)    : tenantTheme.logoUrl);
+  const displayFaviconUrl = ownerBrand?.ownerFaviconUrl ?? (isDarkMode ? (tenantTheme.faviconDarkUrl || tenantTheme.faviconUrl) : tenantTheme.faviconUrl);
   const displayName       = ownerBrand?.ownerOrgName    ?? tenantTheme.companyName;
 
   const allGroups  = buildNav(effectiveRole);

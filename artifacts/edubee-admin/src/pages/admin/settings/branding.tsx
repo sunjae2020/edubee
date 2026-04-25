@@ -186,9 +186,10 @@ export default function Branding() {
       applyThemeToDom({
         organisationId: null,
         companyName:    branding?.companyName ?? "",
-        logoUrl:        variables.logoUrl     ?? branding?.logoUrl     ?? null,
-        logoDarkUrl:    variables.logoDarkUrl ?? branding?.logoDarkUrl ?? null,
-        faviconUrl:     variables.faviconUrl  ?? branding?.faviconUrl  ?? null,
+        logoUrl:        variables.logoUrl        ?? branding?.logoUrl        ?? null,
+        logoDarkUrl:    variables.logoDarkUrl    ?? branding?.logoDarkUrl    ?? null,
+        faviconUrl:     variables.faviconUrl     ?? branding?.faviconUrl     ?? null,
+        faviconDarkUrl: variables.faviconDarkUrl ?? branding?.faviconDarkUrl ?? null,
         primaryColor:   variables.primaryColor   ?? branding?.primaryColor   ?? "var(--e-orange)",
         secondaryColor: variables.secondaryColor ?? branding?.secondaryColor ?? "#1C1917",
         accentColor:    variables.accentColor    ?? branding?.accentColor    ?? "var(--e-orange-lt)",
@@ -238,6 +239,11 @@ export default function Branding() {
       uploadFile(file, "/api/settings/branding/logo-dark", "logoDarkBase64", "logoDarkUrl", "logoDarkUrl"),
   });
 
+  const faviconDarkMutation = useMutation({
+    mutationFn: (file: File) =>
+      uploadFile(file, "/api/settings/branding/favicon-dark", "faviconDarkBase64", "faviconDarkUrl", "faviconDarkUrl"),
+  });
+
   const faviconMutation = useMutation({
     mutationFn: (file: File) =>
       uploadFile(file, "/api/settings/branding/favicon", "faviconBase64", "faviconUrl", "faviconUrl"),
@@ -280,11 +286,15 @@ export default function Branding() {
         </button>
       </div>
 
-      {/* Logo & Favicon Upload */}
+      {/* Logo & Favicon Upload — Light Mode */}
       <Card title="Logo & Favicon" icon={Palette}>
-        <div className="grid grid-cols-3 gap-6">
+        <div className="flex items-center gap-1.5 mb-1">
+          <Sun size={12} className="text-amber-500" />
+          <span className="text-xs font-medium text-[#78716C]">Light Mode Assets</span>
+        </div>
+        <div className="grid grid-cols-2 gap-6">
           <UploadZone
-            label="Logo (Light)"
+            label="Logo"
             hint="PNG, JPG, SVG, WEBP — max 2MB"
             accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
             previewHeight="h-28"
@@ -300,39 +310,6 @@ export default function Branding() {
               colorMutation.mutate({ logoUrl: url });
             }}
           />
-          <div className="space-y-2">
-            <div className="rounded-xl border border-[#E8E6E2] overflow-hidden">
-              <div className="px-3 py-1.5 flex items-center gap-1.5 border-b border-[#E8E6E2]" style={{ background: "#131211" }}>
-                <Moon size={10} style={{ color: "#A8A29E" }} />
-                <span className="text-[10px] font-medium" style={{ color: "#A8A29E" }}>Dark background preview</span>
-              </div>
-              <div className="h-16 flex items-center justify-center" style={{ background: "#0F0E0D" }}>
-                {merged.logoDarkUrl
-                  ? <img src={merged.logoDarkUrl} alt="Dark logo preview" className="max-h-10 max-w-full object-contain" />
-                  : merged.logoUrl
-                    ? <img src={merged.logoUrl} alt="Logo on dark" className="max-h-10 max-w-full object-contain opacity-60" />
-                    : <span className="text-[10px]" style={{ color: "#57534E" }}>No dark logo set</span>
-                }
-              </div>
-            </div>
-            <UploadZone
-              label="Logo (Dark)"
-              hint="PNG, SVG with transparency — max 2MB"
-              accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
-              previewHeight="h-0 hidden"
-              value={null}
-              isPending={logoDarkMutation.isPending}
-              onFile={(file) => logoDarkMutation.mutate(file)}
-              onClear={() => {
-                setForm(p => ({ ...p, logoDarkUrl: "" }));
-                colorMutation.mutate({ logoDarkUrl: null });
-              }}
-              onUrl={(url) => {
-                setForm(p => ({ ...p, logoDarkUrl: url }));
-                colorMutation.mutate({ logoDarkUrl: url });
-              }}
-            />
-          </div>
           <UploadZone
             label="Favicon"
             hint="ICO or PNG 32×32px — max 500KB"
@@ -459,6 +436,104 @@ export default function Branding() {
           {/* ── Dark Preview ── */}
           {previewMode === "dark" && (
             <div className="p-4" style={{ background: "#0F0E0D" }}>
+              {/* Dark Mode Assets upload */}
+              <div className="mb-4 rounded-xl overflow-hidden" style={{ border: "1px solid #2A2725" }}>
+                <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: "#181614", borderBottom: "1px solid #2A2725" }}>
+                  <Moon size={12} style={{ color: primary }} />
+                  <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: primary }}>Dark Mode Assets</span>
+                  <span className="text-[10px] ml-1" style={{ color: "#57534E" }}>— Optional separate branding for dark mode</span>
+                </div>
+                <div className="p-4 grid grid-cols-2 gap-4" style={{ background: "#131211" }}>
+                  {/* Dark Logo */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium uppercase tracking-wide" style={{ color: "#A8A29E" }}>Dark Logo</label>
+                    {merged.logoDarkUrl ? (
+                      <div className="relative rounded-xl overflow-hidden flex items-center justify-center group" style={{ height: 80, background: "#0F0E0D", border: "1px solid #2A2725" }}>
+                        <img src={merged.logoDarkUrl} alt="Dark logo" className="max-h-full max-w-full object-contain p-3" />
+                        <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "rgba(0,0,0,0.6)" }}>
+                          <button type="button" disabled={logoDarkMutation.isPending}
+                            onClick={() => { const inp = document.getElementById("dark-logo-input") as HTMLInputElement; inp?.click(); }}
+                            className="h-7 px-2.5 rounded-lg text-[10px] font-semibold flex items-center gap-1" style={{ background: "#2A2725", color: "#F5F0EB" }}>
+                            {logoDarkMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />} Change
+                          </button>
+                          <button type="button"
+                            onClick={() => { setForm(p => ({ ...p, logoDarkUrl: "" })); colorMutation.mutate({ logoDarkUrl: null }); }}
+                            className="h-7 px-2.5 rounded-lg text-[10px] font-semibold" style={{ background: "#2A2725", color: "#f87171" }}>
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button type="button" disabled={logoDarkMutation.isPending}
+                        onClick={() => { const inp = document.getElementById("dark-logo-input") as HTMLInputElement; inp?.click(); }}
+                        className="w-full flex flex-col items-center justify-center gap-1.5 rounded-xl cursor-pointer transition-colors"
+                        style={{ height: 80, border: "2px dashed #2A2725", background: "transparent" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = primary; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#2A2725"; }}>
+                        {logoDarkMutation.isPending
+                          ? <Loader2 size={18} className="animate-spin" style={{ color: primary }} />
+                          : <><Upload size={18} style={{ color: "#57534E" }} /><span className="text-[10px]" style={{ color: "#57534E" }}>Upload dark logo</span><span className="text-[9px]" style={{ color: "#393532" }}>PNG, SVG — max 2MB</span></>
+                        }
+                      </button>
+                    )}
+                    <input id="dark-logo-input" type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) logoDarkMutation.mutate(f); e.target.value = ""; }} />
+                    <button type="button" onClick={() => {
+                      const url = window.prompt("Dark logo URL:");
+                      if (url?.trim()) { setForm(p => ({ ...p, logoDarkUrl: url.trim() })); colorMutation.mutate({ logoDarkUrl: url.trim() }); }
+                    }} className="flex items-center gap-1 text-[10px] transition-colors" style={{ color: "#57534E" }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#A8A29E"; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#57534E"; }}>
+                      <Link size={9} /> Or enter URL
+                    </button>
+                  </div>
+
+                  {/* Dark Favicon */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium uppercase tracking-wide" style={{ color: "#A8A29E" }}>Dark Favicon</label>
+                    {merged.faviconDarkUrl ? (
+                      <div className="relative rounded-xl overflow-hidden flex items-center justify-center group" style={{ height: 80, background: "#0F0E0D", border: "1px solid #2A2725" }}>
+                        <img src={merged.faviconDarkUrl} alt="Dark favicon" className="max-h-full max-w-full object-contain p-3" />
+                        <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "rgba(0,0,0,0.6)" }}>
+                          <button type="button" disabled={faviconDarkMutation.isPending}
+                            onClick={() => { const inp = document.getElementById("dark-favicon-input") as HTMLInputElement; inp?.click(); }}
+                            className="h-7 px-2.5 rounded-lg text-[10px] font-semibold flex items-center gap-1" style={{ background: "#2A2725", color: "#F5F0EB" }}>
+                            {faviconDarkMutation.isPending ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />} Change
+                          </button>
+                          <button type="button"
+                            onClick={() => { setForm(p => ({ ...p, faviconDarkUrl: "" })); colorMutation.mutate({ faviconDarkUrl: null }); }}
+                            className="h-7 px-2.5 rounded-lg text-[10px] font-semibold" style={{ background: "#2A2725", color: "#f87171" }}>
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button type="button" disabled={faviconDarkMutation.isPending}
+                        onClick={() => { const inp = document.getElementById("dark-favicon-input") as HTMLInputElement; inp?.click(); }}
+                        className="w-full flex flex-col items-center justify-center gap-1.5 rounded-xl cursor-pointer transition-colors"
+                        style={{ height: 80, border: "2px dashed #2A2725", background: "transparent" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = primary; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#2A2725"; }}>
+                        {faviconDarkMutation.isPending
+                          ? <Loader2 size={18} className="animate-spin" style={{ color: primary }} />
+                          : <><Upload size={18} style={{ color: "#57534E" }} /><span className="text-[10px]" style={{ color: "#57534E" }}>Upload dark favicon</span><span className="text-[9px]" style={{ color: "#393532" }}>ICO or PNG 32×32 — max 500KB</span></>
+                        }
+                      </button>
+                    )}
+                    <input id="dark-favicon-input" type="file" accept="image/x-icon,image/vnd.microsoft.icon,image/png" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) faviconDarkMutation.mutate(f); e.target.value = ""; }} />
+                    <button type="button" onClick={() => {
+                      const url = window.prompt("Dark favicon URL:");
+                      if (url?.trim()) { setForm(p => ({ ...p, faviconDarkUrl: url.trim() })); colorMutation.mutate({ faviconDarkUrl: url.trim() }); }
+                    }} className="flex items-center gap-1 text-[10px] transition-colors" style={{ color: "#57534E" }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#A8A29E"; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#57534E"; }}>
+                      <Link size={9} /> Or enter URL
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: primary }}>Dark Mode Preview</p>
               {/* Mini UI shell */}
               <div className="rounded-xl overflow-hidden flex" style={{ height: 200, border: "1px solid #393532" }}>

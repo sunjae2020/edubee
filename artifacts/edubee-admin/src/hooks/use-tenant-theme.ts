@@ -6,6 +6,7 @@ export interface TenantTheme {
   logoUrl:        string | null;
   logoDarkUrl:    string | null;
   faviconUrl:     string | null;
+  faviconDarkUrl: string | null;
   primaryColor:   string;
   secondaryColor: string;
   accentColor:    string;
@@ -21,6 +22,7 @@ export const DEFAULT_THEME: TenantTheme = {
   logoUrl:        null,
   logoDarkUrl:    null,
   faviconUrl:     null,
+  faviconDarkUrl: null,
   primaryColor:   "#F5821F",
   secondaryColor: "#1C1917",
   accentColor:    "#fef0e3",
