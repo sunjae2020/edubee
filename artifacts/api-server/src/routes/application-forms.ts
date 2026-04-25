@@ -95,6 +95,15 @@ router.get("/application-forms", requireRole(...ADMIN_ROLES), async (req, res) =
 });
 
 // ── POST /api/application-forms ────────────────────────────────────────────
+function isDuplicateKey(err: any): boolean {
+  return (
+    err?.code === "23505" ||
+    err?.cause?.code === "23505" ||
+    String(err?.message ?? "").includes("23505") ||
+    String(err?.message ?? "").toLowerCase().includes("unique")
+  );
+}
+
 router.post("/application-forms", requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { name, slug: rawSlug, description, visibility, redirectUrl, organisationId, status } = req.body;
@@ -116,7 +125,7 @@ router.post("/application-forms", requireRole(...ADMIN_ROLES), async (req, res) 
 
     return res.status(201).json(form);
   } catch (err: any) {
-    if (err?.code === "23505") return res.status(409).json({ error: "A form with this slug already exists" });
+    if (isDuplicateKey(err)) return res.status(409).json({ error: "A form with this slug already exists" });
     console.error("[POST /api/application-forms]", err);
     return res.status(500).json({ error: "Internal server error" });
   }
@@ -159,7 +168,7 @@ router.put("/application-forms/:id", requireRole(...ADMIN_ROLES), async (req, re
     if (!form) return res.status(404).json({ error: "Form not found" });
     return res.json(form);
   } catch (err: any) {
-    if (err?.code === "23505") return res.status(409).json({ error: "A form with this slug already exists" });
+    if (isDuplicateKey(err)) return res.status(409).json({ error: "A form with this slug already exists" });
     console.error("[PUT /api/application-forms/:id]", err);
     return res.status(500).json({ error: "Internal server error" });
   }
@@ -226,7 +235,7 @@ router.post("/application-forms/:id/clone", requireRole(...ADMIN_ROLES), async (
 
     return res.status(201).json(clone);
   } catch (err: any) {
-    if (err?.code === "23505") return res.status(409).json({ error: "A form with this slug already exists" });
+    if (isDuplicateKey(err)) return res.status(409).json({ error: "A form with this slug already exists" });
     console.error("[POST /api/application-forms/:id/clone]", err);
     return res.status(500).json({ error: "Internal server error" });
   }
