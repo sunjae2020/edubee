@@ -49,6 +49,8 @@ interface PackageGroup {
   packageCode?: string | null;
   startDate?: string | null;
   endDate?: string | null;
+  ownerOrgName?: string | null;
+  ownerOrgSubdomain?: string | null;
 }
 
 interface Pkg {
@@ -538,10 +540,13 @@ export default function PackageGroups() {
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-muted-foreground">
-                        Created {formatDate(g.createdAt)}
-                      </span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {g.ownerOrgName && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-medium border border-blue-200 truncate max-w-[140px]">
+                          <Building2 className="w-2.5 h-2.5 shrink-0" />
+                          <span className="truncate">{g.ownerOrgName}</span>
+                        </span>
+                      )}
                       {g.sortOrder != null && (
                         <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">
                           #{g.sortOrder}

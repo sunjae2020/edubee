@@ -85,17 +85,22 @@ router.get("/package-groups", authenticate, async (req, res) => {
       const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
       const [totalResult] = await db.select({ count: count() }).from(packageGroups).where(whereClause);
 
+      const campProviderOrg = alias(organisations, "campProviderOrg");
+      const ownerOrgAlias = alias(organisations, "ownerOrgAlias");
       const rows = await db
         .select({
           group: packageGroups,
-          orgId: organisations.id,
-          orgName: organisations.name,
-          orgTradingName: organisations.tradingName,
-          orgSubdomain: organisations.subdomain,
+          orgId: campProviderOrg.id,
+          orgName: campProviderOrg.name,
+          orgTradingName: campProviderOrg.tradingName,
+          orgSubdomain: campProviderOrg.subdomain,
+          ownerOrgName: ownerOrgAlias.name,
+          ownerOrgSubdomain: ownerOrgAlias.subdomain,
           typeName: productTypes.name,
         })
         .from(packageGroups)
-        .leftJoin(organisations, eq(packageGroups.campProviderId, organisations.id))
+        .leftJoin(campProviderOrg, eq(packageGroups.campProviderId, campProviderOrg.id))
+        .leftJoin(ownerOrgAlias, eq(packageGroups.organisationId, ownerOrgAlias.id))
         .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
         .where(whereClause)
         .limit(limitNum)
@@ -119,6 +124,8 @@ router.get("/package-groups", authenticate, async (req, res) => {
         ...r.group,
         packageCount: pkgCounts[r.group.id] ?? 0,
         typeName: r.typeName ?? null,
+        ownerOrgName: r.ownerOrgName ?? null,
+        ownerOrgSubdomain: r.ownerOrgSubdomain ?? null,
         campProvider: r.orgId ? { id: r.orgId, name: r.orgName, tradingName: r.orgTradingName, subdomain: r.orgSubdomain } : null,
       }));
       const total = Number(totalResult.count);
