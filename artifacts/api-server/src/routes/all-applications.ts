@@ -4,7 +4,7 @@ import { applications, campApplications, packageGroups, packages } from "@worksp
 import { quotes }    from "@workspace/db/schema";
 import { contracts } from "@workspace/db/schema";
 import { users }     from "@workspace/db/schema";
-import { sql, ilike, eq, or, desc, and } from "drizzle-orm";
+import { sql, ilike, eq, ne, or, desc, and } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 
 const router = Router();
@@ -140,6 +140,8 @@ router.get("/admin/all-applications", authenticate, async (req, res) => {
         ));
       }
       if (status !== "all") where.push(eq(applications.applicationStatus, status));
+      // Exclude camp-type records from service view (camp apps are in camp_applications table)
+      if (type === "service") where.push(ne(applications.applicationType, "camp"));
 
       // Camp coordinators: only see applications linked to their package groups
       if (isCC && ccOrgId) {

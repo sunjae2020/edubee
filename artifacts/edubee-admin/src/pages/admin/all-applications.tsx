@@ -425,25 +425,29 @@ export default function AllApplicationsPage({ mode = "all" }: { mode?: "all" | "
                     onChange={() => toggleAll(rows.map(r => r.id))} />
                 </th>
               )}
-              <th className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap min-w-[200px]">Ref No.</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap min-w-[180px]">Ref No.</th>
+              {/* "all" mode: show Type column */}
+              {mode === "all" && <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>}
+              {/* "service" mode: show Service Type column */}
+              {mode === "service" && <th className="text-left px-4 py-3 font-medium text-gray-600">Service Type</th>}
               <th className="text-left px-4 py-3 font-medium text-gray-600">Applicant</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Programme / Service</th>
+              {/* Camp & All: show Programme column */}
+              {mode !== "service" && <th className="text-left px-4 py-3 font-medium text-gray-600">Programme / Package</th>}
               <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">Assigned Staff</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">Date</th>
-              <th className="px-4 py-3 w-10" />
+              {mode !== "service" && <th className="px-4 py-3 w-10" />}
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={isSA ? 9 : 8} className="text-center py-12 text-muted-foreground text-sm">Loading...</td>
+                <td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">Loading...</td>
               </tr>
             )}
             {!isLoading && rows.length === 0 && (
               <tr>
-                <td colSpan={isSA ? 9 : 8} className="text-center py-12 text-muted-foreground text-sm">No applications found</td>
+                <td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">No applications found</td>
               </tr>
             )}
             {rows.map((row, i) => (
@@ -461,18 +465,30 @@ export default function AllApplicationsPage({ mode = "all" }: { mode?: "all" | "
                       onChange={() => toggleSelect(row.id)} />
                   </td>
                 )}
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground min-w-[200px] w-[200px]">
+                <td className="px-4 py-3 font-mono text-xs text-muted-foreground min-w-[180px] w-[180px]">
                   <span className="line-clamp-2 break-words leading-relaxed">{row.ref ?? "—"}</span>
                 </td>
-                <td className="px-4 py-3">
-                  <SourceBadge sourceType={row.sourceType} />
-                </td>
+                {/* All mode: generic Type badge */}
+                {mode === "all" && (
+                  <td className="px-4 py-3">
+                    <SourceBadge sourceType={row.sourceType} />
+                  </td>
+                )}
+                {/* Service mode: service-specific type badges */}
+                {mode === "service" && (
+                  <td className="px-4 py-3 max-w-[200px]">
+                    <ProgrammeCell row={row} />
+                  </td>
+                )}
                 <td className="px-4 py-3 max-w-[220px]">
                   <ApplicantCell row={row} />
                 </td>
-                <td className="px-4 py-3 max-w-[240px]">
-                  <ProgrammeCell row={row} />
-                </td>
+                {/* Camp & All mode: Programme column */}
+                {mode !== "service" && (
+                  <td className="px-4 py-3 max-w-[240px]">
+                    <ProgrammeCell row={row} />
+                  </td>
+                )}
                 <td className="px-4 py-3">
                   <StatusBadge status={row.status} />
                 </td>
@@ -482,17 +498,19 @@ export default function AllApplicationsPage({ mode = "all" }: { mode?: "all" | "
                 <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
                   {row.createdAt ? formatDate(row.createdAt) : "—"}
                 </td>
-                <td className="px-4 py-3">
-                  {row.sourceType === "camp" && (
-                    <button
-                      title="Download PDF"
-                      onClick={e => { e.stopPropagation(); downloadCampPdf(row.id, row.ref); }}
-                      className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <FileDown className="w-4 h-4" />
-                    </button>
-                  )}
-                </td>
+                {mode !== "service" && (
+                  <td className="px-4 py-3">
+                    {row.sourceType === "camp" && (
+                      <button
+                        title="Download PDF"
+                        onClick={e => { e.stopPropagation(); downloadCampPdf(row.id, row.ref); }}
+                        className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <FileDown className="w-4 h-4" />
+                      </button>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
