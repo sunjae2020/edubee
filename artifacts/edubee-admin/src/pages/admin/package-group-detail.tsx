@@ -874,56 +874,6 @@ export default function PackageGroupDetail() {
               </div>
             </DetailSection>
 
-            {/* Coordinator Section */}
-            <DetailSection title="Camp Coordinator" className="lg:col-span-2">
-              {isEditing ? (
-                <div className="space-y-2">
-                  <Select
-                    value={getValue("coordinatorId") || "none"}
-                    onValueChange={v => setField("coordinatorId", v === "none" ? null : v)}
-                  >
-                    <SelectTrigger className="h-9 text-sm border-(--e-orange)">
-                      <SelectValue placeholder="— Select coordinator organisation —" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">— No coordinator assigned —</SelectItem>
-                      {coordinators.map(org => (
-                        <SelectItem key={org.id} value={org.id}>
-                          <span className="flex items-center gap-2">
-                            <Building2 className="w-3 h-3 shrink-0 text-(--e-text-3)" />
-                            <span>{org.name}</span>
-                            {org.subdomain && (
-                              <span className="text-xs text-muted-foreground">{org.subdomain}.edubee.co</span>
-                            )}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : group.coordinator ? (
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full bg-(--e-orange)/10 flex items-center justify-center shrink-0">
-                    <Building2 className="w-5 h-5 text-(--e-orange)" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm">{(group.coordinator as any).name}</p>
-                    {(group.coordinator as any).subdomain && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {(group.coordinator as any).subdomain}.edubee.co
-                      </p>
-                    )}
-                    {(group.coordinator as any).email && (
-                      <a href={`mailto:${(group.coordinator as any).email}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-0.5">
-                        <Mail className="w-3 h-3" /> {(group.coordinator as any).email}
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground/60 italic">No coordinator assigned to this program.</p>
-              )}
-            </DetailSection>
             <div className="lg:col-span-2">
               <SystemInfoSection owner={null} createdAt={group.createdAt} updatedAt={group.updatedAt} />
             </div>
