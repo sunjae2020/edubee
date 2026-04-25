@@ -92,18 +92,57 @@ router.use(tenantResolver);
 // ── Tenant Schema 미들웨어 ────────────────────────────────────────────────────
 // tenantResolver 이후 실행. 테넌트의 PostgreSQL schema가 존재하면
 // AsyncLocalStorage context에서 요청을 실행 → 모든 db 쿼리가 tenant schema 사용.
-// schema 미존재 → public schema 사용 (기존 동작 유지)
 //
-// camp_coordinator 예외: 자체 org 스키마는 비어있음 — camp 데이터는 owner(위임한) 테넌트 스키마에 있음.
-// • 직접 로그인(CC JWT): x-view-as가 없으므로 subdomain = tenantResolver가 감지한 subdomain 그대로 사용.
-//   (CC는 owner tenant 서브도메인으로 접근 불가하므로 공용 public 스키마 또는 현재 subdomain 사용)
-// • View-As(admin JWT + x-view-as-user-id): JWT가 admin이므로 subdomain = admin의 tenant subdomain.
-//   Owner tenant 데이터에 정확히 접근됨 — 별도 처리 불필요.
-// 기존 MASTER_TENANT 하드코딩 로직 제거.
+// camp_coordinator 예외: CC 사용자는 위임된 PG의 OWNER 스키마에서 데이터를 읽어야 함.
+// • 직접 로그인(CC JWT): owner 스키마로 전환
+// • View-As(admin → CC): View-As 대상 CC의 owner 스키마로 전환
 router.use(async (req: Request, res: Response, next: NextFunction) => {
   const subdomain = (req as any).tenant?.subdomain as string | undefined;
   if (!subdomain) return next();
   try {
+    // Detect camp_coordinator (direct login or View-As)
+    const JWT_SECRET = process.env.JWT_SECRET;
+    const authHeader = req.headers.authorization;
+    let ccOrgId: string | null = null;
+
+    if (JWT_SECRET && authHeader?.startsWith("Bearer ")) {
+      try {
+        const decoded = jwt.verify(authHeader.split(" ")[1], JWT_SECRET) as any;
+        const viewAsId = req.headers["x-view-as-user-id"] as string | undefined;
+
+        if (viewAsId && ["super_admin", "admin", "consultant"].includes(decoded.role)) {
+          // View-As mode: check if the target user is a CC
+          const r = await pool.query<{ role: string; organisation_id: string }>(
+            "SELECT role, organisation_id FROM public.users WHERE id = $1 LIMIT 1", [viewAsId]
+          );
+          if (r.rows[0]?.role === "camp_coordinator") ccOrgId = r.rows[0].organisation_id;
+        } else if (decoded.role === "camp_coordinator") {
+          ccOrgId = decoded.organisationId ?? null;
+        }
+      } catch { /* invalid JWT — let auth middleware handle */ }
+    }
+
+    if (ccOrgId) {
+      // Find the owner schema for this CC's delegated package groups
+      const ownerRes = await pool.query<{ subdomain: string }>(
+        `SELECT DISTINCT o.subdomain
+         FROM public.package_group_coordinators pgc
+         JOIN public.package_groups pg ON pg.id = pgc.package_group_id
+         JOIN public.organisations o ON o.id = pg.organisation_id
+         WHERE pgc.coordinator_org_id = $1 AND pgc.status = 'Active' AND pgc.revoked_at IS NULL
+         LIMIT 1`,
+        [ccOrgId]
+      );
+      const ownerSlug = ownerRes.rows[0]?.subdomain;
+      if (ownerSlug) {
+        const ownerSchemaExists = await tenantSchemaExists(ownerSlug, pool);
+        if (ownerSchemaExists) {
+          runWithTenantSchema(ownerSlug, next);
+          return;
+        }
+      }
+    }
+
     const schemaExists = await tenantSchemaExists(subdomain, pool);
     if (schemaExists) {
       runWithTenantSchema(subdomain, next);
