@@ -483,17 +483,38 @@
 .dark .rounded-xl[class*="border"],
 .dark .rounded-2xl[class*="border"] { border-color: var(--e-border); }
 
-/* ── 테이블 ──────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   전역 테이블 스타일 — 라이트 + 다크 모든 리스트 페이지 적용
+   (Admin My View / Camp Coordinator View-As 동일 품질 보장)
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 라이트모드 기본 테이블 ─────────────────────────────────── */
+table                         { color: var(--e-text-1); }
+th                            { color: var(--e-text-3); background-color: var(--e-bg-muted); border-color: var(--e-border); }
+td                            { color: var(--e-text-1); border-color: var(--e-border); }
+
+/* 라이트모드 호버: orange-lt bg → 텍스트 진하게, 보조색도 강화 */
+tr:hover td                   { background-color: var(--e-orange-lt); color: var(--e-text-1) !important; }
+tr:hover td *                 { color: inherit; }
+tr:hover td .text-stone-400,
+tr:hover td .text-stone-500,
+tr:hover td .text-muted-foreground,
+tr:hover td .text-\[\#A8A29E\],
+tr:hover td .text-\[\#78716C\] { color: #57534E !important; }
+
+/* ── 다크모드 테이블 ────────────────────────────────────────── */
 .dark table                   { color: var(--e-text-1); }
 .dark th                      { color: var(--e-text-2) !important; border-color: var(--e-border) !important; background-color: var(--e-bg-muted) !important; }
 .dark td                      { color: var(--e-text-1); border-color: var(--e-border) !important; }
 .dark tr:hover td             { background-color: var(--e-bg-muted) !important; color: var(--e-text-1) !important; }
+.dark tr:hover td *           { color: inherit; }
+.dark tr:hover td .text-stone-400,
+.dark tr:hover td .text-stone-500,
+.dark tr:hover td .text-muted-foreground { color: var(--e-text-2) !important; }
 .dark tbody tr:nth-child(even) td { background-color: transparent !important; }
 
-/* ── 라이트모드 hover — orange-lt bg 위에서 텍스트 어둡게 ─────── */
-tr:hover td                   { color: #1C1917; }
-tr:hover td .text-stone-400,
-tr:hover td .text-stone-500   { color: #57534E !important; }
+/* ── 라이트모드 hover: [#F4F3F1] 배경 버튼/행의 텍스트 대비 ─── */
+.hover\:bg-\[\#F4F3F1\]:hover { color: var(--e-text-1) !important; }
 
 /* ── Tiptap 에디터 다크 ──────────────────────────────────────── */
 .dark .tiptap blockquote      { background: var(--e-bg-muted); color: var(--e-text-2); }
