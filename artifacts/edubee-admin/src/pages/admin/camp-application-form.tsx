@@ -421,6 +421,11 @@ export default function AdminCampApplicationForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  // Read packageGroupId from query param (when opened via iframe from camp.edubee.co)
+  const preselectedGroupId = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("packageGroupId") ?? ""
+    : "";
+
   // ── 신청인 정보
   const [firstName,       setFirstName]       = useState("");
   const [lastName,        setLastName]        = useState("");
@@ -432,7 +437,7 @@ export default function AdminCampApplicationForm() {
   const [dob,             setDob]             = useState("");
 
   // ── 프로그램
-  const [packageGroupId,  setPackageGroupId]  = useState("");
+  const [packageGroupId,  setPackageGroupId]  = useState(preselectedGroupId);
   const [packageId,       setPackageId]       = useState("");
   const [preferredStart,  setPreferredStart]  = useState("");
 
