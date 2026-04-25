@@ -248,7 +248,7 @@ function NewApplicationDropdown({ navigate }: { navigate: (path: string) => void
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
-export default function AllApplicationsPage({ mode = "all" }: { mode?: "all" | "camp" | "service" }) {
+export default function AllApplicationsPage({ mode }: { mode: "camp" | "service" }) {
   const [, navigate] = useLocation();
   const { user } = useAuth();
   const isSA = user?.role === "super_admin";
@@ -256,7 +256,7 @@ export default function AllApplicationsPage({ mode = "all" }: { mode?: "all" | "
   const { toast } = useToast();
   const { selectedIds, toggleSelect, toggleAll, clearSelection, isAllSelected } = useBulkSelect();
 
-  const [tab,        setTab]        = useState(mode === "all" ? "all" : mode);
+  const [tab,        setTab]        = useState(mode);
   const [status,     setStatus]     = useState("all");
   const [search,     setSearch]     = useState("");
   const [searchInput,setSearchInput]= useState("");
@@ -295,7 +295,7 @@ export default function AllApplicationsPage({ mode = "all" }: { mode?: "all" | "
       const params = new URLSearchParams();
       params.set("page",     String(page));
       params.set("pageSize", String(pageSize));
-      if (tab    !== "all") params.set("type",   tab);
+      params.set("type", tab);
       if (status !== "all") params.set("status", status);
       if (search) params.set("search", search);
       return axios
@@ -319,7 +319,6 @@ export default function AllApplicationsPage({ mode = "all" }: { mode?: "all" | "
     }
   }
 
-  function handleTabChange(k: string) { setTab(k); setPage(1); }
   function handleStatusChange(s: string) { setStatus(s); setPage(1); }
 
   return (
@@ -352,24 +351,6 @@ export default function AllApplicationsPage({ mode = "all" }: { mode?: "all" | "
           </div>
         </div>
 
-        {/* Tabs — only shown in "all" mode */}
-        {mode === "all" && (
-        <div className="flex gap-1 mb-3">
-          {TABS.map(t => (
-            <button
-              key={t.key}
-              onClick={() => handleTabChange(t.key)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                tab === t.key
-                  ? "bg-[var(--e-orange)] text-white"
-                  : "text-muted-foreground hover:bg-[#FFF0E0] hover:text-[#C2410C]"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        )}
 
         {/* Search + status filters */}
         <div className="flex items-center gap-3 flex-wrap">
@@ -426,13 +407,11 @@ export default function AllApplicationsPage({ mode = "all" }: { mode?: "all" | "
                 </th>
               )}
               <th className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap min-w-[180px]">Ref No.</th>
-              {/* "all" mode: show Type column */}
-              {mode === "all" && <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>}
-              {/* "service" mode: show Service Type column */}
+              {/* Service mode: show Service Type column */}
               {mode === "service" && <th className="text-left px-4 py-3 font-medium text-gray-600">Service Type</th>}
               <th className="text-left px-4 py-3 font-medium text-gray-600">Applicant</th>
-              {/* Camp & All: show Programme column */}
-              {mode !== "service" && <th className="text-left px-4 py-3 font-medium text-gray-600">Programme / Package</th>}
+              {/* Camp mode: show Programme column */}
+              {mode === "camp" && <th className="text-left px-4 py-3 font-medium text-gray-600">Programme / Package</th>}
               <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">Assigned Staff</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">Date</th>
@@ -468,12 +447,6 @@ export default function AllApplicationsPage({ mode = "all" }: { mode?: "all" | "
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground min-w-[180px] w-[180px]">
                   <span className="line-clamp-2 break-words leading-relaxed">{row.ref ?? "—"}</span>
                 </td>
-                {/* All mode: generic Type badge */}
-                {mode === "all" && (
-                  <td className="px-4 py-3">
-                    <SourceBadge sourceType={row.sourceType} />
-                  </td>
-                )}
                 {/* Service mode: service-specific type badges */}
                 {mode === "service" && (
                   <td className="px-4 py-3 max-w-[200px]">
@@ -483,8 +456,8 @@ export default function AllApplicationsPage({ mode = "all" }: { mode?: "all" | "
                 <td className="px-4 py-3 max-w-[220px]">
                   <ApplicantCell row={row} />
                 </td>
-                {/* Camp & All mode: Programme column */}
-                {mode !== "service" && (
+                {/* Camp mode: Programme column */}
+                {mode === "camp" && (
                   <td className="px-4 py-3 max-w-[240px]">
                     <ProgrammeCell row={row} />
                   </td>

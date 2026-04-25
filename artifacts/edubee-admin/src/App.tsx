@@ -282,9 +282,6 @@ function Router() {
       <Route path="/admin/sales/general-consultations">
         <AdminRoute title="General Consultation"><GeneralConsultationsPage /></AdminRoute>
       </Route>
-      <Route path="/admin/all-applications">
-        <AdminRoute title="All Applications"><AllApplications /></AdminRoute>
-      </Route>
       <Route path="/admin/camp-applications-all">
         <AdminRoute title="Camp Applications"><AllApplications mode="camp" /></AdminRoute>
       </Route>
