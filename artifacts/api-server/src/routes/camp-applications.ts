@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, runWithTenantSchema } from "@workspace/db";
-import { campApplications, applicationParticipants, applications } from "@workspace/db/schema";
+import { campApplications, applicationParticipants, applications, campApplicationContacts } from "@workspace/db/schema";
 import { contacts, leads, contracts, quotes, quote_products, accounts, account_contacts } from "@workspace/db/schema";
 import { packageProducts, products, packageGroups, packages as pkgsTable } from "@workspace/db/schema";
 import { eq, ilike, or, count, and, desc, SQL, sql, inArray } from "drizzle-orm";
@@ -118,8 +118,64 @@ router.get("/camp-applications/:id", authenticate, requireRole(...READ_ROLES), a
         .where(eq(packageProducts.packageId, application.packageId))
       : [];
 
-    const participants = await db.select().from(applicationParticipants)
+    let participants = await db.select().from(applicationParticipants)
       .where(eq(applicationParticipants.campApplicationId, req.params.id as string));
+
+    // Fallback: if no application_participants, read from camp_application_contacts → contacts
+    if (participants.length === 0) {
+      const contactLinks = await db
+        .select({
+          id:              campApplicationContacts.id,
+          campApplicationId: campApplicationContacts.campApplicationId,
+          participantType: campApplicationContacts.role,
+          firstName:       contacts.firstName,
+          lastName:        contacts.lastName,
+          dateOfBirth:     contacts.dob,
+          gender:          contacts.gender,
+          nationality:     contacts.nationality,
+          email:           contacts.email,
+          phone:           contacts.mobile,
+        })
+        .from(campApplicationContacts)
+        .leftJoin(contacts, eq(campApplicationContacts.contactId, contacts.id))
+        .where(eq(campApplicationContacts.campApplicationId, req.params.id as string));
+
+      participants = contactLinks.map((c, i) => ({
+        id:                   c.id,
+        applicationId:        null,
+        campApplicationId:    c.campApplicationId,
+        participantType:      c.participantType ?? "child",
+        sequenceOrder:        i + 1,
+        fullName:             `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim(),
+        firstName:            c.firstName  ?? null,
+        lastName:             c.lastName   ?? null,
+        fullNameNative:       null,
+        englishName:          null,
+        dateOfBirth:          c.dateOfBirth ?? null,
+        gender:               c.gender      ?? null,
+        nationality:          c.nationality ?? null,
+        passportNumber:       null,
+        passportExpiry:       null,
+        grade:                null,
+        schoolName:           null,
+        englishLevel:         null,
+        medicalConditions:    null,
+        dietaryRequirements:  null,
+        specialNeeds:         null,
+        relationshipToStudent: null,
+        isEmergencyContact:   false,
+        email:                c.email  ?? null,
+        phone:                c.phone  ?? null,
+        whatsapp:             null,
+        lineId:               null,
+        guardianConsentGiven: false,
+        guardianConsentAt:    null,
+        guardianEmail:        null,
+        guardianPhone:        null,
+        createdAt:            new Date(),
+        updatedAt:            new Date(),
+      })) as any[];
+    }
 
     return res.json({
       ...application,
