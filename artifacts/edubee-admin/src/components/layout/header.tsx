@@ -321,24 +321,28 @@ export function Header({ collapsed, onToggle, title }: Props) {
                     switchableRoles.length === 0 ? (
                       <div className="text-center py-4 text-[11px] text-[#A8A29E]">No roles available</div>
                     ) : (
-                      switchableRoles.map(role => (
-                        <button
-                          key={role}
-                          onClick={() => { setViewAsRole(role); handleClose(); }}
-                          className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left transition-colors mb-0.5 ${viewAsRole === role ? "bg-(--e-orange-lt)" : "hover:bg-[#F4F3F1]"}`}
-                        >
-                          <div className="w-7 h-7 rounded-full bg-[#F4F3F1] flex items-center justify-center text-sm shrink-0">
-                            {ROLE_EMOJIS[role]}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-xs font-medium">{ROLE_LABELS[role]}</div>
-                            <div className="text-[10px] text-[#A8A29E]">{ROLE_DESCRIPTIONS[role]}</div>
-                          </div>
-                          {viewAsRole === role && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-(--e-orange) shrink-0" />
-                          )}
-                        </button>
-                      ))
+                      switchableRoles.map(role => {
+                        const isActive = viewAsRole === role;
+                        const isDimmed = !!viewAsRole && !isActive;
+                        return (
+                          <button
+                            key={role}
+                            onClick={() => { setViewAsRole(role); handleClose(); }}
+                            className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left transition-all mb-0.5 ${isActive ? "bg-(--e-orange-lt)" : "hover:bg-[#F4F3F1]"} ${isDimmed ? "opacity-35" : ""}`}
+                          >
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0 ${isActive ? "bg-(--e-orange-lt)" : "bg-[#F4F3F1]"}`}>
+                              {ROLE_EMOJIS[role]}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs font-medium">{ROLE_LABELS[role]}</div>
+                              <div className="text-[10px] text-[#A8A29E]">{ROLE_DESCRIPTIONS[role]}</div>
+                            </div>
+                            {isActive && (
+                              <div className="w-1.5 h-1.5 rounded-full bg-(--e-orange) shrink-0" />
+                            )}
+                          </button>
+                        );
+                      })
                     )
                   ) : (
                     filteredAccounts.length === 0 ? (

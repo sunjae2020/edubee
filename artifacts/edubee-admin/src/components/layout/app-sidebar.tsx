@@ -509,10 +509,10 @@ type Props = { collapsed: boolean; onToggle: () => void; onNavClick?: () => void
 export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
   const [location]                   = useLocation();
   const { user }                     = useAuth();
-  const { viewAsUser, isImpersonating } = useViewAs();
+  const { viewAsRole, viewAsUser, isImpersonating } = useViewAs();
   const tenantTheme                  = useTenantThemeCtx();
 
-  const effectiveRole   = viewAsUser?.role ?? user?.role ?? "consultant";
+  const effectiveRole   = viewAsRole ?? viewAsUser?.role ?? user?.role ?? "consultant";
   const isSA            = effectiveRole === "super_admin";
   const isCC            = effectiveRole === "camp_coordinator";
   const campFeature     = useFeature("camp_module");
