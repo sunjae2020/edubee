@@ -158,6 +158,7 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
     const acPickup  = alias(accounts, "acPickup");
 
     const coordOrg = alias(organisations, "coordOrg");
+    const ownerOrg = alias(organisations, "ownerOrg");
     const [row] = await db
       .select({
         group: packageGroups,
@@ -166,6 +167,8 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
         coordinatorOrgSubdomain: coordOrg.subdomain,
         coordinatorOrgEmail: coordOrg.email,
         coordinatorOrgWebsite: coordOrg.websiteUrl,
+        ownerOrgName: ownerOrg.name,
+        ownerOrgSubdomain: ownerOrg.subdomain,
         typeName: productTypes.name,
         instituteName2: acInstit.name,
         accommodationName: acAccom.name,
@@ -173,6 +176,7 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
         pickupDriverName: acPickup.name,
       })
       .from(packageGroups)
+      .leftJoin(ownerOrg, eq(packageGroups.organisationId, ownerOrg.id))
       .leftJoin(coordOrg, eq(packageGroups.coordinatorId, coordOrg.id))
       .leftJoin(productTypes, eq(packageGroups.typeId, productTypes.id))
       .leftJoin(acInstit,  eq(packageGroups.instituteId,      acInstit.id))
@@ -184,6 +188,8 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
     if (!row) return res.status(404).json({ error: "Not Found" });
     return res.json({
       ...row.group,
+      ownerOrgName: row.ownerOrgName ?? null,
+      ownerOrgSubdomain: row.ownerOrgSubdomain ?? null,
       typeName: row.typeName ?? null,
       coordinator: row.coordinatorOrgId ? {
         id: row.coordinatorOrgId,

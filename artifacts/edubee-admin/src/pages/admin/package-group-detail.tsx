@@ -696,6 +696,19 @@ export default function PackageGroupDetail() {
                   canEdit={canEdit}
                 />
               </DetailRow>
+              <DetailRow label="Owner">
+                {(group as any).ownerOrgName ? (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+                    <Building2 className="w-3 h-3" />
+                    {(group as any).ownerOrgName}
+                    {(group as any).ownerOrgSubdomain && (
+                      <span className="text-blue-400">· {(group as any).ownerOrgSubdomain}.edubee.co</span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground/60">—</span>
+                )}
+              </DetailRow>
               <DetailRow label="Created" value={group.createdAt ? formatDate(group.createdAt) : "—"} />
               <DetailRow label="Updated" value={group.updatedAt ? formatDate(group.updatedAt) : "—"} />
             </DetailSection>
@@ -1148,22 +1161,32 @@ export default function PackageGroupDetail() {
                 <p className="text-sm text-muted-foreground">
                   Delegate the management of this Package Group to another agency (tenant).
                 </p>
-                {canEdit && (
+                {canEdit && !isCC && (
                   <Button
                     size="sm"
                     onClick={() => setShowCoordModal(true)}
                     className="text-white gap-1.5"
                     style={{ background: "var(--e-primary)" }}
                   >
-                    <Plus className="w-3.5 h-3.5" /> Assign Coordinator
+                    <Plus className="w-3.5 h-3.5" /> Add Coordinator
                   </Button>
                 )}
               </div>
 
               {/* Delegation List */}
               {delegations.length === 0 ? (
-                <div className="py-10 text-center text-sm text-muted-foreground border rounded-lg bg-muted/30">
-                  No coordinator delegation assigned yet.
+                <div className="py-10 text-center text-sm text-muted-foreground border rounded-lg bg-muted/30 space-y-3">
+                  <p>No coordinator delegation assigned yet.</p>
+                  {canEdit && !isCC && (
+                    <Button
+                      size="sm"
+                      onClick={() => setShowCoordModal(true)}
+                      className="text-white gap-1.5"
+                      style={{ background: "var(--e-primary)" }}
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Coordinator
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3">
