@@ -1166,7 +1166,7 @@ export default function PackageGroupDetail() {
                     size="sm"
                     onClick={() => setShowCoordModal(true)}
                     className="text-white gap-1.5"
-                    style={{ background: "var(--e-primary)" }}
+                    style={{ background: "var(--e-orange)" }}
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Coordinator
                   </Button>
@@ -1182,7 +1182,7 @@ export default function PackageGroupDetail() {
                       size="sm"
                       onClick={() => setShowCoordModal(true)}
                       className="text-white gap-1.5"
-                      style={{ background: "var(--e-primary)" }}
+                      style={{ background: "var(--e-orange)" }}
                     >
                       <Plus className="w-3.5 h-3.5" /> Add Coordinator
                     </Button>
@@ -1289,7 +1289,7 @@ export default function PackageGroupDetail() {
           <div className="space-y-4 mt-1">
             {/* Warning */}
             <div className="flex gap-2 p-3 rounded-lg text-sm"
-              style={{ background: "color-mix(in srgb, var(--e-primary) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--e-primary) 25%, transparent)", color: "var(--e-primary)" }}>
+              style={{ background: "color-mix(in srgb, var(--e-orange) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--e-orange) 25%, transparent)", color: "var(--e-orange)" }}>
               <span className="shrink-0">⚠️</span>
               <span>This action grants the selected agency operational access to this Package Group. Please proceed carefully.</span>
             </div>
@@ -1303,7 +1303,7 @@ export default function PackageGroupDetail() {
                 value={coordSearch}
                 onChange={e => { setCoordSearch(e.target.value); setSelectedCoordOrgId(null); }}
                 className="w-full h-9 px-3 text-sm border border-input rounded-md focus:outline-none focus:ring-1"
-                style={{ "--tw-ring-color": "var(--e-primary)" } as any}
+                style={{ "--tw-ring-color": "var(--e-orange)" } as any}
               />
               {orgSearchResults.length > 0 && !selectedCoordOrgId && (
                 <div className="border rounded-md divide-y max-h-40 overflow-y-auto bg-background shadow-sm">
@@ -1321,8 +1321,8 @@ export default function PackageGroupDetail() {
               )}
               {selectedCoordOrgId && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
-                  style={{ background: "color-mix(in srgb, var(--e-primary) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--e-primary) 25%, transparent)" }}>
-                  <Building2 className="w-4 h-4" style={{ color: "var(--e-primary)" }} />
+                  style={{ background: "color-mix(in srgb, var(--e-orange) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--e-orange) 25%, transparent)" }}>
+                  <Building2 className="w-4 h-4" style={{ color: "var(--e-orange)" }} />
                   <span className="font-medium">{coordSearch}</span>
                   <button className="ml-auto text-muted-foreground hover:text-foreground" onClick={() => { setSelectedCoordOrgId(null); setCoordSearch(""); }}>
                     <X className="w-3.5 h-3.5" />
@@ -1343,7 +1343,7 @@ export default function PackageGroupDetail() {
                       onClick={() => setCoordPermissions(p.perms)}
                       className="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
                       style={active
-                        ? { background: "var(--e-primary)", color: "#fff", borderColor: "var(--e-primary)" }
+                        ? { background: "var(--e-orange)", color: "#fff", borderColor: "var(--e-orange)" }
                         : { background: "transparent", color: "var(--e-text-2)", borderColor: "var(--e-border)" }}
                     >
                       {p.label}
@@ -1365,7 +1365,7 @@ export default function PackageGroupDetail() {
                       checked={coordPermissions[key]}
                       onChange={e => setCoordPermissions(p => ({ ...p, [key]: e.target.checked }))}
                       className="rounded border-input"
-                      style={{ accentColor: "var(--e-primary)" }}
+                      style={{ accentColor: "var(--e-orange)" }}
                       disabled={key === "view"}
                     />
                     {label}
@@ -1384,7 +1384,7 @@ export default function PackageGroupDetail() {
                 rows={2}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none resize-none"
                 style={{ outline: "none" }}
-                onFocus={e => e.target.style.boxShadow = `0 0 0 1px var(--e-primary)`}
+                onFocus={e => e.target.style.boxShadow = `0 0 0 1px var(--e-orange)`}
                 onBlur={e => e.target.style.boxShadow = "none"}
               />
             </div>
@@ -1399,7 +1399,7 @@ export default function PackageGroupDetail() {
                 disabled={!selectedCoordOrgId || assignCoordinator.isPending}
                 onClick={() => assignCoordinator.mutate()}
                 className="text-white min-w-[120px]"
-                style={{ background: "var(--e-primary)" }}
+                style={{ background: "var(--e-orange)" }}
               >
                 {assignCoordinator.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Assign Coordinator"}
               </Button>
@@ -1417,8 +1417,8 @@ export default function PackageGroupDetail() {
           <div className="space-y-4 mt-1">
             {editingDelegation && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
-                style={{ background: "color-mix(in srgb, var(--e-primary) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--e-primary) 25%, transparent)" }}>
-                <Building2 className="w-4 h-4" style={{ color: "var(--e-primary)" }} />
+                style={{ background: "color-mix(in srgb, var(--e-orange) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--e-orange) 25%, transparent)" }}>
+                <Building2 className="w-4 h-4" style={{ color: "var(--e-orange)" }} />
                 <span className="font-medium">{editingDelegation.coordinatorOrgName}</span>
                 {editingDelegation.coordinatorOrgSubdomain && (
                   <span className="text-muted-foreground text-xs ml-1">{editingDelegation.coordinatorOrgSubdomain}.edubee.co</span>
@@ -1441,7 +1441,7 @@ export default function PackageGroupDetail() {
                       checked={editPermissions[key]}
                       onChange={e => setEditPermissions(p => ({ ...p, [key]: e.target.checked }))}
                       className="rounded border-input"
-                      style={{ accentColor: "var(--e-primary)" }}
+                      style={{ accentColor: "var(--e-orange)" }}
                       disabled={key === "view"}
                     />
                     {label}
@@ -1459,7 +1459,7 @@ export default function PackageGroupDetail() {
                 rows={2}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none resize-none"
                 style={{ outline: "none" }}
-                onFocus={e => e.target.style.boxShadow = `0 0 0 1px var(--e-primary)`}
+                onFocus={e => e.target.style.boxShadow = `0 0 0 1px var(--e-orange)`}
                 onBlur={e => e.target.style.boxShadow = "none"}
               />
             </div>
@@ -1471,7 +1471,7 @@ export default function PackageGroupDetail() {
                 disabled={updateCoordinator.isPending}
                 onClick={() => updateCoordinator.mutate(editingDelegation.id)}
                 className="text-white min-w-[100px]"
-                style={{ background: "var(--e-primary)" }}
+                style={{ background: "var(--e-orange)" }}
               >
                 {updateCoordinator.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Save Changes"}
               </Button>
