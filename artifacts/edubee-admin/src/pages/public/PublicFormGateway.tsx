@@ -85,10 +85,12 @@ export default function PublicFormGateway() {
     return <NotFoundState />;
   }
 
-  if (form.formType === "lead_inquiry") {
-    return <LeadInquiryContent formInfo={form} />;
+  // camp_application → redirect to camp apply flow
+  if (form.formType === "camp_application") {
+    return <CampApplicationRedirect slug={slug} />;
   }
 
-  // camp_application and any other types → redirect to /apply with slug context
-  return <CampApplicationRedirect slug={slug} />;
+  // All other types (lead_inquiry, schooling_consultation, study_abroad_consultation,
+  // general_consultation, service_application) → show lead inquiry / contact form
+  return <LeadInquiryContent formInfo={form} />;
 }
