@@ -1,5 +1,5 @@
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,176 +9,199 @@ import { DisplayCurrencyProvider } from "@/context/DisplayCurrencyContext";
 import "@/lib/i18n";
 import axios from "axios";
 
-import ApplyPage from "@/pages/public/ApplyPage";
-import LeadInquiryPage from "@/pages/public/LeadInquiryPage";
-import PublicFormGateway from "@/pages/public/PublicFormGateway";
+// ── Static imports — always needed immediately ─────────────────────────────
 import Login from "@/pages/login";
-import Register from "@/pages/Register";
-import ForgotPassword from "@/pages/ForgotPassword";
-import ResetPassword from "@/pages/ResetPassword";
-import AcceptInvite from "@/pages/AcceptInvite";
-import DashboardCrmPage from "@/pages/admin/DashboardCrmPage";
-import Users from "@/pages/users";
-import Applications from "@/pages/admin/applications";
-import AllApplications from "@/pages/admin/all-applications";
-import CampApplications from "@/pages/admin/camp-applications";
-import DelegatedPackages from "@/pages/admin/delegated-packages";
-import CampApplicationDetail from "@/pages/admin/camp-application-detail";
-import PackageGroups from "@/pages/admin/package-groups";
-import Packages from "@/pages/packages";
-import PackageDetail from "@/pages/admin/package-detail";
-import Leads from "@/pages/admin/leads";
-import AdminStub from "@/pages/admin/stub";
 import NotFound from "@/pages/not-found";
-
-// Detail Pages
-import PackageGroupDetail from "@/pages/admin/package-group-detail";
-import NewPackageGroup from "@/pages/admin/new-package-group";
-import ApplicationDetail from "@/pages/admin/application-detail";
-import ApplicationForm from "@/pages/admin/application-form";
-import AdminCampApplicationForm from "@/pages/admin/camp-application-form";
-import PickupMgtDetail from "@/pages/admin/services/pickup-detail";
-import TourMgtDetail from "@/pages/admin/services/tour-detail";
-import SettlementMgtDetail from "@/pages/admin/services/settlement-detail";
-import UserDetail from "@/pages/admin/user-detail";
-import TeamsPage from "@/pages/admin/teams/TeamsPage";
-import TeamDetailPage from "@/pages/admin/teams/TeamDetailPage";
-import StaffKpiPage   from "@/pages/kpi/StaffKpiPage";
-import TeamKpiPage    from "@/pages/kpi/TeamKpiPage";
-import KpiTargetsPage from "@/pages/kpi/KpiTargetsPage";
-
-// Services
-import PickupManagement from "@/pages/admin/services/pickup";
-import TourManagement from "@/pages/admin/services/tour";
-import Settlement from "@/pages/admin/services/settlement";
-import TasksCS from "@/pages/admin/services/tasks";
-
-// Accounting
-import ExchangeRates from "@/pages/admin/accounting/exchange-rates";
-import Invoices from "@/pages/admin/accounting/invoices";
-import Receipts from "@/pages/admin/accounting/receipts";
-import ReceiptDetailPage from "@/pages/admin/accounting/ReceiptDetailPage";
-import Transactions from "@/pages/admin/accounting/transactions";
-import TransactionDetailPage from "@/pages/admin/accounting/TransactionDetailPage";
-
-// My Accounting
-import MySettlements from "@/pages/admin/my-accounting/settlements";
-import MyInvoices from "@/pages/admin/my-accounting/invoices";
-import MyRevenue from "@/pages/admin/my-accounting/revenue";
-
-// Reports
-import Reports from "@/pages/admin/reports";
-import ReportsPage from "@/pages/admin/ReportsPage";
-import ReportEditorPage from "@/pages/admin/ReportEditorPage";
-import ReportViewerPage from "@/pages/admin/ReportViewerPage";
-
-// Documents
-import DocumentsPage from "@/pages/admin/documents";
-import ChatbotAdminPage from "@/pages/admin/ChatbotAdminPage";
-
-// Settings
-import GeneralSettings from "@/pages/admin/settings/general";
-import PageAccess from "@/pages/admin/settings/page-access";
-import FieldPermissions from "@/pages/admin/settings/field-permissions";
-import DocPermissions from "@/pages/admin/settings/doc-permissions";
-import ImpersonationLogs from "@/pages/admin/settings/impersonation-logs";
-import DataManager from "@/pages/admin/settings/data-manager";
-import LookupValues from "@/pages/admin/settings/lookup-values";
-import DbSync from "@/pages/admin/settings/db-sync";
-// Multi-tenant Settings
-import CompanyProfile from "@/pages/admin/settings/company-profile";
-import Branding from "@/pages/admin/settings/branding";
-import DomainAccess from "@/pages/admin/settings/domain-access";
-import UsersTeams from "@/pages/admin/settings/users-teams";
-import PlanBilling from "@/pages/admin/settings/plan-billing";
-import TenantIntegrations from "@/pages/admin/settings/integrations";
-// Super Admin
-import SuperAdminLayout from "@/pages/admin/superadmin/SuperAdminLayout";
-import SuperAdminDashboard from "@/pages/admin/superadmin/SuperAdminDashboard";
-import TenantList from "@/pages/admin/superadmin/TenantList";
-import TenantDetail from "@/pages/admin/superadmin/TenantDetail";
-import PlatformPlans from "@/pages/admin/superadmin/PlatformPlans";
-import StripeSettings from "@/pages/admin/superadmin/StripeSettings";
-import PlatformCrm from "@/pages/admin/superadmin/PlatformCrm";
-import PlatformCrmDetail from "@/pages/admin/superadmin/PlatformCrmDetail";
-import SuperAdminIntegrations from "@/pages/admin/superadmin/Integrations";
+import { MainLayout } from "@/components/layout/main-layout";
 import SuperAdminGuard from "@/components/guards/SuperAdminGuard";
 import { useTenantTheme, TenantThemeContext, DEFAULT_THEME, applyThemeToDom } from "@/hooks/use-tenant-theme";
-import Products from "@/pages/admin/products";
-import ProductDetail from "@/pages/admin/product-detail";
-import ProductGroups from "@/pages/admin/product-groups";
-import ProductGroupDetail from "@/pages/admin/product-group-detail";
-import ProductTypes from "@/pages/admin/product-types";
-import ProductTypeDetail from "@/pages/admin/product-type-detail";
-import PromotionsPage from "@/pages/admin/promotions";
-import PromotionDetail from "@/pages/admin/promotion-detail";
-import CommissionsPage from "@/pages/admin/commissions";
-import CommissionDetail from "@/pages/admin/commission-detail";
-import AdminCommunityPage from "@/pages/admin/community";
+
+// ── Page loading spinner ───────────────────────────────────────────────────
+function PageLoader() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+      <div style={{
+        width: 36, height: 36,
+        border: "3px solid var(--e-orange-lt, #fef0e3)",
+        borderTopColor: "var(--e-orange, #F5821F)",
+        borderRadius: "50%",
+        animation: "edubee-spin 0.7s linear infinite",
+      }} />
+      <style>{`@keyframes edubee-spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+// ── Lazy-loaded pages ──────────────────────────────────────────────────────
+// Public / Auth
+const Register            = lazy(() => import("@/pages/Register"));
+const ForgotPassword      = lazy(() => import("@/pages/ForgotPassword"));
+const ResetPassword       = lazy(() => import("@/pages/ResetPassword"));
+const AcceptInvite        = lazy(() => import("@/pages/AcceptInvite"));
+const ApplyPage           = lazy(() => import("@/pages/public/ApplyPage"));
+const LeadInquiryPage     = lazy(() => import("@/pages/public/LeadInquiryPage"));
+const PublicFormGateway   = lazy(() => import("@/pages/public/PublicFormGateway"));
+
+// Dashboard
+const DashboardCrmPage    = lazy(() => import("@/pages/admin/DashboardCrmPage"));
+
+// Users / Teams / KPI
+const Users               = lazy(() => import("@/pages/users"));
+const UserDetail          = lazy(() => import("@/pages/admin/user-detail"));
+const TeamsPage           = lazy(() => import("@/pages/admin/teams/TeamsPage"));
+const TeamDetailPage      = lazy(() => import("@/pages/admin/teams/TeamDetailPage"));
+const StaffKpiPage        = lazy(() => import("@/pages/kpi/StaffKpiPage"));
+const TeamKpiPage         = lazy(() => import("@/pages/kpi/TeamKpiPage"));
+const KpiTargetsPage      = lazy(() => import("@/pages/kpi/KpiTargetsPage"));
+
+// Packages / Products / Promotions / Commissions
+const PackageGroups       = lazy(() => import("@/pages/admin/package-groups"));
+const PackageGroupDetail  = lazy(() => import("@/pages/admin/package-group-detail"));
+const NewPackageGroup     = lazy(() => import("@/pages/admin/new-package-group"));
+const Packages            = lazy(() => import("@/pages/packages"));
+const PackageDetail       = lazy(() => import("@/pages/admin/package-detail"));
+const DelegatedPackages   = lazy(() => import("@/pages/admin/delegated-packages"));
+const Products            = lazy(() => import("@/pages/admin/products"));
+const ProductDetail       = lazy(() => import("@/pages/admin/product-detail"));
+const ProductGroups       = lazy(() => import("@/pages/admin/product-groups"));
+const ProductGroupDetail  = lazy(() => import("@/pages/admin/product-group-detail"));
+const ProductTypes        = lazy(() => import("@/pages/admin/product-types"));
+const ProductTypeDetail   = lazy(() => import("@/pages/admin/product-type-detail"));
+const PromotionsPage      = lazy(() => import("@/pages/admin/promotions"));
+const PromotionDetail     = lazy(() => import("@/pages/admin/promotion-detail"));
+const CommissionsPage     = lazy(() => import("@/pages/admin/commissions"));
+const CommissionDetail    = lazy(() => import("@/pages/admin/commission-detail"));
+const EnrollmentSpots     = lazy(() => import("@/pages/admin/enrollment-spots"));
+
+// Leads / Leads
+const Leads               = lazy(() => import("@/pages/admin/leads"));
+
+// Applications
+const Applications        = lazy(() => import("@/pages/admin/applications"));
+const AllApplications     = lazy(() => import("@/pages/admin/all-applications"));
+const ApplicationDetail   = lazy(() => import("@/pages/admin/application-detail"));
+const ApplicationForm     = lazy(() => import("@/pages/admin/application-form"));
+
+// Camp Applications
+const CampApplications      = lazy(() => import("@/pages/admin/camp-applications"));
+const CampApplicationDetail = lazy(() => import("@/pages/admin/camp-application-detail"));
+const AdminCampApplicationForm = lazy(() => import("@/pages/admin/camp-application-form"));
 
 // Sales
-import SchoolingConsultationsPage from "@/pages/admin/sales/SchoolingConsultationsPage";
-import SchoolingConsultationFormPage from "@/pages/admin/sales/SchoolingConsultationFormPage";
-import StudyAbroadConsultationsPage from "@/pages/admin/sales/StudyAbroadConsultationsPage";
-import StudyAbroadConsultationFormPage from "@/pages/admin/sales/StudyAbroadConsultationFormPage";
-import GeneralConsultationsPage from "@/pages/admin/sales/GeneralConsultationsPage";
-import GeneralConsultationFormPage from "@/pages/admin/sales/GeneralConsultationFormPage";
+const SchoolingConsultationsPage    = lazy(() => import("@/pages/admin/sales/SchoolingConsultationsPage"));
+const SchoolingConsultationFormPage = lazy(() => import("@/pages/admin/sales/SchoolingConsultationFormPage"));
+const StudyAbroadConsultationsPage  = lazy(() => import("@/pages/admin/sales/StudyAbroadConsultationsPage"));
+const StudyAbroadConsultationFormPage = lazy(() => import("@/pages/admin/sales/StudyAbroadConsultationFormPage"));
+const GeneralConsultationsPage      = lazy(() => import("@/pages/admin/sales/GeneralConsultationsPage"));
+const GeneralConsultationFormPage   = lazy(() => import("@/pages/admin/sales/GeneralConsultationFormPage"));
 
 // CRM
-import ContactsPage from "@/pages/admin/crm/ContactsPage";
-import ContactDetailPage from "@/pages/admin/crm/ContactDetailPage";
-import AccountsPage from "@/pages/admin/crm/AccountsPage";
-import AccountDetailPage from "@/pages/admin/crm/AccountDetailPage";
-import CrmLeadsPage from "@/pages/admin/crm/LeadsPage";
-import LeadDetailPage from "@/pages/admin/crm/LeadDetailPage";
-import QuotesPage from "@/pages/admin/crm/QuotesPage";
-import QuoteBuilderPage from "@/pages/admin/crm/QuoteBuilderPage";
-import ContractListPage from "@/pages/admin/crm/ContractListPage";
-import ContractDetailPage from "@/pages/admin/crm/ContractDetailPage";
+const ContactsPage       = lazy(() => import("@/pages/admin/crm/ContactsPage"));
+const ContactDetailPage  = lazy(() => import("@/pages/admin/crm/ContactDetailPage"));
+const AccountsPage       = lazy(() => import("@/pages/admin/crm/AccountsPage"));
+const AccountDetailPage  = lazy(() => import("@/pages/admin/crm/AccountDetailPage"));
+const CrmLeadsPage       = lazy(() => import("@/pages/admin/crm/LeadsPage"));
+const LeadDetailPage     = lazy(() => import("@/pages/admin/crm/LeadDetailPage"));
+const QuotesPage         = lazy(() => import("@/pages/admin/crm/QuotesPage"));
+const QuoteBuilderPage   = lazy(() => import("@/pages/admin/crm/QuoteBuilderPage"));
+const ContractListPage   = lazy(() => import("@/pages/admin/crm/ContractListPage"));
+const ContractDetailPage = lazy(() => import("@/pages/admin/crm/ContractDetailPage"));
 
-// Accounting (new)
-import ChartOfAccountsPage from "@/pages/admin/accounting/ChartOfAccountsPage";
-import CoaDetailPage from "@/pages/admin/accounting/CoaDetailPage";
-import ArApTrackerPage from "@/pages/admin/accounting/ArApTrackerPage";
-import PaymentsPage from "@/pages/admin/accounting/PaymentsPage";
-import PaymentDetailPage from "@/pages/admin/accounting/PaymentDetailPage";
-import JournalEntriesPage from "@/pages/admin/accounting/JournalEntriesPage";
-import JournalEntryDetailPage from "@/pages/admin/accounting/JournalEntryDetailPage";
-import TaxInvoiceListPage from "@/pages/admin/accounting/TaxInvoiceListPage";
-import TaxInvoiceDetailPage from "@/pages/admin/accounting/TaxInvoiceDetailPage";
-import BankAccountsPage from "@/pages/admin/accounting/BankAccountsPage";
-import InvoiceDetailPage from "@/pages/admin/accounting/InvoiceDetailPage";
+// Services
+const PickupManagement     = lazy(() => import("@/pages/admin/services/pickup"));
+const PickupMgtDetail      = lazy(() => import("@/pages/admin/services/pickup-detail"));
+const TourManagement       = lazy(() => import("@/pages/admin/services/tour"));
+const TourMgtDetail        = lazy(() => import("@/pages/admin/services/tour-detail"));
+const Settlement           = lazy(() => import("@/pages/admin/services/settlement"));
+const SettlementMgtDetail  = lazy(() => import("@/pages/admin/services/settlement-detail"));
+const TasksCS              = lazy(() => import("@/pages/admin/services/tasks"));
+const StudyAbroadPage      = lazy(() => import("@/pages/admin/services/StudyAbroadPage"));
+const StudyAbroadDetailPage = lazy(() => import("@/pages/admin/services/StudyAbroadDetailPage"));
+const AccommodationPage    = lazy(() => import("@/pages/admin/services/AccommodationPage"));
+const AccommodationDetailPage = lazy(() => import("@/pages/admin/services/AccommodationDetailPage"));
+const InternshipPage       = lazy(() => import("@/pages/admin/services/InternshipPage"));
+const InternshipDetailPage = lazy(() => import("@/pages/admin/services/InternshipDetailPage"));
+const GuardianPage         = lazy(() => import("@/pages/admin/services/GuardianPage"));
+const GuardianDetailPage   = lazy(() => import("@/pages/admin/services/GuardianDetailPage"));
+const OtherServicePage     = lazy(() => import("@/pages/admin/services/OtherServicePage"));
+const OtherServiceDetailPage = lazy(() => import("@/pages/admin/services/OtherServiceDetailPage"));
+const VisaServicePage      = lazy(() => import("@/pages/admin/services/VisaServicePage"));
+const VisaServiceDetailPage = lazy(() => import("@/pages/admin/services/VisaServiceDetailPage"));
 
-// Services (new)
-import StudyAbroadPage from "@/pages/admin/services/StudyAbroadPage";
-import StudyAbroadDetailPage from "@/pages/admin/services/StudyAbroadDetailPage";
-import AccommodationPage from "@/pages/admin/services/AccommodationPage";
-import AccommodationDetailPage from "@/pages/admin/services/AccommodationDetailPage";
-import InternshipPage from "@/pages/admin/services/InternshipPage";
-import InternshipDetailPage from "@/pages/admin/services/InternshipDetailPage";
-import GuardianPage from "@/pages/admin/services/GuardianPage";
-import GuardianDetailPage from "@/pages/admin/services/GuardianDetailPage";
-import OtherServicePage from "@/pages/admin/services/OtherServicePage";
-import OtherServiceDetailPage from "@/pages/admin/services/OtherServiceDetailPage";
-import VisaServicePage from "@/pages/admin/services/VisaServicePage";
-import VisaServiceDetailPage from "@/pages/admin/services/VisaServiceDetailPage";
+// Accounting
+const ExchangeRates        = lazy(() => import("@/pages/admin/accounting/exchange-rates"));
+const Invoices             = lazy(() => import("@/pages/admin/accounting/invoices"));
+const Receipts             = lazy(() => import("@/pages/admin/accounting/receipts"));
+const ReceiptDetailPage    = lazy(() => import("@/pages/admin/accounting/ReceiptDetailPage"));
+const Transactions         = lazy(() => import("@/pages/admin/accounting/transactions"));
+const TransactionDetailPage = lazy(() => import("@/pages/admin/accounting/TransactionDetailPage"));
+const ChartOfAccountsPage  = lazy(() => import("@/pages/admin/accounting/ChartOfAccountsPage"));
+const CoaDetailPage        = lazy(() => import("@/pages/admin/accounting/CoaDetailPage"));
+const ArApTrackerPage      = lazy(() => import("@/pages/admin/accounting/ArApTrackerPage"));
+const PaymentsPage         = lazy(() => import("@/pages/admin/accounting/PaymentsPage"));
+const PaymentDetailPage    = lazy(() => import("@/pages/admin/accounting/PaymentDetailPage"));
+const JournalEntriesPage   = lazy(() => import("@/pages/admin/accounting/JournalEntriesPage"));
+const JournalEntryDetailPage = lazy(() => import("@/pages/admin/accounting/JournalEntryDetailPage"));
+const TaxInvoiceListPage   = lazy(() => import("@/pages/admin/accounting/TaxInvoiceListPage"));
+const TaxInvoiceDetailPage = lazy(() => import("@/pages/admin/accounting/TaxInvoiceDetailPage"));
+const BankAccountsPage     = lazy(() => import("@/pages/admin/accounting/BankAccountsPage"));
+const InvoiceDetailPage    = lazy(() => import("@/pages/admin/accounting/InvoiceDetailPage"));
 
-// My Programs
-import MyPrograms from "@/pages/admin/my-programs";
+// My Accounting
+const MySettlements  = lazy(() => import("@/pages/admin/my-accounting/settlements"));
+const MyInvoices     = lazy(() => import("@/pages/admin/my-accounting/invoices"));
+const MyRevenue      = lazy(() => import("@/pages/admin/my-accounting/revenue"));
 
-// Enrollment Spots
-import EnrollmentSpots from "@/pages/admin/enrollment-spots";
+// Reports
+const Reports         = lazy(() => import("@/pages/admin/reports"));
+const ReportsPage     = lazy(() => import("@/pages/admin/ReportsPage"));
+const ReportEditorPage = lazy(() => import("@/pages/admin/ReportEditorPage"));
+const ReportViewerPage = lazy(() => import("@/pages/admin/ReportViewerPage"));
 
-// Notifications
-import Notifications from "@/pages/admin/notifications";
+// Documents / Chatbot
+const DocumentsPage   = lazy(() => import("@/pages/admin/documents"));
+const ChatbotAdminPage = lazy(() => import("@/pages/admin/ChatbotAdminPage"));
+
+// Settings
+const GeneralSettings    = lazy(() => import("@/pages/admin/settings/general"));
+const PageAccess         = lazy(() => import("@/pages/admin/settings/page-access"));
+const FieldPermissions   = lazy(() => import("@/pages/admin/settings/field-permissions"));
+const DocPermissions     = lazy(() => import("@/pages/admin/settings/doc-permissions"));
+const ImpersonationLogs  = lazy(() => import("@/pages/admin/settings/impersonation-logs"));
+const DataManager        = lazy(() => import("@/pages/admin/settings/data-manager"));
+const LookupValues       = lazy(() => import("@/pages/admin/settings/lookup-values"));
+const DbSync             = lazy(() => import("@/pages/admin/settings/db-sync"));
+const CompanyProfile     = lazy(() => import("@/pages/admin/settings/company-profile"));
+const Branding           = lazy(() => import("@/pages/admin/settings/branding"));
+const DomainAccess       = lazy(() => import("@/pages/admin/settings/domain-access"));
+const UsersTeams         = lazy(() => import("@/pages/admin/settings/users-teams"));
+const PlanBilling        = lazy(() => import("@/pages/admin/settings/plan-billing"));
+const TenantIntegrations = lazy(() => import("@/pages/admin/settings/integrations"));
+
+// Super Admin
+const SuperAdminLayout    = lazy(() => import("@/pages/admin/superadmin/SuperAdminLayout"));
+const SuperAdminDashboard = lazy(() => import("@/pages/admin/superadmin/SuperAdminDashboard"));
+const TenantList          = lazy(() => import("@/pages/admin/superadmin/TenantList"));
+const TenantDetail        = lazy(() => import("@/pages/admin/superadmin/TenantDetail"));
+const PlatformPlans       = lazy(() => import("@/pages/admin/superadmin/PlatformPlans"));
+const StripeSettings      = lazy(() => import("@/pages/admin/superadmin/StripeSettings"));
+const PlatformCrm         = lazy(() => import("@/pages/admin/superadmin/PlatformCrm"));
+const PlatformCrmDetail   = lazy(() => import("@/pages/admin/superadmin/PlatformCrmDetail"));
+const SuperAdminIntegrations = lazy(() => import("@/pages/admin/superadmin/Integrations"));
+
+// My Programs / Notifications / Community
+const MyPrograms          = lazy(() => import("@/pages/admin/my-programs"));
+const Notifications       = lazy(() => import("@/pages/admin/notifications"));
+const AdminCommunityPage  = lazy(() => import("@/pages/admin/community"));
+const AdminStub           = lazy(() => import("@/pages/admin/stub"));
 
 // Application Form Management
-import ApplicationFormList    from "@/pages/admin/application-forms/list";
-import ApplicationFormEdit    from "@/pages/admin/application-forms/edit";
-import ApplicationFormPartners from "@/pages/admin/application-forms/partners";
-import ApplicationFormTerms from "@/pages/admin/application-forms/terms";
+const ApplicationFormList    = lazy(() => import("@/pages/admin/application-forms/list"));
+const ApplicationFormEdit    = lazy(() => import("@/pages/admin/application-forms/edit"));
+const ApplicationFormPartners = lazy(() => import("@/pages/admin/application-forms/partners"));
+const ApplicationFormTerms   = lazy(() => import("@/pages/admin/application-forms/terms"));
 
-import { MainLayout } from "@/components/layout/main-layout";
+// ─────────────────────────────────────────────────────────────────────────────
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -192,8 +215,6 @@ function Router() {
   const { theme } = useTenantTheme();
   const [location] = useLocation();
 
-  // 슈퍼 어드민 경로에서는 항상 Edubee 기본 테마 사용.
-  // 테넌트 JWT로 인해 테넌트 색상이 슈퍼 어드민 UI에 bleeding되는 것을 방지.
   const isSuperAdmin = location.startsWith("/superadmin");
   const effectiveTheme = isSuperAdmin ? DEFAULT_THEME : theme;
 
@@ -203,6 +224,7 @@ function Router() {
 
   return (
     <TenantThemeContext.Provider value={effectiveTheme}>
+    <Suspense fallback={<PageLoader />}>
     <Switch>
       {/* Root → login */}
       <Route path="/"><Redirect to="/login" /></Route>
@@ -259,7 +281,7 @@ function Router() {
         <AdminRoute title="New Schooling Consultation"><SchoolingConsultationFormPage /></AdminRoute>
       </Route>
       <Route path="/admin/sales/schooling-consultations/:id">
-        {(params) => <AdminRoute title="Schooling Consultation"><SchoolingConsultationFormPage /></AdminRoute>}
+        {() => <AdminRoute title="Schooling Consultation"><SchoolingConsultationFormPage /></AdminRoute>}
       </Route>
       <Route path="/admin/sales/schooling-consultations">
         <AdminRoute title="Schooling Consultation"><SchoolingConsultationsPage /></AdminRoute>
@@ -268,7 +290,7 @@ function Router() {
         <AdminRoute title="New Study Abroad Consultation"><StudyAbroadConsultationFormPage /></AdminRoute>
       </Route>
       <Route path="/admin/sales/study-abroad-consultations/:id">
-        {(params) => <AdminRoute title="Study Abroad Consultation"><StudyAbroadConsultationFormPage /></AdminRoute>}
+        {() => <AdminRoute title="Study Abroad Consultation"><StudyAbroadConsultationFormPage /></AdminRoute>}
       </Route>
       <Route path="/admin/sales/study-abroad-consultations">
         <AdminRoute title="Study Abroad Consultation"><StudyAbroadConsultationsPage /></AdminRoute>
@@ -277,7 +299,7 @@ function Router() {
         <AdminRoute title="New General Consultation"><GeneralConsultationFormPage /></AdminRoute>
       </Route>
       <Route path="/admin/sales/general-consultations/:id">
-        {(params) => <AdminRoute title="General Consultation"><GeneralConsultationFormPage /></AdminRoute>}
+        {() => <AdminRoute title="General Consultation"><GeneralConsultationFormPage /></AdminRoute>}
       </Route>
       <Route path="/admin/sales/general-consultations">
         <AdminRoute title="General Consultation"><GeneralConsultationsPage /></AdminRoute>
@@ -683,14 +705,12 @@ function Router() {
 
       <Route component={NotFound} />
     </Switch>
+    </Suspense>
     </TenantThemeContext.Provider>
   );
 }
 
 // ── View-As axios header sync ─────────────────────────────────────────────
-// Role-based view-as: inject x-view-as-role so the backend overrides req.user.role
-// while keeping the same user identity and organisation.
-// Account portal view-as: inject x-view-as-user-id only for tenant-scoped accounts.
 function AxiosViewAsSetup() {
   const { viewAsRole, viewAsUser } = useViewAs();
   useEffect(() => {
@@ -710,7 +730,6 @@ function AxiosViewAsSetup() {
 
 function ImpersonationInit() {
   useEffect(() => {
-    // 구형 공유 키 정리 (앱별 전용 키로 마이그레이션)
     sessionStorage.removeItem("edubee_impersonate_org_id");
     sessionStorage.removeItem("edubee_impersonate_org_name");
     const params = new URLSearchParams(window.location.search);
