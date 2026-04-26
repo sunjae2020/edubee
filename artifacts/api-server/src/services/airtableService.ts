@@ -2,7 +2,7 @@ import { db, staticDb } from "@workspace/db";
 import {
   platformSettings, users, contacts, accounts, account_contacts,
   contracts, contractProducts, airtableSyncMap, transactions,
-  packageGroups, packages,
+  packageGroups, packages, enrollmentSpots, interviewSchedules,
 } from "@workspace/db/schema";
 import { eq, and, sql, gte } from "drizzle-orm";
 import { decryptField } from "../lib/crypto.js";
@@ -915,6 +915,155 @@ async function syncCampContracts(
   return { synced, created, failed };
 }
 
+// ── Sync: Enrollment Spots → enrollment_spots ─────────────────────────────────
+async function syncEnrollmentSpots(
+  token: string, baseId: string, organisationId: string,
+): Promise<{ synced: number; created: number; failed: number }> {
+  const records = await fetchAllRecords(token, baseId, "Enrollment Spots");
+  let synced = 0, created = 0, failed = 0;
+
+  for (const rec of records) {
+    try {
+      const f = rec.fields;
+
+      const pgRecIds: string[] = f["Package Group"] ?? [];
+      if (pgRecIds.length === 0) { failed++; continue; }
+      const packageGroupId = await findCrmId(baseId, "Package Groups", pgRecIds[0]);
+      if (!packageGroupId) { failed++; continue; }
+
+      const gradeLabel: string = (f["Year Level"] ?? "").trim() || "Unknown";
+      const totalSpots: number = f["Total Spots"] ?? 0;
+      const enrolledCount: number = f["Enroll No."] ?? 0;
+      const enrollName: string  = (f["Enroll Name"] ?? "").trim() || null!;
+      const dobRange: string    = f["DOB Range"] ?? "";
+      const note: string        = f["Note"] ?? null!;
+
+      const upsertData = {
+        packageGroupId,
+        enrollName:    enrollName || null,
+        gradeLabel,
+        gradeOrder:    0,
+        totalSpots,
+        reservedSpots: enrolledCount,
+        note:          [dobRange ? `DOB: ${dobRange}` : null, note].filter(Boolean).join(" | ") || null,
+        status:        totalSpots - enrolledCount <= 0 ? "full" : "available",
+        updatedAt:     new Date(),
+      };
+
+      const existingCrmId = await findCrmId(baseId, "Enrollment Spots", rec.id);
+
+      if (existingCrmId) {
+        await db.update(enrollmentSpots).set(upsertData).where(eq(enrollmentSpots.id, existingCrmId));
+        synced++;
+      } else {
+        const [spot] = await db.insert(enrollmentSpots)
+          .values({ ...upsertData, createdAt: new Date() })
+          .returning({ id: enrollmentSpots.id });
+        await upsertSyncMap({
+          airtableBaseId: baseId, airtableTable: "Enrollment Spots",
+          airtableRecordId: rec.id, crmTable: "enrollment_spots", crmId: spot.id, organisationId,
+        });
+        created++;
+      }
+    } catch (err: any) {
+      console.error(`[Airtable] syncEnrollmentSpots record ${rec.id} failed:`, err.message);
+      failed++;
+    }
+  }
+  return { synced, created, failed };
+}
+
+// ── Sync: Interview MGT → interview_schedules ─────────────────────────────────
+async function syncInterviewMgt(
+  token: string, baseId: string, organisationId: string,
+): Promise<{ synced: number; created: number; failed: number }> {
+  const records = await fetchAllRecords(token, baseId, "Interview MGT");
+  let synced = 0, created = 0, failed = 0;
+
+  const statusMap: Record<string, string> = {
+    "Pending":  "pending",
+    "Passed":   "completed",
+    "Failed":   "cancelled",
+    "Cancelled": "cancelled",
+    "Scheduled": "scheduled",
+  };
+  const formatMap: Record<string, string> = {
+    "Teams": "online", "Zoom": "online", "Online": "online",
+    "In Person": "in_person", "Phone": "phone",
+  };
+  const tzMap: Record<string, string> = {
+    "Melbourne": "Australia/Melbourne",
+    "Sydney": "Australia/Sydney",
+    "Seoul": "Asia/Seoul",
+    "Bangkok": "Asia/Bangkok",
+    "Tokyo": "Asia/Tokyo",
+  };
+
+  for (const rec of records) {
+    try {
+      const f = rec.fields;
+
+      const interviewDate: string | null = f["Interview Date"] ?? null;
+      const interviewTime: string = f["Interview Time"] ?? "00:00";
+      const statusRaw: string = f["Interview State"] ?? "";
+      const status = statusMap[statusRaw] ?? "pending";
+      const format = formatMap[f["App"] ?? f["Interview Type"] ?? ""] ?? "online";
+      const timezone = tzMap[f["Time Zone"]] ?? "Australia/Melbourne";
+
+      // Build datetime from date + time strings
+      let scheduledDatetime: Date;
+      if (interviewDate) {
+        const timeClean = interviewTime.replace(/AM|PM/i, "").trim();
+        const isPM = /PM/i.test(interviewTime);
+        const [hStr, mStr] = timeClean.split(":");
+        let h = parseInt(hStr ?? "0", 10);
+        const m = parseInt(mStr ?? "0", 10);
+        if (isPM && h !== 12) h += 12;
+        if (!isPM && h === 12) h = 0;
+        scheduledDatetime = new Date(`${interviewDate}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`);
+      } else {
+        scheduledDatetime = new Date();
+      }
+
+      // Resolve package group via Institute MGT → Package Group (best effort)
+      const instRecIds: string[] = f["Link to Institute MGT"] ?? [];
+      let packageGroupId: string | null = null;
+      // We don't have a direct sync map for Institute MGT, so skip packageGroupId resolution
+
+      const upsertData = {
+        scheduledDatetime,
+        timezone,
+        format,
+        status,
+        result:           statusRaw === "Passed" ? "pass" : statusRaw === "Failed" ? "fail" : null,
+        meetingLink:      f["Interview Link"] ?? null,
+        interviewerNotes: f["Interview Summary"] ?? f["Note"] ?? null,
+        updatedAt:        new Date(),
+      };
+
+      const existingCrmId = await findCrmId(baseId, "Interview MGT", rec.id);
+
+      if (existingCrmId) {
+        await db.update(interviewSchedules).set(upsertData).where(eq(interviewSchedules.id, existingCrmId));
+        synced++;
+      } else {
+        const [interview] = await db.insert(interviewSchedules)
+          .values({ ...upsertData, createdAt: new Date() })
+          .returning({ id: interviewSchedules.id });
+        await upsertSyncMap({
+          airtableBaseId: baseId, airtableTable: "Interview MGT",
+          airtableRecordId: rec.id, crmTable: "interview_schedules", crmId: interview.id, organisationId,
+        });
+        created++;
+      }
+    } catch (err: any) {
+      console.error(`[Airtable] syncInterviewMgt record ${rec.id} failed:`, err.message);
+      failed++;
+    }
+  }
+  return { synced, created, failed };
+}
+
 // ── Main sync function ────────────────────────────────────────────────────────
 export interface SyncResult {
   baseId: string;
@@ -952,6 +1101,13 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
       catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
       try { details.campContracts = await syncCampContracts(token, base.baseId, organisationId); }
+      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+
+      // Enrollment Spots depend on Package Groups being synced first
+      try { details.enrollmentSpots = await syncEnrollmentSpots(token, base.baseId, organisationId); }
+      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+
+      try { details.interviewMgt = await syncInterviewMgt(token, base.baseId, organisationId); }
       catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
       try { details.contract = await syncContracts(token, base.baseId, organisationId, ownerId); }

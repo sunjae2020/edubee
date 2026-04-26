@@ -23,7 +23,12 @@
       "Bash(sed -i '' 's/^const PAGE_SIZE = 10;$//' /Users/sunkim/Edubee/artifacts/edubee-admin/src/pages/admin/product-types.tsx)",
       "Bash(sed -i '' 's/^const PAGE_SIZE = 12;$//' /Users/sunkim/Edubee/artifacts/edubee-admin/src/pages/admin/package-groups.tsx)",
       "Bash(sed -i '' 's/filtered\\\\.slice\\(\\(page - 1\\) \\\\* PAGE_SIZE, page \\\\* PAGE_SIZE\\)/filtered.slice\\(\\(page - 1\\) * pageSize, page * pageSize\\)/' /Users/sunkim/Edubee/artifacts/edubee-admin/src/pages/admin/package-groups.tsx)",
-      "Bash(sed -i '' 's/<ListPagination page={page} pageSize={PAGE_SIZE} total={filtered\\\\.length} onChange={setPage} \\\\/>/<ListPagination page={page} pageSize={pageSize} total={filtered.length} onChange={setPage} onPageSizeChange={v => { setPageSize\\(v\\); setPage\\(1\\); }} label=\"packages\" \\\\/>/' /Users/sunkim/Edubee/artifacts/edubee-admin/src/pages/admin/package-groups.tsx)"
+      "Bash(sed -i '' 's/<ListPagination page={page} pageSize={PAGE_SIZE} total={filtered\\\\.length} onChange={setPage} \\\\/>/<ListPagination page={page} pageSize={pageSize} total={filtered.length} onChange={setPage} onPageSizeChange={v => { setPageSize\\(v\\); setPage\\(1\\); }} label=\"packages\" \\\\/>/' /Users/sunkim/Edubee/artifacts/edubee-admin/src/pages/admin/package-groups.tsx)",
+      "Read(//opt/**)",
+      "Bash(git -C /Users/sunkim/Edubee diff --stat)",
+      "Bash(git -C /Users/sunkim/Edubee add artifacts/edubee-admin/src/components/layout/app-sidebar.tsx artifacts/edubee-admin/src/components/layout/header.tsx)",
+      "Bash(git -C /Users/sunkim/Edubee add artifacts/edubee-admin/src/index.css)",
+      "Bash(git -C /Users/sunkim/Edubee commit -m 'fix: dark mode visibility for all list pages — add stone color overrides *)"
     ]
   }
 }
