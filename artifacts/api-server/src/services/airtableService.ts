@@ -161,147 +161,153 @@ async function syncStaff(
 // ── Sync: Student → contacts + accounts ──────────────────────────────────────
 async function syncStudent(
   token: string, baseId: string, organisationId: string, ownerId: string,
-): Promise<{ synced: number; created: number }> {
+): Promise<{ synced: number; created: number; failed: number }> {
   const records = await fetchAllRecords(token, baseId, "Student");
-  let synced = 0, created = 0;
+  let synced = 0, created = 0, failed = 0;
 
   for (const rec of records) {
-    const f = rec.fields;
-    const firstName: string = (f["First Name"] ?? "").trim();
-    const lastName: string  = (f["Last Name"]  ?? "").trim();
-    const email: string     = (f["Email Address"] ?? "").trim().toLowerCase();
-    if (!firstName && !lastName) continue;
+    try {
+      const f = rec.fields;
+      const firstName: string = (f["First Name"] ?? "").trim();
+      const lastName: string  = (f["Last Name"]  ?? "").trim();
+      const email: string     = (f["Email Address"] ?? "").trim().toLowerCase();
+      if (!firstName && !lastName) continue;
 
-    const existingCrmId = await findCrmId(baseId, "Student", rec.id);
+      const existingCrmId = await findCrmId(baseId, "Student", rec.id);
 
-    if (existingCrmId) {
-      // Update existing account
-      await db.update(accounts).set({
-        name: `${firstName} ${lastName}`.trim(),
-        email: email || undefined,
-        modifiedOn: new Date(),
-      }).where(eq(accounts.id, existingCrmId));
-      synced++;
-    } else {
-      // Create contact first
-      const [contact] = await db.insert(contacts).values({
-        firstName, lastName,
-        fullName:    `${firstName} ${lastName}`.trim(),
-        email:       email || undefined,
-        mobile:      f["Phone Number"] ?? undefined,
-        nationality: f["Nationality"] ?? undefined,
-        dob:         f["Date of Birth"] ?? undefined,
-        accountType: "Student",
-        status:      "Active",
-        organisationId,
-      }).returning({ id: contacts.id });
+      if (existingCrmId) {
+        await db.update(accounts).set({
+          name: `${firstName} ${lastName}`.trim(),
+          email: email || undefined,
+          modifiedOn: new Date(),
+        }).where(eq(accounts.id, existingCrmId));
+        synced++;
+      } else {
+        const [contact] = await db.insert(contacts).values({
+          firstName, lastName,
+          fullName:    `${firstName} ${lastName}`.trim(),
+          email:       email || undefined,
+          mobile:      f["Phone Number"] ?? undefined,
+          nationality: f["Nationality"] ?? undefined,
+          dob:         f["Date of Birth"] ?? undefined,
+          accountType: "Student",
+          status:      "Active",
+          organisationId,
+        }).returning({ id: contacts.id });
 
-      // Create account
-      const [account] = await db.insert(accounts).values({
-        name:             `${firstName} ${lastName}`.trim(),
-        accountType:      "Student",
-        email:            email || undefined,
-        primaryContactId: contact.id,
-        ownerId,
-        status:           "Active",
-        organisationId,
-      }).returning({ id: accounts.id });
+        const [account] = await db.insert(accounts).values({
+          name:             `${firstName} ${lastName}`.trim(),
+          accountType:      "Student",
+          email:            email || undefined,
+          primaryContactId: contact.id,
+          ownerId,
+          status:           "Active",
+          organisationId,
+        }).returning({ id: accounts.id });
 
-      // Link contact to account
-      await db.insert(account_contacts).values({
-        accountId: account.id,
-        contactId: contact.id,
-        role: "Primary",
-      });
+        // Link contact to account — ignore if already exists
+        await db.insert(account_contacts).values({
+          accountId: account.id,
+          contactId: contact.id,
+          role: "Primary",
+        }).onConflictDoNothing();
 
-      await upsertSyncMap({ airtableBaseId: baseId, airtableTable: "Student", airtableRecordId: rec.id, crmTable: "accounts", crmId: account.id, organisationId });
-      created++;
+        await upsertSyncMap({ airtableBaseId: baseId, airtableTable: "Student", airtableRecordId: rec.id, crmTable: "accounts", crmId: account.id, organisationId });
+        created++;
+      }
+    } catch (err: any) {
+      console.error(`[Airtable] syncStudent record ${rec.id} failed:`, err.message);
+      failed++;
     }
   }
-  return { synced, created };
+  return { synced, created, failed };
 }
 
 // ── Sync: Partner → contacts + accounts ──────────────────────────────────────
 async function syncPartner(
   token: string, baseId: string, organisationId: string, ownerId: string,
-): Promise<{ synced: number; created: number }> {
+): Promise<{ synced: number; created: number; failed: number }> {
   const records = await fetchAllRecords(token, baseId, "Partner");
-  let synced = 0, created = 0;
+  let synced = 0, created = 0, failed = 0;
 
   for (const rec of records) {
-    const f = rec.fields;
-    const partnerName: string = (f["Partner Name"] ?? "").trim();
-    if (!partnerName) continue;
+    try {
+      const f = rec.fields;
+      const partnerName: string = (f["Partner Name"] ?? "").trim();
+      if (!partnerName) continue;
 
-    const existingCrmId = await findCrmId(baseId, "Partner", rec.id);
+      const existingCrmId = await findCrmId(baseId, "Partner", rec.id);
 
-    if (existingCrmId) {
-      await db.update(accounts).set({
-        name:       partnerName,
-        email:      f["Company Email"] ?? undefined,
-        phoneNumber: f["Contact Number"] ?? undefined,
-        website:    f["Website"] ?? undefined,
-        address:    f["Address"] ?? undefined,
-        country:    f["Country"] ?? undefined,
-        modifiedOn: new Date(),
-      }).where(eq(accounts.id, existingCrmId));
-      synced++;
-    } else {
-      // Contact person info
-      const cpName: string = (f["Contact Person"] ?? "").trim();
-      const cpParts = cpName.split(" ");
-      const cpFirst = cpParts[0] ?? partnerName;
-      const cpLast  = cpParts.slice(1).join(" ") || "";
-      const cpEmail = (f["Contact Person Email"] ?? "").trim().toLowerCase();
-      const cpMobile = f["Contact Person Mobile Number"] ?? undefined;
+      if (existingCrmId) {
+        await db.update(accounts).set({
+          name:       partnerName,
+          email:      f["Company Email"] ?? undefined,
+          phoneNumber: f["Contact Number"] ?? undefined,
+          website:    f["Website"] ?? undefined,
+          address:    f["Address"] ?? undefined,
+          country:    f["Country"] ?? undefined,
+          modifiedOn: new Date(),
+        }).where(eq(accounts.id, existingCrmId));
+        synced++;
+      } else {
+        const cpName: string = (f["Contact Person"] ?? "").trim();
+        const cpParts = cpName.split(" ");
+        const cpFirst = cpParts[0] ?? partnerName;
+        const cpLast  = cpParts.slice(1).join(" ") || "";
+        const cpEmail = (f["Contact Person Email"] ?? "").trim().toLowerCase();
+        const cpMobile = f["Contact Person Mobile Number"] ?? undefined;
 
-      const [contact] = await db.insert(contacts).values({
-        firstName:   cpFirst,
-        lastName:    cpLast,
-        fullName:    cpName || partnerName,
-        email:       cpEmail || f["Company Email"] || undefined,
-        mobile:      cpMobile,
-        accountType: "Agent",
-        status:      "Active",
-        organisationId,
-      }).returning({ id: contacts.id });
+        const [contact] = await db.insert(contacts).values({
+          firstName:   cpFirst,
+          lastName:    cpLast,
+          fullName:    cpName || partnerName,
+          email:       cpEmail || f["Company Email"] || undefined,
+          mobile:      cpMobile,
+          accountType: "Agent",
+          status:      "Active",
+          organisationId,
+        }).returning({ id: contacts.id });
 
-      const [account] = await db.insert(accounts).values({
-        name:             partnerName,
-        accountType:      "Agent",
-        email:            f["Company Email"] ?? undefined,
-        phoneNumber:      f["Contact Number"] ?? undefined,
-        website:          f["Website"] ?? undefined,
-        address:          f["Address"] ?? undefined,
-        country:          f["Country"] ?? undefined,
-        primaryContactId: contact.id,
-        isProductProvider: true,
-        ownerId,
-        status:           "Active",
-        organisationId,
-      }).returning({ id: accounts.id });
+        const [account] = await db.insert(accounts).values({
+          name:             partnerName,
+          accountType:      "Agent",
+          email:            f["Company Email"] ?? undefined,
+          phoneNumber:      f["Contact Number"] ?? undefined,
+          website:          f["Website"] ?? undefined,
+          address:          f["Address"] ?? undefined,
+          country:          f["Country"] ?? undefined,
+          primaryContactId: contact.id,
+          isProductProvider: true,
+          ownerId,
+          status:           "Active",
+          organisationId,
+        }).returning({ id: accounts.id });
 
-      await db.insert(account_contacts).values({
-        accountId: account.id,
-        contactId: contact.id,
-        role: "Primary",
-      });
+        // Link contact to account — ignore if already exists
+        await db.insert(account_contacts).values({
+          accountId: account.id,
+          contactId: contact.id,
+          role: "Primary",
+        }).onConflictDoNothing();
 
-      await upsertSyncMap({ airtableBaseId: baseId, airtableTable: "Partner", airtableRecordId: rec.id, crmTable: "accounts", crmId: account.id, organisationId });
-      created++;
+        await upsertSyncMap({ airtableBaseId: baseId, airtableTable: "Partner", airtableRecordId: rec.id, crmTable: "accounts", crmId: account.id, organisationId });
+        created++;
+      }
+    } catch (err: any) {
+      console.error(`[Airtable] syncPartner record ${rec.id} failed:`, err.message);
+      failed++;
     }
   }
-  return { synced, created };
+  return { synced, created, failed };
 }
 
 // ── Sync: Contract → contracts ────────────────────────────────────────────────
 async function syncContracts(
   token: string, baseId: string, organisationId: string, ownerId: string,
-): Promise<{ synced: number; created: number }> {
+): Promise<{ synced: number; created: number; failed: number }> {
   const records = await fetchAllRecords(token, baseId, "Contract");
-  let synced = 0, created = 0;
+  let synced = 0, created = 0, failed = 0;
 
-  // Airtable status → CRM status mapping
   const statusMap: Record<string, string> = {
     "Active": "active", "Completed": "completed",
     "Cancelled": "cancelled", "Draft": "draft",
@@ -309,70 +315,70 @@ async function syncContracts(
   };
 
   for (const rec of records) {
-    const f = rec.fields;
+    try {
+      const f = rec.fields;
 
-    // Resolve student account from linked record
-    const studentRecIds: string[] = f["Student ID"] ?? [];
-    let studentAccountId: string | null = null;
-    if (studentRecIds.length > 0) {
-      studentAccountId = await findCrmId(baseId, "Student", studentRecIds[0]);
-    }
+      const studentRecIds: string[] = f["Student ID"] ?? [];
+      let studentAccountId: string | null = null;
+      if (studentRecIds.length > 0) {
+        studentAccountId = await findCrmId(baseId, "Student", studentRecIds[0]);
+      }
 
-    // Resolve staff user from linked record
-    const staffRecIds: string[] = f["Staff"] ?? [];
-    let resolvedOwnerId = ownerId;
-    if (staffRecIds.length > 0) {
-      const staffCrmId = await findCrmId(baseId, "Staff", staffRecIds[0]);
-      if (staffCrmId) resolvedOwnerId = staffCrmId;
-    }
+      const staffRecIds: string[] = f["Staff"] ?? [];
+      let resolvedOwnerId = ownerId;
+      if (staffRecIds.length > 0) {
+        const staffCrmId = await findCrmId(baseId, "Staff", staffRecIds[0]);
+        if (staffCrmId) resolvedOwnerId = staffCrmId;
+      }
 
-    // Student name from lookup fields
-    const firstNames: string[] = f["First Name"] ?? [];
-    const lastNames: string[]  = f["Last Name"]  ?? [];
-    const studentName = [firstNames[0], lastNames[0]].filter(Boolean).join(" ") || null;
+      const firstNames: string[] = f["First Name"] ?? [];
+      const lastNames: string[]  = f["Last Name"]  ?? [];
+      const studentName = [firstNames[0], lastNames[0]].filter(Boolean).join(" ") || null;
+      const crmStatus = statusMap[f["Contract Status"]] ?? "draft";
+      const existingCrmId = await findCrmId(baseId, "Contract", rec.id);
 
-    const crmStatus = statusMap[f["Contract Status"]] ?? "draft";
+      if (existingCrmId) {
+        await db.update(contracts).set({
+          status:          crmStatus,
+          startDate:       f["Contract Start Date"] ?? undefined,
+          endDate:         f["Contract End Date"] ?? undefined,
+          courseStartDate: f["Contract Start Date"] ?? undefined,
+          courseEndDate:   f["Contract End Date"] ?? undefined,
+          studentName:     studentName ?? undefined,
+          accountId:       studentAccountId ?? undefined,
+          updatedAt:       new Date(),
+        }).where(eq(contracts.id, existingCrmId));
+        synced++;
+      } else {
+        const [contract] = await db.insert(contracts).values({
+          status:          crmStatus,
+          startDate:       f["Contract Start Date"] ?? undefined,
+          endDate:         f["Contract End Date"] ?? undefined,
+          courseStartDate: f["Contract Start Date"] ?? undefined,
+          courseEndDate:   f["Contract End Date"] ?? undefined,
+          studentName:     studentName ?? undefined,
+          accountId:       studentAccountId ?? undefined,
+          currency:        "AUD",
+          organisationId,
+        }).returning({ id: contracts.id });
 
-    const existingCrmId = await findCrmId(baseId, "Contract", rec.id);
-
-    if (existingCrmId) {
-      await db.update(contracts).set({
-        status:          crmStatus,
-        startDate:       f["Contract Start Date"] ?? undefined,
-        endDate:         f["Contract End Date"] ?? undefined,
-        courseStartDate: f["Contract Start Date"] ?? undefined,
-        courseEndDate:   f["Contract End Date"] ?? undefined,
-        studentName:     studentName ?? undefined,
-        accountId:       studentAccountId ?? undefined,
-        updatedAt:       new Date(),
-      }).where(eq(contracts.id, existingCrmId));
-      synced++;
-    } else {
-      const [contract] = await db.insert(contracts).values({
-        status:          crmStatus,
-        startDate:       f["Contract Start Date"] ?? undefined,
-        endDate:         f["Contract End Date"] ?? undefined,
-        courseStartDate: f["Contract Start Date"] ?? undefined,
-        courseEndDate:   f["Contract End Date"] ?? undefined,
-        studentName:     studentName ?? undefined,
-        accountId:       studentAccountId ?? undefined,
-        currency:        "AUD",
-        organisationId,
-      }).returning({ id: contracts.id });
-
-      await upsertSyncMap({ airtableBaseId: baseId, airtableTable: "Contract", airtableRecordId: rec.id, crmTable: "contracts", crmId: contract.id, organisationId });
-      created++;
+        await upsertSyncMap({ airtableBaseId: baseId, airtableTable: "Contract", airtableRecordId: rec.id, crmTable: "contracts", crmId: contract.id, organisationId });
+        created++;
+      }
+    } catch (err: any) {
+      console.error(`[Airtable] syncContracts record ${rec.id} failed:`, err.message);
+      failed++;
     }
   }
-  return { synced, created };
+  return { synced, created, failed };
 }
 
 // ── Sync: Contract Products → contract_products ───────────────────────────────
 async function syncContractProducts(
   token: string, baseId: string, organisationId: string,
-): Promise<{ synced: number; created: number }> {
+): Promise<{ synced: number; created: number; failed: number }> {
   const records = await fetchAllRecords(token, baseId, "Contract Products");
-  let synced = 0, created = 0;
+  let synced = 0, created = 0, failed = 0;
 
   const cpStatusMap: Record<string, string> = {
     "Enrolled": "active", "Completed": "completed",
@@ -380,81 +386,83 @@ async function syncContractProducts(
   };
 
   for (const rec of records) {
-    const f = rec.fields;
+    try {
+      const f = rec.fields;
 
-    // Resolve contract
-    const contractRecIds: string[] = f["Contract Name"] ?? [];
-    if (contractRecIds.length === 0) continue;
-    const contractId = await findCrmId(baseId, "Contract", contractRecIds[0]);
-    if (!contractId) continue; // contract not synced yet
+      const contractRecIds: string[] = f["Contract Name"] ?? [];
+      if (contractRecIds.length === 0) continue;
+      const contractId = await findCrmId(baseId, "Contract", contractRecIds[0]);
+      if (!contractId) continue;
 
-    // Resolve provider (partner)
-    const providerRecIds: string[] = f["Provider"] ?? [];
-    let providerAccountId: string | null = null;
-    if (providerRecIds.length > 0) {
-      providerAccountId = await findCrmId(baseId, "Partner", providerRecIds[0]);
-    }
+      const providerRecIds: string[] = f["Provider"] ?? [];
+      let providerAccountId: string | null = null;
+      if (providerRecIds.length > 0) {
+        providerAccountId = await findCrmId(baseId, "Partner", providerRecIds[0]);
+      }
 
-    const productName: string = (f["Course(Product) Name"] ?? f["CP Name"] ?? "").trim();
-    const unitPrice   = f["Standard Fee"] ?? null;
-    const totalPrice  = f["Payable"] ?? null;
-    const commAmount  = f["Comm Amount"] ?? null;
-    const gstAmount   = f["GST Amount"] ?? null;
-    const grossAmount = f["Total Amount"] ?? null;
-    const arDueDate   = f["Due Date(Service Start)"] ?? null;
-    const apDueDate   = f["Payment Date"] ?? null;
-    const crmStatus   = cpStatusMap[f["Status"]] ?? "pending";
-    const currency    = f["Currency"] ?? "AUD";
-    const existingCrmId = await findCrmId(baseId, "Contract Products", rec.id);
+      const productName: string = (f["Course(Product) Name"] ?? f["CP Name"] ?? "").trim();
+      const unitPrice   = f["Standard Fee"] ?? null;
+      const totalPrice  = f["Payable"] ?? null;
+      const commAmount  = f["Comm Amount"] ?? null;
+      const gstAmount   = f["GST Amount"] ?? null;
+      const grossAmount = f["Total Amount"] ?? null;
+      const arDueDate   = f["Due Date(Service Start)"] ?? null;
+      const apDueDate   = f["Payment Date"] ?? null;
+      const crmStatus   = cpStatusMap[f["Status"]] ?? "pending";
+      const existingCrmId = await findCrmId(baseId, "Contract Products", rec.id);
 
-    if (existingCrmId) {
-      await db.update(contractProducts).set({
-        name:             productName || undefined,
-        unitPrice:        unitPrice != null ? String(unitPrice) : undefined,
-        totalPrice:       totalPrice != null ? String(totalPrice) : undefined,
-        commissionAmount: commAmount != null ? String(commAmount) : undefined,
-        gstAmount:        gstAmount != null ? String(gstAmount) : undefined,
-        grossAmount:      grossAmount != null ? String(grossAmount) : undefined,
-        arDueDate:        arDueDate ?? undefined,
-        apDueDate:        apDueDate ?? undefined,
-        status:           crmStatus,
-        providerAccountId: providerAccountId ?? undefined,
-      }).where(eq(contractProducts.id, existingCrmId));
-      synced++;
-    } else {
-      const [cp] = await db.insert(contractProducts).values({
-        contractId,
-        organisationId,
-        name:             productName || "Unnamed Product",
-        unitPrice:        unitPrice != null ? String(unitPrice) : null,
-        totalPrice:       totalPrice != null ? String(totalPrice) : null,
-        arAmount:         totalPrice != null ? String(totalPrice) : null,
-        apAmount:         commAmount != null ? String(commAmount) : null,
-        commissionAmount: commAmount != null ? String(commAmount) : null,
-        gstAmount:        gstAmount != null ? String(gstAmount) : null,
-        grossAmount:      grossAmount != null ? String(grossAmount) : null,
-        arDueDate:        arDueDate ?? undefined,
-        apDueDate:        apDueDate ?? undefined,
-        status:           crmStatus,
-        arStatus:         "scheduled",
-        apStatus:         "pending",
-        providerAccountId: providerAccountId ?? undefined,
-        sortIndex:        0,
-      }).returning({ id: contractProducts.id });
+      if (existingCrmId) {
+        await db.update(contractProducts).set({
+          name:             productName || undefined,
+          unitPrice:        unitPrice != null ? String(unitPrice) : undefined,
+          totalPrice:       totalPrice != null ? String(totalPrice) : undefined,
+          commissionAmount: commAmount != null ? String(commAmount) : undefined,
+          gstAmount:        gstAmount != null ? String(gstAmount) : undefined,
+          grossAmount:      grossAmount != null ? String(grossAmount) : undefined,
+          arDueDate:        arDueDate ?? undefined,
+          apDueDate:        apDueDate ?? undefined,
+          status:           crmStatus,
+          providerAccountId: providerAccountId ?? undefined,
+        }).where(eq(contractProducts.id, existingCrmId));
+        synced++;
+      } else {
+        const [cp] = await db.insert(contractProducts).values({
+          contractId,
+          organisationId,
+          name:             productName || "Unnamed Product",
+          unitPrice:        unitPrice != null ? String(unitPrice) : null,
+          totalPrice:       totalPrice != null ? String(totalPrice) : null,
+          arAmount:         totalPrice != null ? String(totalPrice) : null,
+          apAmount:         commAmount != null ? String(commAmount) : null,
+          commissionAmount: commAmount != null ? String(commAmount) : null,
+          gstAmount:        gstAmount != null ? String(gstAmount) : null,
+          grossAmount:      grossAmount != null ? String(grossAmount) : null,
+          arDueDate:        arDueDate ?? undefined,
+          apDueDate:        apDueDate ?? undefined,
+          status:           crmStatus,
+          arStatus:         "scheduled",
+          apStatus:         "pending",
+          providerAccountId: providerAccountId ?? undefined,
+          sortIndex:        0,
+        }).returning({ id: contractProducts.id });
 
-      await upsertSyncMap({ airtableBaseId: baseId, airtableTable: "Contract Products", airtableRecordId: rec.id, crmTable: "contract_products", crmId: cp.id, organisationId });
-      created++;
+        await upsertSyncMap({ airtableBaseId: baseId, airtableTable: "Contract Products", airtableRecordId: rec.id, crmTable: "contract_products", crmId: cp.id, organisationId });
+        created++;
+      }
+    } catch (err: any) {
+      console.error(`[Airtable] syncContractProducts record ${rec.id} failed:`, err.message);
+      failed++;
     }
   }
-  return { synced, created };
+  return { synced, created, failed };
 }
 
 // ── Sync: Payments → transactions ────────────────────────────────────────────
 async function syncPayments(
   token: string, baseId: string, organisationId: string,
-): Promise<{ synced: number; created: number }> {
+): Promise<{ synced: number; created: number; failed: number }> {
   const records = await fetchAllRecords(token, baseId, "Payments");
-  let synced = 0, created = 0;
+  let synced = 0, created = 0, failed = 0;
 
   const paymentMethodMap: Record<string, string> = {
     "Bank Transfer": "bank_transfer", "Cash": "cash",
@@ -467,62 +475,65 @@ async function syncPayments(
   };
 
   for (const rec of records) {
-    const f = rec.fields;
-    const paymentDate: string | null = f["Payment Date"] ?? null;
-    const amountPaid: number | null  = f["Amount Paid"] ?? null;
-    if (!paymentDate && !amountPaid) continue;
+    try {
+      const f = rec.fields;
+      const paymentDate: string | null = f["Payment Date"] ?? null;
+      const amountPaid: number | null  = f["Amount Paid"] ?? null;
+      if (!paymentDate && !amountPaid) continue;
 
-    // Resolve contract via Payment ID → Contract Reference string match
-    // (Airtable Payments table links to contract by text reference, not linked record)
-    let resolvedContractId: string | null = null;
-    const contractRef: string | undefined = f["Contract Reference"]?.trim();
-    if (contractRef) {
-      const contractRow = await db.execute(sql`
-        SELECT id FROM contracts
-        WHERE (contract_number = ${contractRef} OR student_name ILIKE ${"%" + contractRef + "%"})
-          AND organisation_id = ${organisationId}
-        LIMIT 1
-      `);
-      resolvedContractId = (contractRow.rows[0] as any)?.id ?? null;
-    }
+      let resolvedContractId: string | null = null;
+      const contractRef: string | undefined = f["Contract Reference"]?.trim();
+      if (contractRef) {
+        const contractRow = await db.execute(sql`
+          SELECT id FROM contracts
+          WHERE (contract_number = ${contractRef} OR student_name ILIKE ${"%" + contractRef + "%"})
+            AND organisation_id = ${organisationId}
+          LIMIT 1
+        `);
+        resolvedContractId = (contractRow.rows[0] as any)?.id ?? null;
+      }
 
-    const existingCrmId = await findCrmId(baseId, "Payments", rec.id);
+      const existingCrmId = await findCrmId(baseId, "Payments", rec.id);
 
-    const currency = f["Currency"] ?? "AUD";
-    const method   = paymentMethodMap[f["Payment Method"]] ?? f["Payment Method"] ?? null;
-    const status   = statusMap[f["Payment Status"]] ?? "Active";
-    const amount   = amountPaid != null ? String(amountPaid) : null;
+      const currency = f["Currency"] ?? "AUD";
+      const method   = paymentMethodMap[f["Payment Method"]] ?? f["Payment Method"] ?? null;
+      const status   = statusMap[f["Payment Status"]] ?? "Active";
+      const amount   = amountPaid != null ? String(amountPaid) : null;
 
-    if (existingCrmId) {
-      await db.update(transactions).set({
-        transactionDate: paymentDate ?? undefined,
-        amount:          amount ?? undefined,
-        currency,
-        description:     method ? `Payment via ${method}` : undefined,
-        status,
-      }).where(eq(transactions.id, existingCrmId));
-      synced++;
-    } else {
-      const [tx] = await db.insert(transactions).values({
-        transactionType:  "receipt",
-        contractId:       resolvedContractId ?? undefined,
-        transactionDate:  paymentDate ?? undefined,
-        amount:           amount ?? undefined,
-        currency,
-        description:      method ? `Payment via ${method}` : "Airtable payment",
-        status,
-        organisationId,
-      }).returning({ id: transactions.id });
+      if (existingCrmId) {
+        await db.update(transactions).set({
+          transactionDate: paymentDate ?? undefined,
+          amount:          amount ?? undefined,
+          currency,
+          description:     method ? `Payment via ${method}` : undefined,
+          status,
+        }).where(eq(transactions.id, existingCrmId));
+        synced++;
+      } else {
+        const [tx] = await db.insert(transactions).values({
+          transactionType:  "receipt",
+          contractId:       resolvedContractId ?? undefined,
+          transactionDate:  paymentDate ?? undefined,
+          amount:           amount ?? undefined,
+          currency,
+          description:      method ? `Payment via ${method}` : "Airtable payment",
+          status,
+          organisationId,
+        }).returning({ id: transactions.id });
 
-      await upsertSyncMap({
-        airtableBaseId: baseId, airtableTable: "Payments",
-        airtableRecordId: rec.id, crmTable: "transactions",
-        crmId: tx.id, organisationId,
-      });
-      created++;
+        await upsertSyncMap({
+          airtableBaseId: baseId, airtableTable: "Payments",
+          airtableRecordId: rec.id, crmTable: "transactions",
+          crmId: tx.id, organisationId,
+        });
+        created++;
+      }
+    } catch (err: any) {
+      console.error(`[Airtable] syncPayments record ${rec.id} failed:`, err.message);
+      failed++;
     }
   }
-  return { synced, created };
+  return { synced, created, failed };
 }
 
 // ── Outbound: contracts → Airtable "Contract" ─────────────────────────────────
