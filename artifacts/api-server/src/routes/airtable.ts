@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request } from "express";
 import { db } from "@workspace/db";
 import { platformSettings } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
@@ -10,13 +10,18 @@ import { syncAirtableBase } from "../services/airtableService.js";
 const router = Router();
 const guard = [authenticate, requireRole("super_admin", "admin")];
 
-const TOKEN_KEY = "airtable.token";
-const BASES_KEY = "airtable.bases";
+// ── org-scoped key helpers ────────────────────────────────────────────────────
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+function getOrgId(req: Request): string | null {
+  return (req as any).user?.organisationId ?? (req as any).tenant?.id ?? null;
+}
+
+function tokenKey(orgId: string) { return `airtable.token.${orgId}`; }
+function basesKey(orgId: string) { return `airtable.bases.${orgId}`; }
 
 async function getSetting(key: string): Promise<string | null> {
-  const rows = await db.select().from(platformSettings).where(eq(platformSettings.key, key)).limit(1);
+  const rows = await db.select().from(platformSettings)
+    .where(eq(platformSettings.key, key)).limit(1);
   return rows[0]?.value ?? null;
 }
 
@@ -43,22 +48,25 @@ export interface AirtableBase {
   lastSyncMessage: string | null;
 }
 
-async function getBases(): Promise<AirtableBase[]> {
-  const raw = await getSetting(BASES_KEY);
+async function getBases(orgId: string): Promise<AirtableBase[]> {
+  const raw = await getSetting(basesKey(orgId));
   if (!raw) return [];
   try { return JSON.parse(raw); } catch { return []; }
 }
 
-async function saveBases(bases: AirtableBase[]) {
-  await upsertSetting(BASES_KEY, JSON.stringify(bases));
+async function saveBases(orgId: string, bases: AirtableBase[]) {
+  await upsertSetting(basesKey(orgId), JSON.stringify(bases));
 }
 
 // ── GET /api/airtable/config ─────────────────────────────────────────────────
-router.get("/airtable/config", ...guard, async (_req, res) => {
+router.get("/airtable/config", ...guard, async (req, res) => {
   try {
-    const encToken = await getSetting(TOKEN_KEY);
+    const orgId = getOrgId(req);
+    if (!orgId) return res.status(400).json({ error: "Organisation not resolved" });
+
+    const encToken = await getSetting(tokenKey(orgId));
     const token = decryptField(encToken);
-    const bases = await getBases();
+    const bases = await getBases(orgId);
     return res.json({
       hasToken: !!token,
       tokenMasked: token ? maskToken(token) : null,
@@ -73,13 +81,16 @@ router.get("/airtable/config", ...guard, async (_req, res) => {
 // ── PUT /api/airtable/token ──────────────────────────────────────────────────
 router.put("/airtable/token", ...guard, async (req, res) => {
   try {
+    const orgId = getOrgId(req);
+    if (!orgId) return res.status(400).json({ error: "Organisation not resolved" });
+
     const { token } = req.body as { token: string };
     if (!token || !String(token).trim()) {
       return res.status(400).json({ error: "Token is required" });
     }
     const encrypted = encryptField(String(token).trim());
     if (!encrypted) return res.status(500).json({ error: "Encryption failed" });
-    await upsertSetting(TOKEN_KEY, encrypted);
+    await upsertSetting(tokenKey(orgId), encrypted);
     return res.json({ success: true, tokenMasked: maskToken(String(token).trim()) });
   } catch (err) {
     console.error("[Airtable] PUT /token error:", err);
@@ -88,10 +99,13 @@ router.put("/airtable/token", ...guard, async (req, res) => {
 });
 
 // ── DELETE /api/airtable/token ───────────────────────────────────────────────
-router.delete("/airtable/token", ...guard, async (_req, res) => {
+router.delete("/airtable/token", ...guard, async (req, res) => {
   try {
-    await db.delete(platformSettings).where(eq(platformSettings.key, TOKEN_KEY));
-    await db.delete(platformSettings).where(eq(platformSettings.key, BASES_KEY));
+    const orgId = getOrgId(req);
+    if (!orgId) return res.status(400).json({ error: "Organisation not resolved" });
+
+    await db.delete(platformSettings).where(eq(platformSettings.key, tokenKey(orgId)));
+    await db.delete(platformSettings).where(eq(platformSettings.key, basesKey(orgId)));
     return res.json({ success: true });
   } catch (err) {
     console.error("[Airtable] DELETE /token error:", err);
@@ -99,25 +113,25 @@ router.delete("/airtable/token", ...guard, async (_req, res) => {
   }
 });
 
-// ── GET /api/airtable/schema ─────────────────────────────────────────────────
-// Fetches table list + fields from Airtable API for a given baseId
+// ── GET /api/airtable/schema/:baseId ─────────────────────────────────────────
 router.get("/airtable/schema/:baseId", ...guard, async (req, res) => {
   try {
-    const encToken = await getSetting(TOKEN_KEY);
+    const orgId = getOrgId(req);
+    if (!orgId) return res.status(400).json({ error: "Organisation not resolved" });
+
+    const encToken = await getSetting(tokenKey(orgId));
     const token = decryptField(encToken);
     if (!token) return res.status(400).json({ error: "Airtable token not configured" });
 
-    const { baseId } = req.params;
     const response = await fetch(
-      `https://api.airtable.com/v0/meta/bases/${baseId}/tables`,
+      `https://api.airtable.com/v0/meta/bases/${req.params.baseId}/tables`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     if (!response.ok) {
       const body = await response.text();
       return res.status(response.status).json({ error: `Airtable API error: ${body}` });
     }
-    const data = await response.json() as any;
-    return res.json(data);
+    return res.json(await response.json());
   } catch (err) {
     console.error("[Airtable] GET /schema error:", err);
     return res.status(500).json({ error: "Internal server error" });
@@ -127,10 +141,13 @@ router.get("/airtable/schema/:baseId", ...guard, async (req, res) => {
 // ── POST /api/airtable/bases ─────────────────────────────────────────────────
 router.post("/airtable/bases", ...guard, async (req, res) => {
   try {
+    const orgId = getOrgId(req);
+    if (!orgId) return res.status(400).json({ error: "Organisation not resolved" });
+
     const { name, baseId, syncDirection, syncSchedule } = req.body as Partial<AirtableBase>;
     if (!name || !baseId) return res.status(400).json({ error: "name and baseId are required" });
 
-    const bases = await getBases();
+    const bases = await getBases(orgId);
     const newBase: AirtableBase = {
       id: crypto.randomUUID(),
       name: String(name).trim(),
@@ -143,7 +160,7 @@ router.post("/airtable/bases", ...guard, async (req, res) => {
       lastSyncMessage: null,
     };
     bases.push(newBase);
-    await saveBases(bases);
+    await saveBases(orgId, bases);
     return res.status(201).json(newBase);
   } catch (err) {
     console.error("[Airtable] POST /bases error:", err);
@@ -154,7 +171,10 @@ router.post("/airtable/bases", ...guard, async (req, res) => {
 // ── PUT /api/airtable/bases/:id ──────────────────────────────────────────────
 router.put("/airtable/bases/:id", ...guard, async (req, res) => {
   try {
-    const bases = await getBases();
+    const orgId = getOrgId(req);
+    if (!orgId) return res.status(400).json({ error: "Organisation not resolved" });
+
+    const bases = await getBases(orgId);
     const idx = bases.findIndex(b => b.id === req.params.id);
     if (idx === -1) return res.status(404).json({ error: "Base not found" });
 
@@ -165,7 +185,7 @@ router.put("/airtable/bases/:id", ...guard, async (req, res) => {
     if (syncSchedule !== undefined) bases[idx].syncSchedule = syncSchedule;
     if (isActive !== undefined) bases[idx].isActive = Boolean(isActive);
 
-    await saveBases(bases);
+    await saveBases(orgId, bases);
     return res.json(bases[idx]);
   } catch (err) {
     console.error("[Airtable] PUT /bases/:id error:", err);
@@ -176,10 +196,13 @@ router.put("/airtable/bases/:id", ...guard, async (req, res) => {
 // ── DELETE /api/airtable/bases/:id ──────────────────────────────────────────
 router.delete("/airtable/bases/:id", ...guard, async (req, res) => {
   try {
-    const bases = await getBases();
+    const orgId = getOrgId(req);
+    if (!orgId) return res.status(400).json({ error: "Organisation not resolved" });
+
+    const bases = await getBases(orgId);
     const filtered = bases.filter(b => b.id !== req.params.id);
     if (filtered.length === bases.length) return res.status(404).json({ error: "Base not found" });
-    await saveBases(filtered);
+    await saveBases(orgId, filtered);
     return res.json({ success: true });
   } catch (err) {
     console.error("[Airtable] DELETE /bases/:id error:", err);
@@ -190,31 +213,28 @@ router.delete("/airtable/bases/:id", ...guard, async (req, res) => {
 // ── POST /api/airtable/sync/:id ──────────────────────────────────────────────
 router.post("/airtable/sync/:id", ...guard, async (req, res) => {
   try {
-    const bases = await getBases();
+    const orgId = getOrgId(req);
+    if (!orgId) return res.status(400).json({ error: "Organisation not resolved" });
+
+    const bases = await getBases(orgId);
     const base = bases.find(b => b.id === req.params.id);
     if (!base) return res.status(404).json({ error: "Base not found" });
 
-    const encToken = await getSetting(TOKEN_KEY);
+    const encToken = await getSetting(tokenKey(orgId));
     const token = decryptField(encToken);
     if (!token) return res.status(400).json({ error: "Airtable token not configured" });
 
-    // Get organisation id from JWT
-    const organisationId: string = (req as any).user?.organisationId ?? (req as any).tenant?.id;
-    if (!organisationId) return res.status(400).json({ error: "Organisation not resolved" });
+    console.log(`[Airtable] Manual sync: ${base.name} (${base.baseId}) org=${orgId}`);
+    const result = await syncAirtableBase(base, orgId);
 
-    console.log(`[Airtable] Manual sync: ${base.name} (${base.baseId}) org=${organisationId}`);
-
-    const result = await syncAirtableBase(base, organisationId);
-
-    // Persist updated status back to settings
     const idx = bases.findIndex(b => b.id === req.params.id);
     if (idx !== -1) {
-      bases[idx].lastSyncedAt     = new Date().toISOString();
-      bases[idx].lastSyncStatus   = result.success ? "success" : "error";
-      bases[idx].lastSyncMessage  = result.success
+      bases[idx].lastSyncedAt    = new Date().toISOString();
+      bases[idx].lastSyncStatus  = result.success ? "success" : "error";
+      bases[idx].lastSyncMessage = result.success
         ? `Synced: ${JSON.stringify(result.details)}`
         : result.error ?? "Unknown error";
-      await saveBases(bases);
+      await saveBases(orgId, bases);
     }
 
     return res.json({ success: result.success, result, base: bases[idx] });

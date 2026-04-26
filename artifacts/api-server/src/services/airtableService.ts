@@ -20,12 +20,13 @@ interface AirtableBase {
 }
 
 // ── Airtable API helpers ──────────────────────────────────────────────────────
-async function getToken(): Promise<string> {
+async function getToken(organisationId: string): Promise<string> {
+  const key = `airtable.token.${organisationId}`;
   const rows = await db.select().from(platformSettings)
-    .where(eq(platformSettings.key, "airtable.token")).limit(1);
+    .where(eq(platformSettings.key, key)).limit(1);
   const enc = rows[0]?.value ?? null;
   const token = decryptField(enc);
-  if (!token) throw new Error("Airtable token not configured");
+  if (!token) throw new Error(`Airtable token not configured for org ${organisationId}`);
   return token;
 }
 
@@ -579,7 +580,7 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
   const details: SyncResult["details"] = {};
 
   try {
-    const token = await getToken();
+    const token = await getToken(organisationId);
     const ownerId = await getDefaultOwner(organisationId);
 
     if (base.syncDirection === "inbound" || base.syncDirection === "both") {
@@ -605,8 +606,9 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
 
 // ── Sync all active bases for an organisation ─────────────────────────────────
 export async function syncAllBases(organisationId: string): Promise<SyncResult[]> {
+  const basesKey = `airtable.bases.${organisationId}`;
   const rows = await db.select().from(platformSettings)
-    .where(eq(platformSettings.key, "airtable.bases")).limit(1);
+    .where(eq(platformSettings.key, basesKey)).limit(1);
   const bases: AirtableBase[] = JSON.parse(rows[0]?.value ?? "[]");
   const activeBases = bases.filter(b => b.isActive);
   const results: SyncResult[] = [];
@@ -615,17 +617,19 @@ export async function syncAllBases(organisationId: string): Promise<SyncResult[]
     const result = await syncAirtableBase(base, organisationId);
     results.push(result);
 
-    // Update last sync status in settings
-    const all: AirtableBase[] = JSON.parse(rows[0]?.value ?? "[]");
+    // Refresh from DB to avoid stale overwrite
+    const fresh = await db.select().from(platformSettings)
+      .where(eq(platformSettings.key, basesKey)).limit(1);
+    const all: AirtableBase[] = JSON.parse(fresh[0]?.value ?? "[]");
     const idx = all.findIndex(b => b.id === base.id);
     if (idx !== -1) {
-      all[idx].lastSyncedAt = new Date().toISOString();
-      all[idx].lastSyncStatus = result.success ? "success" : "error";
+      all[idx].lastSyncedAt    = new Date().toISOString();
+      all[idx].lastSyncStatus  = result.success ? "success" : "error";
       all[idx].lastSyncMessage = result.success
         ? `Synced: ${JSON.stringify(result.details)}`
         : result.error ?? "Unknown error";
       await db.insert(platformSettings)
-        .values({ key: "airtable.bases", value: JSON.stringify(all), updatedAt: new Date() })
+        .values({ key: basesKey, value: JSON.stringify(all), updatedAt: new Date() })
         .onConflictDoUpdate({ target: platformSettings.key, set: { value: JSON.stringify(all), updatedAt: new Date() } });
     }
   }
