@@ -11,6 +11,7 @@ import { importDevDataIfNeeded } from "./seeds/import-dev-data.js";
 import { startTaxInvoiceScheduler } from "./jobs/taxInvoiceScheduler.js";
 import { startKpiScheduler } from "./jobs/kpiScheduler.js";
 import { startDelegationExpiryScheduler } from "./jobs/delegationExpiryScheduler.js";
+import { startAirtableScheduler } from "./jobs/airtableScheduler.js";
 import { syncAllTenantSchemas } from "./seeds/provision-tenant.js";
 
 const rawPort = process.env["PORT"];
@@ -37,6 +38,7 @@ const server = app.listen(port, async () => {
   startTaxInvoiceScheduler();
   startKpiScheduler();
   startDelegationExpiryScheduler();
+  startAirtableScheduler();
   // 모든 테넌트 schema를 public 기준으로 자동 동기화 (배포 시 스키마 변경 자동 반영)
   syncAllTenantSchemas().catch(err =>
     console.error("[SchemaSync] Fatal error:", err)

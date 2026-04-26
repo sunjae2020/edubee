@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { encryptField, decryptField } from "../lib/crypto.js";
+import { syncAirtableBase } from "../services/airtableService.js";
 
 const router = Router();
 const guard = [authenticate, requireRole("super_admin", "admin")];
@@ -187,7 +188,6 @@ router.delete("/airtable/bases/:id", ...guard, async (req, res) => {
 });
 
 // ── POST /api/airtable/sync/:id ──────────────────────────────────────────────
-// Manual sync trigger placeholder — actual sync logic added in next phase
 router.post("/airtable/sync/:id", ...guard, async (req, res) => {
   try {
     const bases = await getBases();
@@ -198,19 +198,29 @@ router.post("/airtable/sync/:id", ...guard, async (req, res) => {
     const token = decryptField(encToken);
     if (!token) return res.status(400).json({ error: "Airtable token not configured" });
 
-    // Placeholder — full sync engine implemented in phase 2
-    console.log(`[Airtable] Manual sync triggered for base: ${base.name} (${base.baseId})`);
+    // Get organisation id from JWT
+    const organisationId: string = (req as any).user?.organisationId ?? (req as any).tenant?.id;
+    if (!organisationId) return res.status(400).json({ error: "Organisation not resolved" });
 
+    console.log(`[Airtable] Manual sync: ${base.name} (${base.baseId}) org=${organisationId}`);
+
+    const result = await syncAirtableBase(base, organisationId);
+
+    // Persist updated status back to settings
     const idx = bases.findIndex(b => b.id === req.params.id);
-    bases[idx].lastSyncedAt = new Date().toISOString();
-    bases[idx].lastSyncStatus = "success";
-    bases[idx].lastSyncMessage = "Sync ready — field mapping required (Phase 2)";
-    await saveBases(bases);
+    if (idx !== -1) {
+      bases[idx].lastSyncedAt     = new Date().toISOString();
+      bases[idx].lastSyncStatus   = result.success ? "success" : "error";
+      bases[idx].lastSyncMessage  = result.success
+        ? `Synced: ${JSON.stringify(result.details)}`
+        : result.error ?? "Unknown error";
+      await saveBases(bases);
+    }
 
-    return res.json({ success: true, base: bases[idx] });
-  } catch (err) {
+    return res.json({ success: result.success, result, base: bases[idx] });
+  } catch (err: any) {
     console.error("[Airtable] POST /sync error:", err);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: err.message ?? "Internal server error" });
   }
 });
 

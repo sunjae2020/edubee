@@ -23,3 +23,4 @@ export * from "./community";
 export * from "./security";
 export * from "./correction-requests";
 export * from "./menu";
+export * from "./airtable";
