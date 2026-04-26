@@ -1,5 +1,6 @@
 > ⚠️ **DEPRECATED** — This file will be removed on **2026-05-06**.
-> See `_workflows/FINANCE_SYSTEM_GUIDE.md` for the current Finance documentation (single source of truth).
+> See `_workflows/FINANCE_SYSTEM_GUIDE.md` (v1.2, 2026-04-26) for the current Finance documentation (single source of truth).
+> For workflow data rules, see `FINANCE_SYSTEM_GUIDE.md § W` (Time Study 워크플로우 데이터 룰).
 > Content below is kept for reference only — **do NOT use for new work**.
 
 ---

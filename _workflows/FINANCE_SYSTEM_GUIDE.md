@@ -20,13 +20,14 @@
 > - `artifacts/api-server/src/services/contractFinanceService.ts` — 계약-재무 자동 연동
 > - `artifacts/api-server/src/lib/financeDelegationGuard.ts` — 권한 위임 가드
 >
-> **문서 작성일:** 2026-04-22 | **버전:** v1.0 | **검토 필수:** Jason KIM 대표
+> **문서 작성일:** 2026-04-22 | **버전:** v1.2 | **최종 업데이트:** 2026-04-26 (Migration 0015 반영) | **검토 필수:** Jason KIM 대표
 
 ---
 
 ## 목차
 
 0. [핵심 개념 — Dual Finance System](#0-핵심-개념)
+**W. [Time Study 워크플로우 데이터 룰 (전체)](#w-워크플로우-데이터-룰)** ← 2026-04-26 신규
 1. [Chart of Accounts (실제 CoA)](#1-coa)
 2. [계약 시점 — 자동 생성 흐름](#2-계약시점)
 3. [수익 구조 및 인식 시점](#3-수익구조)
@@ -40,6 +41,88 @@
 
 부록 A. [전체 테이블 레퍼런스](#부록-a)
 부록 B. [작업 완료 보고 템플릿](#부록-b)
+
+---
+
+<a id="w-워크플로우-데이터-룰"></a>
+## W. Time Study 워크플로우 데이터 룰 (전체)
+
+> **추가일:** 2026-04-26 | **검증 완료:** Migration 0015 적용 후 스키마 일치 확인
+
+### W.1 전체 흐름 요약
+
+```
+Lead(QUALIFIED) → Quote(1:N QP) → Contract(1:N CP, 1:1 Account) → Invoice(1:N IP)
+   → Payment Header(1:N Lines) → Receipt + Journal Entry → [Recurring: 자동 반복]
+```
+
+### W.2 단계별 데이터 룰
+
+#### W.2.1 상담 ~ 계약 단계
+
+| 룰 | 구현 상태 | 관련 테이블/컬럼 |
+|----|----------|----------------|
+| Lead `QUALIFIED` → Quote 생성 | ✅ | `leads.id → quotes.lead_id` |
+| Quote 1:N Quote Products | ✅ | `quotes.id → quote_products.quote_id` |
+| Quote → Contract 최대 1개 (잠금) | ✅★ | `contracts.quote_id` UNIQUE + FK (Migration 0015) |
+| Contract 생성 시 QP → CP 스냅샷 복사 | ✅ 앱 레벨 | `quote_products` → `contract_products` 복사 |
+| Contract 1:1 Account (Student/Client) | ✅ FK, ⚠️ NOT NULL 미적용 | `contracts.account_id` (nullable) |
+| Contact M:N Account | ✅ | `account_contacts` 테이블 (M:N) |
+| Contact — 동일 Type Account 중복 금지 | ⚠️ 앱 레벨만 | `account_contacts`에 `UNIQUE(contact_id, account_type)` 미설정 |
+
+★ Migration 0015 적용
+
+#### W.2.2 계약 ~ 청구 단계
+
+| 룰 | 구현 상태 | 관련 테이블/컬럼 |
+|----|----------|----------------|
+| Contract 1:N Contract Products | ✅ | `contract_products.contract_id` |
+| Contract Product → AR/AP 일정 | ✅ | `ar_due_date`, `ap_due_date`, `ar_status`, `ap_status` |
+| Contract Product → Cost Lines | ✅ | `product_cost_lines.contract_product_id` |
+| Invoice → Contract (1 Contract) | ✅ | `invoices.contract_id` |
+| Invoice → Account (1 Account) | ✅★ | `invoices.account_id` FK (Migration 0015) |
+| Invoice 1:N Invoice Products (분할 청구) | ✅★ | `invoice_products` 신설 (Migration 0015) |
+| 1 Contract Product → N Invoice Products (split) | ✅★ | `invoice_products.contract_product_id` |
+| Contract Product `invoice_count` 누적 | ✅★ | `contract_products.invoice_count` (Migration 0015) |
+
+★ Migration 0015 적용
+
+#### W.2.3 수금 ~ 정산 단계
+
+| 룰 | 구현 상태 | 관련 테이블/컬럼 |
+|----|----------|----------------|
+| Payment Header 1:N Payment Lines (Split) | ✅ | `payment_headers`, `payment_lines` |
+| Payment Line → Invoice 또는 Contract Product | ✅ | `payment_lines.invoice_id`, `payment_lines.contract_product_id` |
+| Invoice Status 자동 갱신 (scheduled→invoiced→partial→paid) | ⚠️ 앱 레벨 | `invoices.ar_status` |
+| Payment Header 1:1 Receipt | ✅★ | `receipts.payment_header_id` FK (Migration 0015) |
+| Payment Header → Journal Entry 자동 | ✅ | `journal_entries.payment_header_id`, `auto_generated=true` |
+| AR 완납 시 AP Status `pending→ready` 자동 전환 | ✅★ | `contract_products.ap_trigger='on_ar_paid'` (Migration 0015) — **실행 로직은 앱 레벨 구현 필요** |
+| 학교 송금 (AP): `payment_type='trust_transfer'` | ✅ | `payment_headers.payment_type` |
+| AP 송금 시 `product_cost_lines` `pending→paid` 갱신 | ✅ | `product_cost_lines.payment_header_id`, `status` |
+
+★ Migration 0015 적용
+
+#### W.2.4 반복 청구 (Recurring) 단계
+
+| 룰 | 구현 상태 | 관련 테이블/컬럼 |
+|----|----------|----------------|
+| `guardian_mgt.billing_cycle` (monthly / per_term) | ✅ | `guardian_mgt.billing_cycle` |
+| `accommodation_mgt.billing_cycle` (monthly / per_term) | ✅★ | `accommodation_mgt.billing_cycle` (Migration 0015) |
+| 반복 Invoice → 부모 Invoice 추적 | ✅ | `invoices.parent_invoice_id` (self-ref) |
+| 반복 플래그 | ✅ | `invoices.is_recurring`, `invoices.recurring_cycle`, `invoices.recurring_seq` |
+| `service_end_date` 도달 시 스케줄러 중지 | ⚠️ | 스케줄러 미구현 (Phase C) |
+| 월별 독립 처리 (미납 해당월만 Overdue) | ⚠️ | `invoices.ar_status='overdue'` — cron은 있으나 자동 생성 없음 |
+
+★ Migration 0015 적용
+
+### W.3 구현 갭 현황 (Migration 0015 이후 잔여)
+
+| 갭 | 설명 | 조치 |
+|----|------|------|
+| `contracts.account_id` NOT NULL 미적용 | nullable로 계약 생성 가능 | 기존 데이터 backfill 후 NOT NULL 추가 필요 |
+| `UNIQUE(contact_id, account_type)` 미설정 | 동일 Type Account 중복 DB 레벨 방지 없음 | `account_contacts`에 unique constraint 추가 필요 |
+| `ap_trigger` 실행 로직 미구현 | 컬럼은 추가됐으나 AR 완납 감지 → AP 전환 앱 로직 없음 | AR payment 처리 route에 자동 전환 로직 추가 필요 |
+| 반복 청구 스케줄러 미구현 | `is_recurring=true` Invoice 자동 생성 없음 | Phase C 예정 |
 
 ---
 
@@ -1126,16 +1209,19 @@ Phase D 작업 (장기 로드맵):
 
 ### A.1 Legacy Finance (lib/db/src/schema/finance.ts)
 
-| 테이블 | 역할 | 상태 |
-|--------|------|------|
-| `exchange_rates` | 환율 마스터 | ✅ 공유 |
-| `banking` | 은행 계좌 마스터 | ✅ 공유 |
-| `invoices` | 통합 인보이스 (양 시스템 공유) | ✅ 공유 |
-| `transactions` | Legacy 거래 + 확장 필드 | ✅ Legacy |
-| `receipts` | 영수증 | ✅ Legacy |
-| `contract_finance_items` | Camp/Agent 재무 항목 | ✅ Legacy 전용 |
-| `user_ledger` | 스태프 개인 원장 | ✅ Legacy 전용 |
-| `account_ledger_entries` | 계정별 원장 (파트너·학생별) | ✅ 양쪽 사용 |
+| 테이블 | 역할 | 상태 | 주요 변경 |
+|--------|------|------|----------|
+| `exchange_rates` | 환율 마스터 | ✅ 공유 | — |
+| `banking` | 은행 계좌 마스터 | ✅ 공유 | — |
+| `invoices` | 통합 인보이스 (양 시스템 공유) | ✅ 공유 | `account_id` FK 추가★ |
+| `invoice_products` | 분할 청구 라인 (1 CP → N IP) | ✅ **신설★** | Migration 0015 |
+| `transactions` | Legacy 거래 + 확장 필드 | ✅ Legacy | — |
+| `receipts` | 영수증 | ✅ Legacy | `payment_header_id` 추가★ |
+| `contract_finance_items` | Camp/Agent 재무 항목 | ✅ Legacy 전용 | — |
+| `user_ledger` | 스태프 개인 원장 | ✅ Legacy 전용 | — |
+| `account_ledger_entries` | 계정별 원장 (파트너·학생별) | ✅ 양쪽 사용 | — |
+
+★ Migration 0015 (2026-04-26)
 
 ### A.2 New Accounting (lib/db/src/schema/accounting.ts)
 
@@ -1152,7 +1238,18 @@ Phase D 작업 (장기 로드맵):
 | `cost_centers` | Cost Center 코드 마스터 (Legacy 호환) | ✅ 실재 |
 | `payment_infos` | 결제 수단 마스터 | ✅ 실재 |
 
-### A.3 🎯 TO-BE — 향후 도입 예정 테이블
+### A.3 New Accounting — 주요 컬럼 변경 (Migration 0015)
+
+| 테이블 | 파일 | 추가 컬럼 | 내용 |
+|--------|------|----------|------|
+| `contracts` | `contracts.ts` | `quote_id` UNIQUE+FK | Quote → Contract 1:1 보장 |
+| `contract_products` | `contracts.ts` | `ap_trigger` (`on_ar_paid`) | AR 완납 시 AP 자동 전환 트리거 기준 |
+| `contract_products` | `contracts.ts` | `invoice_count` | 분할 청구 횟수 누적 카운터 |
+| `invoices` | `finance.ts` | `account_id` FK | Invoice 귀속 Account |
+| `receipts` | `finance.ts` | `payment_header_id` | Payment Header 1:1 Receipt 연결 |
+| `accommodation_mgt` | `services.ts` | `billing_cycle` | monthly / per_term 반복 청구 |
+
+### A.4 🎯 TO-BE — 향후 도입 예정 테이블
 
 | 테이블 | 목적 | Phase |
 |--------|------|-------|
@@ -1217,6 +1314,8 @@ Finance 관련 코드 수정 후 반드시 아래 형식으로 보고:
 | 날짜 | 버전 | 변경 사항 | 작성자 |
 |------|------|----------|--------|
 | 2026-04-22 | v1.0 | 초판 작성 — 실제 코드 검증 기반 | Claude + Sun Kim |
+| 2026-04-26 | v1.1 | Migration 0015 Finance Workflow Gaps 6개 반영 | Claude + Sun Kim |
+| 2026-04-26 | v1.2 | 섹션 W (워크플로우 데이터 룰 전체) 신설, 부록 A 업데이트 | Claude + Sun Kim |
 
 ---
 
