@@ -224,20 +224,32 @@ router.post("/airtable/sync/:id", ...guard, async (req, res) => {
     const token = decryptField(encToken);
     if (!token) return res.status(400).json({ error: "Airtable token not configured" });
 
-    console.log(`[Airtable] Manual sync: ${base.name} (${base.baseId}) org=${orgId}`);
-    const result = await syncAirtableBase(base, orgId);
-
+    // Mark sync as running and respond immediately to avoid Cloudflare 524 timeout
     const idx = bases.findIndex(b => b.id === req.params.id);
     if (idx !== -1) {
-      bases[idx].lastSyncedAt    = new Date().toISOString();
-      bases[idx].lastSyncStatus  = result.success ? "success" : "error";
-      bases[idx].lastSyncMessage = result.success
-        ? `Synced: ${JSON.stringify(result.details)}`
-        : result.error ?? "Unknown error";
+      bases[idx].lastSyncStatus  = "error";
+      bases[idx].lastSyncMessage = "Sync in progress...";
       await saveBases(orgId, bases);
     }
+    res.json({ success: true, message: "Sync started in background", baseId: base.id });
 
-    return res.json({ success: result.success, result, base: bases[idx] });
+    // Run sync in background after response is sent
+    console.log(`[Airtable] Manual sync started: ${base.name} (${base.baseId}) org=${orgId}`);
+    syncAirtableBase(base, orgId).then(async (result) => {
+      const latestBases = await getBases(orgId);
+      const latestIdx = latestBases.findIndex(b => b.id === req.params.id);
+      if (latestIdx !== -1) {
+        latestBases[latestIdx].lastSyncedAt    = new Date().toISOString();
+        latestBases[latestIdx].lastSyncStatus  = result.success ? "success" : "error";
+        latestBases[latestIdx].lastSyncMessage = result.success
+          ? `Synced: ${JSON.stringify(result.details)}`
+          : result.error ?? "Unknown error";
+        await saveBases(orgId, latestBases);
+      }
+      console.log(`[Airtable] Manual sync completed: ${base.name} success=${result.success}`);
+    }).catch((err: any) => {
+      console.error("[Airtable] Background sync error:", err);
+    });
   } catch (err: any) {
     console.error("[Airtable] POST /sync error:", err);
     return res.status(500).json({ error: err.message ?? "Internal server error" });

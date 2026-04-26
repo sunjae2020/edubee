@@ -25,7 +25,7 @@ if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
 // ── Rate Limiters ────────────────────────────────────────────────────────────
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many login attempts. Please try again after 15 minutes.' },
@@ -42,7 +42,7 @@ const refreshLimiter = rateLimit({
 const ACCESS_TOKEN_EXPIRY = "8h";
 const PORTAL_TOKEN_EXPIRY = "24h";
 const REFRESH_TOKEN_EXPIRY = "7d";
-const MAX_FAILED = 5;
+const MAX_FAILED = 999999; // 계정 잠금 비활성화
 const LOCK_MINUTES = 30;
 
 async function writeAuthLog(

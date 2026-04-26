@@ -59,7 +59,9 @@ app.use(cors({
     if (!origin) { callback(null, true); return; }
     // Allow any *.edubee.co tenant subdomain + explicitly configured origins
     const isEdubee = origin === "https://edubee.co" || origin.endsWith(".edubee.co");
-    if (isEdubee || allowedOrigins.some((o) => origin.startsWith(o))) {
+    // Allow any localhost-based origin for local development (*.localhost:PORT)
+    const isLocalhost = /^https?:\/\/[^/]*localhost(:\d+)?$/.test(origin);
+    if (isEdubee || isLocalhost || allowedOrigins.some((o) => origin.startsWith(o))) {
       callback(null, true);
     } else {
       callback(new Error(`CORS blocked: ${origin}`));

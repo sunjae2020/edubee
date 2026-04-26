@@ -225,7 +225,7 @@ async function syncStudent(
         created++;
       }
     } catch (err: any) {
-      console.error(`[Airtable] syncStudent record ${rec.id} failed:`, err.message);
+      console.error(`[Airtable] syncStudent record ${rec.id} failed:`, err.message, err.cause?.message ?? "");
       failed++;
     }
   }
@@ -1140,8 +1140,10 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
     console.log(`[Airtable] Sync complete for ${base.name}: ${JSON.stringify(details)}`);
     return { baseId: base.id, baseName: base.name, success: true, elapsed: Date.now() - start, details };
   } catch (err: any) {
-    console.error(`[Airtable] Sync failed for ${base.name}:`, err);
-    return { baseId: base.id, baseName: base.name, success: false, error: err.message, elapsed: Date.now() - start, details };
+    const causeMsg = err.cause?.message ?? err.cause ?? "";
+    const fullError = causeMsg ? `${err.message} | cause: ${causeMsg}` : err.message;
+    console.error(`[Airtable] Sync failed for ${base.name}:`, err.message, causeMsg ? `\n  cause: ${causeMsg}` : "");
+    return { baseId: base.id, baseName: base.name, success: false, error: fullError, elapsed: Date.now() - start, details };
   }
 }
 
