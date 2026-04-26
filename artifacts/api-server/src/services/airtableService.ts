@@ -2,6 +2,7 @@ import { db, staticDb } from "@workspace/db";
 import {
   platformSettings, users, contacts, accounts, account_contacts,
   contracts, contractProducts, airtableSyncMap, transactions,
+  packageGroups, packages,
 } from "@workspace/db/schema";
 import { eq, and, sql, gte } from "drizzle-orm";
 import { decryptField } from "../lib/crypto.js";
@@ -114,12 +115,19 @@ async function getDefaultOwner(organisationId: string): Promise<string> {
   const rows = await db.execute(sql`
     SELECT id FROM public.users
     WHERE organisation_id = ${organisationId}
-      AND role IN ('super_admin', 'admin')
       AND status = 'active'
-    ORDER BY created_at ASC LIMIT 1
+    ORDER BY
+      CASE role
+        WHEN 'super_admin' THEN 1
+        WHEN 'admin' THEN 2
+        WHEN 'manager' THEN 3
+        ELSE 4
+      END,
+      created_at ASC
+    LIMIT 1
   `);
   const id = (rows.rows[0] as any)?.id;
-  if (!id) throw new Error("No admin user found for organisation");
+  if (!id) throw new Error("No active user found for organisation");
   return id;
 }
 
@@ -557,6 +565,17 @@ async function syncContractsOutbound(
   let pushed = 0, created = 0;
 
   for (const contract of rows) {
+    // Skip contracts that were inbound-synced from Airtable (any table) — they belong to Airtable already
+    const inboundEntry = await staticDb.select({ id: airtableSyncMap.id })
+      .from(airtableSyncMap)
+      .where(and(
+        eq(airtableSyncMap.airtableBaseId, baseId),
+        eq(airtableSyncMap.crmTable, "contracts"),
+        eq(airtableSyncMap.crmId, contract.id),
+        eq(airtableSyncMap.syncDirection, "inbound"),
+      )).limit(1);
+    if (inboundEntry.length > 0) continue;
+
     // Resolve Airtable student record ID
     let studentAirtableId: string | null = null;
     if (contract.accountId) {
@@ -650,6 +669,252 @@ async function syncContractProductsOutbound(
   return { pushed, created };
 }
 
+// ── Sync: Package Groups → package_groups ────────────────────────────────────
+async function syncPackageGroups(
+  token: string, baseId: string, organisationId: string,
+): Promise<{ synced: number; created: number; failed: number }> {
+  const records = await fetchAllRecords(token, baseId, "Package Groups");
+  let synced = 0, created = 0, failed = 0;
+
+  const statusMap: Record<string, string> = {
+    "Active": "active", "Expired": "archived", "Draft": "draft",
+    "Archived": "archived", "Inactive": "inactive",
+  };
+  const countryMap: Record<string, string> = {
+    "Australia": "AU", "Thailand": "TH", "New Zealand": "NZ",
+    "United Kingdom": "GB", "USA": "US", "Japan": "JP",
+    "South Korea": "KR", "Singapore": "SG",
+  };
+
+  for (const rec of records) {
+    try {
+      const f = rec.fields;
+      const name: string = (f["Package Group Name"] ?? "").trim();
+      if (!name) continue;
+
+      const statusRaw: string = f["Status"] ?? "";
+      const status = statusMap[statusRaw] ?? "draft";
+      const country = countryMap[f["Country"]] ?? f["Country"] ?? null;
+
+      // Resolve linked account names (Institute, Accommodation, Tour Company, Pickup Driver)
+      const instituteName  = Array.isArray(f["Institute"])  ? null : null; // linked IDs, store display name via lookup
+      const accommodation  = f["Accommodation (from Package Group)"]?.[0] ?? null;
+      const tourCompany    = f["Tour Company"]  ? String(f["Tour Company"]).trim() : null;
+      const pickupDriver   = f["Pickup Driver"] ? String(f["Pickup Driver"]).trim() : null;
+
+      const upsertData = {
+        nameEn:            name,
+        status,
+        year:              f["Year"] ?? null,
+        month:             f["Month"] ?? null,
+        countryCode:       country,
+        location:          f["City"] ?? null,
+        descriptionEn:     f["Description"] ?? null,
+        requiredDocuments: f["Required Documents"] ?? null,
+        durationText:      [f["Period"], f["Duration"]].filter(Boolean).join(" | ") || null,
+        packagePptUrl:     f["Package PPT"] ?? null,
+        googleDriveUrl:    f["Google Drive"] ?? null,
+        packageCode:       f["Package ID"] ?? null,
+        localManual:       f["Local Manual"] ?? null,
+        departureOt:       f["Departure OT"] ?? null,
+        organisationId,
+        updatedAt:         new Date(),
+      };
+
+      const existingCrmId = await findCrmId(baseId, "Package Groups", rec.id);
+
+      if (existingCrmId) {
+        await db.update(packageGroups).set(upsertData).where(eq(packageGroups.id, existingCrmId));
+        synced++;
+      } else {
+        const [pg] = await db.insert(packageGroups)
+          .values({ ...upsertData, createdAt: new Date() })
+          .returning({ id: packageGroups.id });
+        await upsertSyncMap({
+          airtableBaseId: baseId, airtableTable: "Package Groups",
+          airtableRecordId: rec.id, crmTable: "package_groups", crmId: pg.id, organisationId,
+        });
+        created++;
+      }
+    } catch (err: any) {
+      console.error(`[Airtable] syncPackageGroups record ${rec.id} failed:`, err.message);
+      failed++;
+    }
+  }
+  return { synced, created, failed };
+}
+
+// ── Sync: Packages → packages ─────────────────────────────────────────────────
+async function syncPackages(
+  token: string, baseId: string, organisationId: string,
+): Promise<{ synced: number; created: number; failed: number }> {
+  const records = await fetchAllRecords(token, baseId, "Packages");
+  let synced = 0, created = 0, failed = 0;
+
+  for (const rec of records) {
+    try {
+      const f = rec.fields;
+
+      // Resolve package group
+      const pgRecIds: string[] = f["Package Group"] ?? [];
+      let packageGroupId: string | null = null;
+      if (pgRecIds.length > 0) {
+        packageGroupId = await findCrmId(baseId, "Package Groups", pgRecIds[0]);
+      }
+      if (!packageGroupId) { failed++; continue; }
+
+      // Package name — derive from option + group name
+      const packageOption: string = (f["Package Option"] ?? "").trim();
+      const packageName: string = (f["Package Name"] ?? packageOption).trim() || "Unnamed Package";
+
+      // Fees — Airtable uses "AUS $" for AUD
+      const packageFee  = f["Package Fee"]  ?? null;
+      const agentComm   = f["Agent Comm"]   ?? null;
+      const netPrice    = f["Net Price"]    ?? null;
+      const revenue     = f["Revenue"]      ?? null;
+      const feeKrw      = f["Product Fee_KOR"] ?? null;
+      const commKrw     = f["Agent Comm_KOR"]  ?? null;
+
+      const upsertData = {
+        packageGroupId,
+        name:             packageName,
+        durationDays:     0, // Airtable stores as text weeks, default 0
+        packageOption:    packageOption || null,
+        packageCode:      f["Product ID"] ?? null,
+        kakaoName:        f["Kakao Name"] ?? null,
+        priceAud:         packageFee != null ? String(packageFee) : null,
+        agentCommissionFixed: agentComm != null ? String(agentComm) : null,
+        netPrice:         netPrice != null ? String(netPrice) : null,
+        revenue:          revenue != null ? String(revenue) : null,
+        priceKrw:         feeKrw != null ? String(Math.round(Number(feeKrw))) : null,
+        agentCommKrw:     commKrw != null ? String(Math.round(Number(commKrw))) : null,
+        roomType:         f["Room Type"] ?? null,
+        pricePerNight:    f["Per/Night"] != null ? String(f["Per/Night"]) : null,
+        checkInDate:      f["Check-In"] ?? null,
+        checkOutDate:     f["Check-Out"] ?? null,
+        schoolStartDate:  f["School Start Date"] ?? null,
+        schoolDuration:   f["School Duration"] ?? null,
+        pickupDate:       f["Pickup Date"] ?? null,
+        pickupFee:        f["Pickup Fee"] != null ? String(f["Pickup Fee"]) : null,
+        dropDate:         f["Drop Date"] ?? null,
+        dropFee:          f["Drop Fee"] != null ? String(f["Drop Fee"]) : null,
+        status:           "active",
+        updatedAt:        new Date(),
+      };
+
+      const existingCrmId = await findCrmId(baseId, "Packages", rec.id);
+
+      if (existingCrmId) {
+        await db.update(packages).set(upsertData).where(eq(packages.id, existingCrmId));
+        synced++;
+      } else {
+        const [pkg] = await db.insert(packages)
+          .values({ ...upsertData, createdAt: new Date() })
+          .returning({ id: packages.id });
+        await upsertSyncMap({
+          airtableBaseId: baseId, airtableTable: "Packages",
+          airtableRecordId: rec.id, crmTable: "packages", crmId: pkg.id, organisationId,
+        });
+        created++;
+      }
+    } catch (err: any) {
+      console.error(`[Airtable] syncPackages record ${rec.id} failed:`, err.message);
+      failed++;
+    }
+  }
+  return { synced, created, failed };
+}
+
+// ── Sync: Camp MGT → contracts ────────────────────────────────────────────────
+async function syncCampContracts(
+  token: string, baseId: string, organisationId: string,
+): Promise<{ synced: number; created: number; failed: number }> {
+  const records = await fetchAllRecords(token, baseId, "Camp MGT");
+  let synced = 0, created = 0, failed = 0;
+
+  const statusMap: Record<string, string> = {
+    "Active": "active", "Completed": "completed",
+    "Cancelled": "cancelled", "Draft": "draft",
+    "Pending": "pending", "Expired": "completed",
+  };
+  const currencyMap: Record<string, string> = {
+    "AUD $": "AUD", "AUS $": "AUD", "USD $": "USD",
+    "KRW ₩": "KRW", "THB ฿": "THB",
+    "AUD": "AUD", "USD": "USD",
+  };
+
+  for (const rec of records) {
+    try {
+      const f = rec.fields;
+
+      const statusRaw: string = f["CampMGT Status"] ?? "";
+      const status = statusMap[statusRaw] ?? "draft";
+      const currencyRaw: string = f["Currency"] ?? "AUD $";
+      const currency = currencyMap[currencyRaw] ?? "AUD";
+
+      const firstName: string = (f["First Name"] ?? "").trim();
+      const lastName:  string = (f["Last Name"]  ?? "").trim();
+      const studentName = [firstName, lastName].filter(Boolean).join(" ") || null;
+
+      // Resolve package group name from lookup
+      const pgLookup: string[] = f["Package Group (from Package)"] ?? [];
+      const packageGroupName = pgLookup[0] ?? null;
+
+      // Resolve package via linked Package record
+      const packageRecIds: string[] = f["Package"] ?? [];
+      let resolvedPackageName: string | null = null;
+      if (packageRecIds.length > 0) {
+        const pkgId = packageRecIds[0];
+        const idLookup: string[] = f["Package ID (from Package)"] ?? [];
+        resolvedPackageName = idLookup[0] ?? null;
+      }
+
+      const totalFee   = f["Total Fee"]   ?? null;
+      const paid       = f["Paid"]        ?? null;
+      const balance    = typeof f["Balance"] === "number" ? f["Balance"] : null;
+      const agentComm  = f["Agent Comm"]  ?? null;
+      const agentName  = Array.isArray(f["Agent Name"])
+        ? null  // linked record — name not available here without additional fetch
+        : (f["Agent Name"] ?? null);
+
+      const upsertData = {
+        status,
+        currency,
+        totalAmount:      totalFee  != null ? String(totalFee)  : null,
+        paidAmount:       paid      != null ? String(paid)      : null,
+        balanceAmount:    balance   != null ? String(balance)   : null,
+        studentName:      studentName ?? null,
+        packageGroupName: packageGroupName ?? null,
+        adminNote:        f["Admin Note"] ?? null,
+        partnerNote:      f["Partner Note"] ?? null,
+        googleFolderTitle: f["Google Drive"] ? String(f["Google Drive"]) : null,
+        organisationId,
+        updatedAt:        new Date(),
+      };
+
+      const existingCrmId = await findCrmId(baseId, "Camp MGT", rec.id);
+
+      if (existingCrmId) {
+        await db.update(contracts).set(upsertData).where(eq(contracts.id, existingCrmId));
+        synced++;
+      } else {
+        const [contract] = await db.insert(contracts)
+          .values({ ...upsertData, createdAt: new Date() })
+          .returning({ id: contracts.id });
+        await upsertSyncMap({
+          airtableBaseId: baseId, airtableTable: "Camp MGT",
+          airtableRecordId: rec.id, crmTable: "contracts", crmId: contract.id, organisationId,
+        });
+        created++;
+      }
+    } catch (err: any) {
+      console.error(`[Airtable] syncCampContracts record ${rec.id} failed:`, err.message);
+      failed++;
+    }
+  }
+  return { synced, created, failed };
+}
+
 // ── Main sync function ────────────────────────────────────────────────────────
 export interface SyncResult {
   baseId: string;
@@ -669,12 +934,34 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
     const ownerId = await getDefaultOwner(organisationId);
 
     if (base.syncDirection === "inbound" || base.syncDirection === "both") {
-      details.staff            = await syncStaff(token, base.baseId, organisationId);
-      details.student          = await syncStudent(token, base.baseId, organisationId, ownerId);
-      details.partner          = await syncPartner(token, base.baseId, organisationId, ownerId);
-      details.contract         = await syncContracts(token, base.baseId, organisationId, ownerId);
-      details.contractProducts = await syncContractProducts(token, base.baseId, organisationId);
-      details.payments         = await syncPayments(token, base.baseId, organisationId);
+      // All syncs wrapped individually — gracefully skip tables that don't exist in this base
+      try { details.staff = await syncStaff(token, base.baseId, organisationId); }
+      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+
+      try { details.student = await syncStudent(token, base.baseId, organisationId, ownerId); }
+      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+
+      try { details.partner = await syncPartner(token, base.baseId, organisationId, ownerId); }
+      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+
+      // Camp CRM: Package Groups → Packages → Contracts (order matters)
+      try { details.packageGroups = await syncPackageGroups(token, base.baseId, organisationId); }
+      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+
+      try { details.packages = await syncPackages(token, base.baseId, organisationId); }
+      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+
+      try { details.campContracts = await syncCampContracts(token, base.baseId, organisationId); }
+      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+
+      try { details.contract = await syncContracts(token, base.baseId, organisationId, ownerId); }
+      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+
+      try { details.contractProducts = await syncContractProducts(token, base.baseId, organisationId); }
+      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+
+      try { details.payments = await syncPayments(token, base.baseId, organisationId); }
+      catch (e: any) { if (!e.message?.includes("403")) throw e; }
     }
 
     if (base.syncDirection === "outbound" || base.syncDirection === "both") {
