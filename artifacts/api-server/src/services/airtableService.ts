@@ -3,7 +3,7 @@ import {
   platformSettings, users, contacts, accounts, account_contacts,
   contracts, contractProducts, airtableSyncMap,
 } from "@workspace/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, gte } from "drizzle-orm";
 import { decryptField } from "../lib/crypto.js";
 
 // ── Airtable Base config stored in platform_settings ─────────────────────────
@@ -37,6 +37,23 @@ async function fetchAirtable(token: string, path: string): Promise<any> {
   return res.json();
 }
 
+async function writeAirtable(
+  token: string, method: "POST" | "PATCH",
+  baseId: string, table: string, recordId: string | null, fields: Record<string, any>,
+): Promise<string> {
+  const url = recordId
+    ? `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${recordId}`
+    : `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}`;
+  const res = await fetch(url, {
+    method,
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ fields }),
+  });
+  if (!res.ok) throw new Error(`Airtable write ${table} → ${res.status}: ${await res.text()}`);
+  const data: any = await res.json();
+  return data.id as string;
+}
+
 async function fetchAllRecords(token: string, baseId: string, table: string): Promise<any[]> {
   const records: any[] = [];
   let offset: string | undefined;
@@ -61,6 +78,20 @@ async function findCrmId(
       eq(airtableSyncMap.airtableRecordId, airtableRecordId),
     )).limit(1);
   return rows[0]?.crmId ?? null;
+}
+
+// Reverse lookup: CRM ID → Airtable record ID
+async function findAirtableId(
+  airtableBaseId: string, airtableTable: string, crmId: string,
+): Promise<string | null> {
+  const rows = await db.select({ recId: airtableSyncMap.airtableRecordId })
+    .from(airtableSyncMap)
+    .where(and(
+      eq(airtableSyncMap.airtableBaseId, airtableBaseId),
+      eq(airtableSyncMap.airtableTable, airtableTable),
+      eq(airtableSyncMap.crmId, crmId),
+    )).limit(1);
+  return rows[0]?.recId ?? null;
 }
 
 async function upsertSyncMap(entry: {
@@ -419,6 +450,120 @@ async function syncContractProducts(
   return { synced, created };
 }
 
+// ── Outbound: contracts → Airtable "Contract" ─────────────────────────────────
+async function syncContractsOutbound(
+  token: string, baseId: string, organisationId: string,
+): Promise<{ pushed: number; created: number }> {
+  // Fetch contracts updated in last 24 h (or all if never synced)
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const rows = await db.select().from(contracts)
+    .where(and(
+      eq(contracts.organisationId, organisationId),
+      eq(contracts.isActive, true),
+      gte(contracts.updatedAt, cutoff),
+    ));
+
+  const crmToAirtable: Record<string, string> = {
+    active: "Active", completed: "Completed",
+    cancelled: "Cancelled", draft: "Draft", pending: "Pending",
+  };
+
+  let pushed = 0, created = 0;
+
+  for (const contract of rows) {
+    // Resolve Airtable student record ID
+    let studentAirtableId: string | null = null;
+    if (contract.accountId) {
+      studentAirtableId = await findAirtableId(baseId, "Student", contract.accountId);
+    }
+
+    const fields: Record<string, any> = {
+      "Contract Status": crmToAirtable[contract.status ?? "draft"] ?? "Draft",
+      "Contract Start Date": contract.startDate ?? undefined,
+      "Contract End Date":   contract.endDate ?? undefined,
+    };
+    if (studentAirtableId) fields["Student ID"] = [studentAirtableId];
+
+    const existingAirtableId = await findAirtableId(baseId, "Contract", contract.id);
+
+    if (existingAirtableId) {
+      await writeAirtable(token, "PATCH", baseId, "Contract", existingAirtableId, fields);
+      pushed++;
+    } else {
+      const newId = await writeAirtable(token, "POST", baseId, "Contract", null, fields);
+      await upsertSyncMap({
+        airtableBaseId: baseId, airtableTable: "Contract",
+        airtableRecordId: newId, crmTable: "contracts", crmId: contract.id, organisationId,
+      });
+      created++;
+    }
+  }
+  return { pushed, created };
+}
+
+// ── Outbound: contract_products → Airtable "Contract Products" ────────────────
+async function syncContractProductsOutbound(
+  token: string, baseId: string, organisationId: string,
+): Promise<{ pushed: number; created: number }> {
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const rows = await db.select().from(contractProducts)
+    .where(and(
+      eq(contractProducts.organisationId, organisationId),
+      gte(contractProducts.createdAt, cutoff),
+    ));
+
+  const statusMap: Record<string, string> = {
+    active: "Enrolled", completed: "Completed",
+    cancelled: "Cancelled", pending: "Pending",
+  };
+
+  let pushed = 0, created = 0;
+
+  for (const cp of rows) {
+    if (!cp.contractId) continue;
+
+    const contractAirtableId = await findAirtableId(baseId, "Contract", cp.contractId);
+    if (!contractAirtableId) continue;
+
+    let providerAirtableId: string | null = null;
+    if (cp.providerAccountId) {
+      providerAirtableId = await findAirtableId(baseId, "Partner", cp.providerAccountId);
+    }
+
+    const fields: Record<string, any> = {
+      "Contract Name":        [contractAirtableId],
+      "Course(Product) Name": cp.name ?? "",
+      "Status":               statusMap[cp.status ?? "pending"] ?? "Pending",
+      "Standard Fee":         cp.unitPrice ? Number(cp.unitPrice) : undefined,
+      "Payable":              cp.totalPrice ? Number(cp.totalPrice) : undefined,
+      "Comm Amount":          cp.commissionAmount ? Number(cp.commissionAmount) : undefined,
+      "GST Amount":           cp.gstAmount ? Number(cp.gstAmount) : undefined,
+      "Total Amount":         cp.grossAmount ? Number(cp.grossAmount) : undefined,
+      "Due Date(Service Start)": cp.arDueDate ?? undefined,
+      "Payment Date":            cp.apDueDate ?? undefined,
+    };
+    if (providerAirtableId) fields["Provider"] = [providerAirtableId];
+
+    // Remove undefined values
+    Object.keys(fields).forEach(k => fields[k] === undefined && delete fields[k]);
+
+    const existingId = await findAirtableId(baseId, "Contract Products", cp.id);
+
+    if (existingId) {
+      await writeAirtable(token, "PATCH", baseId, "Contract Products", existingId, fields);
+      pushed++;
+    } else {
+      const newId = await writeAirtable(token, "POST", baseId, "Contract Products", null, fields);
+      await upsertSyncMap({
+        airtableBaseId: baseId, airtableTable: "Contract Products",
+        airtableRecordId: newId, crmTable: "contract_products", crmId: cp.id, organisationId,
+      });
+      created++;
+    }
+  }
+  return { pushed, created };
+}
+
 // ── Main sync function ────────────────────────────────────────────────────────
 export interface SyncResult {
   baseId: string;
@@ -426,7 +571,7 @@ export interface SyncResult {
   success: boolean;
   error?: string;
   elapsed: number;
-  details: Record<string, { synced: number; created?: number; skipped?: number }>;
+  details: Record<string, { synced?: number; created?: number; skipped?: number; pushed?: number }>;
 }
 
 export async function syncAirtableBase(base: AirtableBase, organisationId: string): Promise<SyncResult> {
@@ -443,6 +588,11 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
       details.partner          = await syncPartner(token, base.baseId, organisationId, ownerId);
       details.contract         = await syncContracts(token, base.baseId, organisationId, ownerId);
       details.contractProducts = await syncContractProducts(token, base.baseId, organisationId);
+    }
+
+    if (base.syncDirection === "outbound" || base.syncDirection === "both") {
+      details.contractOut         = await syncContractsOutbound(token, base.baseId, organisationId);
+      details.contractProductsOut = await syncContractProductsOutbound(token, base.baseId, organisationId);
     }
 
     console.log(`[Airtable] Sync complete for ${base.name}: ${JSON.stringify(details)}`);

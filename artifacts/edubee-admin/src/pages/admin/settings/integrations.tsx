@@ -160,15 +160,44 @@ function AirtableBaseCard({
       </div>
 
       {base.lastSyncedAt && (
-        <div className="flex items-center gap-1.5 text-xs">
-          {base.lastSyncStatus === "success" ? (
-            <CheckCircle2 size={11} className="text-green-500" />
-          ) : (
-            <XCircle size={11} className="text-red-500" />
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5 text-xs">
+            {base.lastSyncStatus === "success" ? (
+              <CheckCircle2 size={11} className="text-green-500" />
+            ) : (
+              <XCircle size={11} className="text-red-500" />
+            )}
+            <span className="text-[#A8A29E]">
+              마지막 동기화: {new Date(base.lastSyncedAt).toLocaleString("ko-KR")}
+            </span>
+          </div>
+          {base.lastSyncMessage && base.lastSyncStatus === "success" && (() => {
+            try {
+              const raw = base.lastSyncMessage.replace(/^Synced:\s*/, "");
+              const d = JSON.parse(raw);
+              const items = [
+                d.staff          && `직원 ${d.staff.synced ?? 0}건`,
+                d.student        && `학생 ${(d.student.created ?? 0) + (d.student.synced ?? 0)}건`,
+                d.partner        && `파트너 ${(d.partner.created ?? 0) + (d.partner.synced ?? 0)}건`,
+                d.contract       && `계약 ${(d.contract.created ?? 0) + (d.contract.synced ?? 0)}건`,
+                d.contractProducts && `상품 ${(d.contractProducts.created ?? 0) + (d.contractProducts.synced ?? 0)}건`,
+                d.contractOut    && `계약→AT ${(d.contractOut.pushed ?? 0) + (d.contractOut.created ?? 0)}건`,
+              ].filter(Boolean);
+              if (!items.length) return null;
+              return (
+                <div className="flex flex-wrap gap-1.5">
+                  {items.map((item, i) => (
+                    <span key={i} className="px-2 py-0.5 rounded-full text-[10px] bg-green-50 text-green-700 border border-green-100">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              );
+            } catch { return null; }
+          })()}
+          {base.lastSyncStatus === "error" && base.lastSyncMessage && (
+            <p className="text-xs text-red-500 truncate">{base.lastSyncMessage}</p>
           )}
-          <span className="text-[#A8A29E]">
-            마지막 동기화: {new Date(base.lastSyncedAt).toLocaleString("ko-KR")}
-          </span>
         </div>
       )}
     </div>
