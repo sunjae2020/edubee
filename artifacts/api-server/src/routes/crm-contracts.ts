@@ -467,6 +467,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       partnerNote:             c.partner_note ?? null,
       kakaoName:               c.kakao_name ?? null,
       googleFolderTitle:       c.google_folder_title ?? null,
+      packageName:             c.package_name ?? null,
       agentName:               c.agent_name ?? null,
       agentInitial:            c.agent_initial ?? null,
       currency:                c.currency ?? "AUD",

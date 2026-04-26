@@ -633,8 +633,22 @@ async function syncContractsOutbound(
     const existingAirtableId = await findAirtableId(baseId, "Contract", contract.id);
 
     if (existingAirtableId) {
-      await writeAirtable(token, "PATCH", baseId, "Contract", existingAirtableId, fields);
-      pushed++;
+      try {
+        await writeAirtable(token, "PATCH", baseId, "Contract", existingAirtableId, fields);
+        pushed++;
+      } catch (e: any) {
+        if (e.message?.includes("→ 422")) {
+          // Stale sync map entry — Airtable record was deleted; remove and recreate
+          await staticDb.delete(airtableSyncMap).where(and(
+            eq(airtableSyncMap.airtableBaseId, baseId),
+            eq(airtableSyncMap.airtableTable, "Contract"),
+            eq(airtableSyncMap.airtableRecordId, existingAirtableId),
+          ));
+          const newId = await writeAirtable(token, "POST", baseId, "Contract", null, fields);
+          await upsertSyncMap({ airtableBaseId: baseId, airtableTable: "Contract", airtableRecordId: newId, crmTable: "contracts", crmId: contract.id, organisationId });
+          created++;
+        } else { throw e; }
+      }
     } else {
       const newId = await writeAirtable(token, "POST", baseId, "Contract", null, fields);
       await upsertSyncMap({
@@ -696,8 +710,21 @@ async function syncContractProductsOutbound(
     const existingId = await findAirtableId(baseId, "Contract Products", cp.id);
 
     if (existingId) {
-      await writeAirtable(token, "PATCH", baseId, "Contract Products", existingId, fields);
-      pushed++;
+      try {
+        await writeAirtable(token, "PATCH", baseId, "Contract Products", existingId, fields);
+        pushed++;
+      } catch (e: any) {
+        if (e.message?.includes("→ 422")) {
+          await staticDb.delete(airtableSyncMap).where(and(
+            eq(airtableSyncMap.airtableBaseId, baseId),
+            eq(airtableSyncMap.airtableTable, "Contract Products"),
+            eq(airtableSyncMap.airtableRecordId, existingId),
+          ));
+          const newId = await writeAirtable(token, "POST", baseId, "Contract Products", null, fields);
+          await upsertSyncMap({ airtableBaseId: baseId, airtableTable: "Contract Products", airtableRecordId: newId, crmTable: "contract_products", crmId: cp.id, organisationId });
+          created++;
+        } else { throw e; }
+      }
     } else {
       const newId = await writeAirtable(token, "POST", baseId, "Contract Products", null, fields);
       await upsertSyncMap({
