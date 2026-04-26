@@ -9,13 +9,14 @@ import {
   jsonb,
   date,
   boolean,
+  unique,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { users } from "./users";
 import { applications } from "./applications";
 import { products } from "./packages";
-import { accounts } from "./crm";
+import { accounts, quotes } from "./crm";
 import { organisations } from "./settings";
 
 export const contracts = pgTable("contracts", {
@@ -55,12 +56,13 @@ export const contracts = pgTable("contracts", {
   totalApAmount: decimal("total_ap_amount", { precision: 12, scale: 2 }),
   serviceModulesActivated: jsonb("service_modules_activated"),
   accountId: uuid("account_id").references(() => accounts.id, { onDelete: "set null" }),
-  quoteId: uuid("quote_id"),
+  quoteId: uuid("quote_id").references(() => quotes.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   isActive:  boolean("is_active").notNull().default(true),
   organisationId: uuid("organisation_id").references(() => organisations.id),
-});
+},
+(t) => [unique("contracts_quote_id_unique").on(t.quoteId)]);
 
 export const contractProducts = pgTable("contract_products", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -92,6 +94,8 @@ export const contractProducts = pgTable("contract_products", {
   gstAmount:          decimal("gst_amount",            { precision: 12, scale: 2 }),
   isGstFree:          boolean("is_gst_free").default(false),
   providerAccountId:  uuid("provider_account_id").references(() => accounts.id, { onDelete: "set null" }),
+  apTrigger:    varchar("ap_trigger",    { length: 30 }).default("on_ar_paid"),
+  invoiceCount: integer("invoice_count").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

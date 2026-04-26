@@ -16,7 +16,7 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { users } from "./users";
-import { contracts } from "./contracts";
+import { contracts, contractProducts } from "./contracts";
 import { products } from "./packages";
 import { accounts, contacts } from "./crm";
 import { organisations } from "./settings";
@@ -160,6 +160,7 @@ export const invoices = pgTable("invoices", {
   recurringCycle: varchar("recurring_cycle", { length: 20 }),
   recurringSeq: integer("recurring_seq"),
   contractProductId: uuid("contract_product_id"),
+  accountId: uuid("account_id").references(() => accounts.id, { onDelete: "set null" }),
   balanceDue: decimal("balance_due", { precision: 12, scale: 2 }),
   arStatus: varchar("ar_status", { length: 20 }).default("invoiced"),
   // Tax Invoice fields (optional - nullable for non-tax invoices)
@@ -227,10 +228,38 @@ export const receipts = pgTable("receipts", {
   ledgerEntryId: uuid("ledger_entry_id"),
   // New fields
   financeItemId: uuid("finance_item_id").references(() => contractFinanceItems.id),
+  paymentHeaderId: uuid("payment_header_id"),
   confirmedBy: uuid("confirmed_by").references(() => users.id),
   confirmedAt: timestamp("confirmed_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// ── Invoice Products (분할 청구 라인) ─────────────────────────────────────────
+// 1 Contract Product → N Invoice Products (분할 청구)
+// 1 Invoice → N Invoice Products
+export const invoiceProducts = pgTable(
+  "invoice_products",
+  {
+    id:                uuid("id").primaryKey().defaultRandom(),
+    invoiceId:         uuid("invoice_id").notNull().references(() => invoices.id, { onDelete: "cascade" }),
+    contractProductId: uuid("contract_product_id").references(() => contractProducts.id, { onDelete: "set null" }),
+    name:              varchar("name", { length: 255 }),
+    description:       text("description"),
+    quantity:          integer("quantity").notNull().default(1),
+    unitPrice:         decimal("unit_price", { precision: 12, scale: 2 }).notNull().default("0"),
+    amount:            decimal("amount", { precision: 12, scale: 2 }).notNull().default("0"),
+    sortIndex:         integer("sort_index").notNull().default(0),
+    organisationId:    uuid("organisation_id").references(() => organisations.id),
+    createdAt:         timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("idx_ip_invoice").on(t.invoiceId),
+    index("idx_ip_contract_product").on(t.contractProductId),
+  ]
+);
+
+export type InvoiceProduct    = typeof invoiceProducts.$inferSelect;
+export type NewInvoiceProduct = typeof invoiceProducts.$inferInsert;
 
 export const accountLedgerEntries = pgTable(
   "account_ledger_entries",

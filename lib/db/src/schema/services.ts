@@ -47,6 +47,7 @@ export const accommodationMgt = pgTable("accommodation_mgt", {
   otherFee:              decimal("other_fee", { precision: 12, scale: 2 }),
   totalHotelFee:         decimal("total_hotel_fee", { precision: 12, scale: 2 }),
   paymentDate:           date("payment_date"),
+  billingCycle:          varchar("billing_cycle", { length: 20 }),
   status:                varchar("status", { length: 50 }).notNull().default("searching"),
   notes:                 text("notes"),
   createdAt:             timestamp("created_at").notNull().defaultNow(),
