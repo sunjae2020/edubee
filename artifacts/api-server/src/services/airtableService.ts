@@ -483,34 +483,26 @@ async function syncContractProducts(
 
 // ── Post-sync: backfill agentName / packageName on contracts from contract_products ──
 async function backfillContractDenormFields(organisationId: string): Promise<{ updated: number }> {
-  const rows = await db.execute(sql`
-    SELECT DISTINCT ON (cp.contract_id)
-      cp.contract_id,
-      cp.name          AS package_name,
-      a.name           AS agent_name
-    FROM contract_products cp
-    LEFT JOIN accounts a ON a.id = cp.provider_account_id
-    WHERE cp.organisation_id = ${organisationId}
-      AND (cp.name IS NOT NULL OR a.name IS NOT NULL)
-    ORDER BY cp.contract_id, cp.created_at
+  const result = await db.execute(sql`
+    UPDATE contracts c
+    SET package_name = sub.package_name,
+        agent_name   = COALESCE(sub.agent_name, c.agent_name),
+        updated_at   = NOW()
+    FROM (
+      SELECT DISTINCT ON (cp.contract_id)
+        cp.contract_id,
+        cp.name       AS package_name,
+        a.name        AS agent_name
+      FROM contract_products cp
+      LEFT JOIN accounts a ON a.id = cp.provider_account_id
+      WHERE cp.organisation_id = ${organisationId}
+        AND cp.name IS NOT NULL
+      ORDER BY cp.contract_id, cp.created_at
+    ) sub
+    WHERE c.id = sub.contract_id
+      AND c.organisation_id = ${organisationId}
   `);
-
-  let updated = 0;
-  for (const row of rows.rows as any[]) {
-    const { contract_id, package_name, agent_name } = row;
-    if (!contract_id) continue;
-    await db.execute(sql`
-      UPDATE contracts
-      SET package_name  = COALESCE(${package_name}, package_name),
-          agent_name    = COALESCE(${agent_name}, agent_name),
-          updated_at    = NOW()
-      WHERE id = ${contract_id}::uuid
-        AND organisation_id = ${organisationId}
-        AND (package_name IS NULL OR agent_name IS NULL)
-    `);
-    updated++;
-  }
-  return { updated };
+  return { updated: result.rowCount ?? 0 };
 }
 
 // ── Sync: Payments → transactions ────────────────────────────────────────────
@@ -605,9 +597,10 @@ async function syncContractsOutbound(
       gte(contracts.updatedAt, cutoff),
     ));
 
+  // Airtable Contract Status only allows: "TBA", "Active", "Deactive"
   const crmToAirtable: Record<string, string> = {
-    active: "Active", completed: "Completed",
-    cancelled: "Cancelled", draft: "Draft", pending: "Pending",
+    active: "Active", completed: "Deactive",
+    cancelled: "Deactive", draft: "TBA", pending: "TBA", on_hold: "TBA",
   };
 
   let pushed = 0, created = 0;
@@ -631,7 +624,7 @@ async function syncContractsOutbound(
     }
 
     const fields: Record<string, any> = {
-      "Contract Status": crmToAirtable[contract.status ?? "draft"] ?? "Draft",
+      "Contract Status": crmToAirtable[contract.status ?? "draft"] ?? "TBA",
       "Contract Start Date": contract.startDate ?? undefined,
       "Contract End Date":   contract.endDate ?? undefined,
     };

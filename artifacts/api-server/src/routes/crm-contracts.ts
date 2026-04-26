@@ -14,7 +14,8 @@ router.get("/crm/contracts/filter-options", authenticate, async (_req, res) => {
     const owners = await db.execute(sql`
       SELECT DISTINCT u.id, u.full_name AS name
       FROM users u
-      INNER JOIN contracts c ON c.owner_id = u.id
+      INNER JOIN accounts a ON a.owner_id = u.id
+      INNER JOIN contracts c ON c.account_id = a.id
       WHERE u.full_name IS NOT NULL
       ORDER BY u.full_name
     `);
@@ -76,7 +77,7 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
     if (status)           conds.push(sql`c.status = ${status}`);
     if (dateFrom)         conds.push(sql`c.start_date >= ${dateFrom}::date`);
     if (dateTo)           conds.push(sql`c.start_date <= ${dateTo}::date`);
-    if (ownerId)          conds.push(sql`c.owner_id = ${ownerId}::uuid`);
+    if (ownerId)          conds.push(sql`a.owner_id = ${ownerId}::uuid`);
     if (paymentFrequency) conds.push(sql`c.payment_frequency = ${paymentFrequency}`);
     if (arStatus)         conds.push(sql`EXISTS (SELECT 1 FROM contract_products cp2 WHERE cp2.contract_id = c.id AND cp2.ar_status = ${arStatus})`);
     if (apStatus)         conds.push(sql`EXISTS (SELECT 1 FROM contract_products cp3 WHERE cp3.contract_id = c.id AND cp3.ap_status = ${apStatus})`);
@@ -125,7 +126,7 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
           c.student_name,
           c.client_country      AS nationality,
           c.account_id,
-          c.owner_id,
+          a.owner_id,
           c.quote_id,
           a.name                AS account_name,
           a.first_name          AS account_first_name,
@@ -146,7 +147,7 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
           c.updated_at AS updated_at
         FROM contracts c
         LEFT JOIN accounts a         ON a.id = c.account_id
-        LEFT JOIN users   u         ON u.id = c.owner_id
+        LEFT JOIN users   u         ON u.id = a.owner_id
         LEFT JOIN quotes  q         ON q.id = c.quote_id
         LEFT JOIN LATERAL (SELECT id, status FROM study_abroad_mgt  WHERE contract_id = c.id LIMIT 1) sa ON true
         LEFT JOIN LATERAL (SELECT id, status FROM pickup_mgt        WHERE contract_id = c.id LIMIT 1) pk ON true
@@ -318,14 +319,13 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
                COALESCE(c.camp_application_id, q.camp_application_id) AS effective_camp_app_id,
                ca.application_ref  AS camp_app_ref,
                ca.applicant_name   AS camp_app_name,
-               COALESCE(ct1.id,          ct2.id)                       AS contact_id,
-               COALESCE(ct1.nationality, ct2.nationality)               AS contact_nationality,
-               COALESCE(ct1.email,       ct2.email, c.client_email)     AS contact_email,
-               COALESCE(ct1.mobile,      ct2.mobile)                    AS contact_phone
+               ct1.id                                                 AS contact_id,
+               ct1.nationality                                        AS contact_nationality,
+               COALESCE(ct1.email, c.client_email)                   AS contact_email,
+               ct1.mobile                                            AS contact_phone
         FROM contracts c
         LEFT JOIN accounts       a   ON a.id   = c.account_id
         LEFT JOIN contacts       ct1 ON ct1.id = a.primary_contact_id
-        LEFT JOIN contacts       ct2 ON ct2.id = c.customer_contact_id
         LEFT JOIN users          u   ON u.id   = a.owner_id
         LEFT JOIN quotes         q   ON q.id   = c.quote_id
         LEFT JOIN camp_applications ca ON ca.id = COALESCE(c.camp_application_id, q.camp_application_id)
@@ -475,7 +475,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
       isActive:                c.is_active ?? true,
       createdAt:               c.created_at ?? null,
       updatedAt:               c.updated_at ?? null,
-      ownerId:                 c.owner_id ?? null,
+      ownerId:                 c.owner_user_id ?? null,
       ownerName:               c.owner_name ?? null,
       account: {
         id:           c.account_id_val ?? c.account_id,
@@ -515,7 +515,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
         applicationRef: c.camp_app_ref  ?? null,
         applicantName:  c.camp_app_name ?? null,
       } : null,
-      owner:   c.owner_id  ? { id: c.owner_id,  name: c.owner_name }               : null,
+      owner:   c.owner_user_id  ? { id: c.owner_user_id,  name: c.owner_name }      : null,
       contractProducts,
       invoices,
       transactions,
@@ -615,7 +615,7 @@ router.patch("/crm/contracts/:id", authenticate, async (req, res) => {
     if (notes                !== undefined) parts.push(sql`notes                   = ${notes || null}`);
     if (contractAmount       !== undefined) parts.push(sql`total_amount            = ${Number(contractAmount)}`);
     if (clientCountry        !== undefined) parts.push(sql`client_country          = ${clientCountry || null}`);
-    if (ownerId              !== undefined) parts.push(sql`owner_id                = ${ownerId || null}`);
+    // owner is stored on accounts.owner_id, not contracts — skip direct update
     if (primaryServiceModule !== undefined) parts.push(sql`primary_service_module  = ${primaryServiceModule || null}`);
     if (accountId            !== undefined) {
       parts.push(sql`account_id = ${accountId || null}`);
