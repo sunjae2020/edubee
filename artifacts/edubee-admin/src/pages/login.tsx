@@ -169,10 +169,10 @@ export default function Login() {
                     <LockKeyhole style={{ width: "18px", height: "18px", color: "#DC2626", flexShrink: 0, marginTop: "2px" }} />
                     <div>
                       <p style={{ margin: "0 0 6px", fontSize: "13px", fontWeight: 600, color: "#991B1B" }}>
-                        계정이 잠겼습니다 (Account Locked)
+                        Account Locked
                       </p>
                       <p style={{ margin: "0 0 10px", fontSize: "12px", color: "#7F1D1D", lineHeight: 1.6 }}>
-                        {lockedMessage || "비밀번호 입력 실패 횟수 초과로 계정이 잠겼습니다. 이메일로 잠금 해제 링크를 보내드렸습니다."}
+                        {lockedMessage || "Account locked after too many failed attempts. An unlock link has been sent to your email."}
                       </p>
                       <Link href="/forgot-password" style={{
                         display: "inline-block",
@@ -181,7 +181,7 @@ export default function Login() {
                         color: "#F5821F",
                         textDecoration: "none",
                       }}>
-                        비밀번호 재설정으로 즉시 잠금 해제 →
+                        Reset password to unlock immediately →
                       </Link>
                     </div>
                   </div>
