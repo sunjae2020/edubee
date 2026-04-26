@@ -1,5 +1,5 @@
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, Component, type ErrorInfo, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +15,38 @@ import NotFound from "@/pages/not-found";
 import { MainLayout } from "@/components/layout/main-layout";
 import SuperAdminGuard from "@/components/guards/SuperAdminGuard";
 import { useTenantTheme, TenantThemeContext, DEFAULT_THEME, applyThemeToDom } from "@/hooks/use-tenant-theme";
+
+// ── Error Boundary — prevents white screen on render crash ────────────────
+class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("[AppErrorBoundary]", error, info.componentStack);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem", fontFamily: "Inter, sans-serif" }}>
+          <div style={{ maxWidth: 480, textAlign: "center" }}>
+            <p style={{ fontSize: 32, marginBottom: 16 }}>⚠️</p>
+            <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, color: "#1C1917" }}>Something went wrong</h2>
+            <p style={{ fontSize: 13, color: "#78716C", marginBottom: 20 }}>{this.state.error.message}</p>
+            <button
+              onClick={() => { this.setState({ error: null }); window.location.reload(); }}
+              style={{ padding: "8px 20px", background: "#F5821F", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 600 }}
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ── Page loading spinner ───────────────────────────────────────────────────
 function PageLoader() {
@@ -749,6 +781,7 @@ function ImpersonationInit() {
 
 function App() {
   return (
+    <AppErrorBoundary>
     <DisplayCurrencyProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -765,6 +798,7 @@ function App() {
         </TooltipProvider>
       </QueryClientProvider>
     </DisplayCurrencyProvider>
+    </AppErrorBoundary>
   );
 }
 
