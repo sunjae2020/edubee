@@ -1,7 +1,7 @@
 import { db } from "@workspace/db";
 import {
   platformSettings, users, contacts, accounts, account_contacts,
-  contracts, contractProducts, airtableSyncMap,
+  contracts, contractProducts, airtableSyncMap, transactions,
 } from "@workspace/db/schema";
 import { eq, and, sql, gte } from "drizzle-orm";
 import { decryptField } from "../lib/crypto.js";
@@ -405,8 +405,6 @@ async function syncContractProducts(
     const apDueDate   = f["Payment Date"] ?? null;
     const crmStatus   = cpStatusMap[f["Status"]] ?? "pending";
     const currency    = f["Currency"] ?? "AUD";
-    const commRate    = f["Comm"] != null ? String(f["Comm"] * 100) : null;
-
     const existingCrmId = await findCrmId(baseId, "Contract Products", rec.id);
 
     if (existingCrmId) {
@@ -445,6 +443,82 @@ async function syncContractProducts(
       }).returning({ id: contractProducts.id });
 
       await upsertSyncMap({ airtableBaseId: baseId, airtableTable: "Contract Products", airtableRecordId: rec.id, crmTable: "contract_products", crmId: cp.id, organisationId });
+      created++;
+    }
+  }
+  return { synced, created };
+}
+
+// ── Sync: Payments → transactions ────────────────────────────────────────────
+async function syncPayments(
+  token: string, baseId: string, organisationId: string,
+): Promise<{ synced: number; created: number }> {
+  const records = await fetchAllRecords(token, baseId, "Payments");
+  let synced = 0, created = 0;
+
+  const paymentMethodMap: Record<string, string> = {
+    "Bank Transfer": "bank_transfer", "Cash": "cash",
+    "Credit Card": "credit_card", "Cheque": "cheque",
+    "Online": "online", "Other": "other",
+  };
+  const statusMap: Record<string, string> = {
+    "Completed": "Active", "Pending": "pending",
+    "Cancelled": "cancelled", "Failed": "failed",
+  };
+
+  for (const rec of records) {
+    const f = rec.fields;
+    const paymentDate: string | null = f["Payment Date"] ?? null;
+    const amountPaid: number | null  = f["Amount Paid"] ?? null;
+    if (!paymentDate && !amountPaid) continue;
+
+    // Resolve contract via Payment ID → Contract Reference string match
+    // (Airtable Payments table links to contract by text reference, not linked record)
+    let resolvedContractId: string | null = null;
+    const contractRef: string | undefined = f["Contract Reference"]?.trim();
+    if (contractRef) {
+      const contractRow = await db.execute(sql`
+        SELECT id FROM contracts
+        WHERE (contract_number = ${contractRef} OR student_name ILIKE ${"%" + contractRef + "%"})
+          AND organisation_id = ${organisationId}
+        LIMIT 1
+      `);
+      resolvedContractId = (contractRow.rows[0] as any)?.id ?? null;
+    }
+
+    const existingCrmId = await findCrmId(baseId, "Payments", rec.id);
+
+    const currency = f["Currency"] ?? "AUD";
+    const method   = paymentMethodMap[f["Payment Method"]] ?? f["Payment Method"] ?? null;
+    const status   = statusMap[f["Payment Status"]] ?? "Active";
+    const amount   = amountPaid != null ? String(amountPaid) : null;
+
+    if (existingCrmId) {
+      await db.update(transactions).set({
+        transactionDate: paymentDate ?? undefined,
+        amount:          amount ?? undefined,
+        currency,
+        description:     method ? `Payment via ${method}` : undefined,
+        status,
+      }).where(eq(transactions.id, existingCrmId));
+      synced++;
+    } else {
+      const [tx] = await db.insert(transactions).values({
+        transactionType:  "receipt",
+        contractId:       resolvedContractId ?? undefined,
+        transactionDate:  paymentDate ?? undefined,
+        amount:           amount ?? undefined,
+        currency,
+        description:      method ? `Payment via ${method}` : "Airtable payment",
+        status,
+        organisationId,
+      }).returning({ id: transactions.id });
+
+      await upsertSyncMap({
+        airtableBaseId: baseId, airtableTable: "Payments",
+        airtableRecordId: rec.id, crmTable: "transactions",
+        crmId: tx.id, organisationId,
+      });
       created++;
     }
   }
@@ -589,6 +663,7 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
       details.partner          = await syncPartner(token, base.baseId, organisationId, ownerId);
       details.contract         = await syncContracts(token, base.baseId, organisationId, ownerId);
       details.contractProducts = await syncContractProducts(token, base.baseId, organisationId);
+      details.payments         = await syncPayments(token, base.baseId, organisationId);
     }
 
     if (base.syncDirection === "outbound" || base.syncDirection === "both") {

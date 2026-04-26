@@ -181,6 +181,7 @@ function AirtableBaseCard({
                 d.partner        && `파트너 ${(d.partner.created ?? 0) + (d.partner.synced ?? 0)}건`,
                 d.contract       && `계약 ${(d.contract.created ?? 0) + (d.contract.synced ?? 0)}건`,
                 d.contractProducts && `상품 ${(d.contractProducts.created ?? 0) + (d.contractProducts.synced ?? 0)}건`,
+                d.payments       && `결제 ${(d.payments.created ?? 0) + (d.payments.synced ?? 0)}건`,
                 d.contractOut    && `계약→AT ${(d.contractOut.pushed ?? 0) + (d.contractOut.created ?? 0)}건`,
               ].filter(Boolean);
               if (!items.length) return null;
