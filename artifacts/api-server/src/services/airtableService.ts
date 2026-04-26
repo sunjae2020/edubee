@@ -1,8 +1,9 @@
-import { db, staticDb } from "@workspace/db";
+import { db, staticDb, runWithTenantSchema } from "@workspace/db";
 import {
   platformSettings, users, contacts, accounts, account_contacts,
   contracts, contractProducts, airtableSyncMap, transactions,
   packageGroups, packages, enrollmentSpots, interviewSchedules,
+  organisations,
 } from "@workspace/db/schema";
 import { eq, and, sql, gte } from "drizzle-orm";
 import { decryptField } from "../lib/crypto.js";
@@ -774,6 +775,7 @@ async function syncPackages(
       const revenue     = f["Revenue"]      ?? null;
       const feeKrw      = f["Product Fee_KOR"] ?? null;
       const commKrw     = f["Agent Comm_KOR"]  ?? null;
+      const toNum = (v: any) => (v != null && v !== "" ? String(v) : null);
 
       const upsertData = {
         packageGroupId,
@@ -782,22 +784,22 @@ async function syncPackages(
         packageOption:    packageOption || null,
         packageCode:      f["Product ID"] ?? null,
         kakaoName:        f["Kakao Name"] ?? null,
-        priceAud:         packageFee != null ? String(packageFee) : null,
-        agentCommissionFixed: agentComm != null ? String(agentComm) : null,
-        netPrice:         netPrice != null ? String(netPrice) : null,
-        revenue:          revenue != null ? String(revenue) : null,
-        priceKrw:         feeKrw != null ? String(Math.round(Number(feeKrw))) : null,
-        agentCommKrw:     commKrw != null ? String(Math.round(Number(commKrw))) : null,
+        priceAud:         toNum(packageFee),
+        agentCommissionFixed: toNum(agentComm),
+        netPrice:         toNum(netPrice),
+        revenue:          toNum(revenue),
+        priceKrw:         feeKrw != null && feeKrw !== "" ? String(Math.round(Number(feeKrw))) : null,
+        agentCommKrw:     commKrw != null && commKrw !== "" ? String(Math.round(Number(commKrw))) : null,
         roomType:         f["Room Type"] ?? null,
-        pricePerNight:    f["Per/Night"] != null ? String(f["Per/Night"]) : null,
+        pricePerNight:    toNum(f["Per/Night"]),
         checkInDate:      f["Check-In"] ?? null,
         checkOutDate:     f["Check-Out"] ?? null,
         schoolStartDate:  f["School Start Date"] ?? null,
         schoolDuration:   f["School Duration"] ?? null,
         pickupDate:       f["Pickup Date"] ?? null,
-        pickupFee:        f["Pickup Fee"] != null ? String(f["Pickup Fee"]) : null,
+        pickupFee:        toNum(f["Pickup Fee"]),
         dropDate:         f["Drop Date"] ?? null,
-        dropFee:          f["Drop Fee"] != null ? String(f["Drop Fee"]) : null,
+        dropFee:          toNum(f["Drop Fee"]),
         status:           "active",
         updatedAt:        new Date(),
       };
@@ -818,7 +820,7 @@ async function syncPackages(
         created++;
       }
     } catch (err: any) {
-      console.error(`[Airtable] syncPackages record ${rec.id} failed:`, err.message);
+      console.error(`[Airtable] syncPackages record ${rec.id} failed:`, err.message, err.cause?.message ?? "");
       failed++;
     }
   }
@@ -1082,47 +1084,57 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
     const token = await getToken(organisationId);
     const ownerId = await getDefaultOwner(organisationId);
 
+    // Look up tenant slug so DB operations use the correct schema (not public fallback)
+    const orgRow = await staticDb.select({ subdomain: organisations.subdomain })
+      .from(organisations).where(eq(organisations.id, organisationId)).limit(1);
+    const tenantSlug = orgRow[0]?.subdomain;
+    if (!tenantSlug) throw new Error(`No tenant slug found for org ${organisationId}`);
+
     if (base.syncDirection === "inbound" || base.syncDirection === "both") {
-      // All syncs wrapped individually — gracefully skip tables that don't exist in this base
-      try { details.staff = await syncStaff(token, base.baseId, organisationId); }
-      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+      await runWithTenantSchema(tenantSlug, async () => {
+        // All syncs wrapped individually — gracefully skip tables that don't exist in this base
+        try { details.staff = await syncStaff(token, base.baseId, organisationId); }
+        catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-      try { details.student = await syncStudent(token, base.baseId, organisationId, ownerId); }
-      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+        try { details.student = await syncStudent(token, base.baseId, organisationId, ownerId); }
+        catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-      try { details.partner = await syncPartner(token, base.baseId, organisationId, ownerId); }
-      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+        try { details.partner = await syncPartner(token, base.baseId, organisationId, ownerId); }
+        catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-      // Camp CRM: Package Groups → Packages → Contracts (order matters)
-      try { details.packageGroups = await syncPackageGroups(token, base.baseId, organisationId); }
-      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+        // Camp CRM: Package Groups → Packages → Contracts (order matters)
+        try { details.packageGroups = await syncPackageGroups(token, base.baseId, organisationId); }
+        catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-      try { details.packages = await syncPackages(token, base.baseId, organisationId); }
-      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+        try { details.packages = await syncPackages(token, base.baseId, organisationId); }
+        catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-      try { details.campContracts = await syncCampContracts(token, base.baseId, organisationId); }
-      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+        try { details.campContracts = await syncCampContracts(token, base.baseId, organisationId); }
+        catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-      // Enrollment Spots depend on Package Groups being synced first
-      try { details.enrollmentSpots = await syncEnrollmentSpots(token, base.baseId, organisationId); }
-      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+        // Enrollment Spots depend on Package Groups being synced first
+        try { details.enrollmentSpots = await syncEnrollmentSpots(token, base.baseId, organisationId); }
+        catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-      try { details.interviewMgt = await syncInterviewMgt(token, base.baseId, organisationId); }
-      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+        try { details.interviewMgt = await syncInterviewMgt(token, base.baseId, organisationId); }
+        catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-      try { details.contract = await syncContracts(token, base.baseId, organisationId, ownerId); }
-      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+        try { details.contract = await syncContracts(token, base.baseId, organisationId, ownerId); }
+        catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-      try { details.contractProducts = await syncContractProducts(token, base.baseId, organisationId); }
-      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+        try { details.contractProducts = await syncContractProducts(token, base.baseId, organisationId); }
+        catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-      try { details.payments = await syncPayments(token, base.baseId, organisationId); }
-      catch (e: any) { if (!e.message?.includes("403")) throw e; }
+        try { details.payments = await syncPayments(token, base.baseId, organisationId); }
+        catch (e: any) { if (!e.message?.includes("403")) throw e; }
+      });
     }
 
     if (base.syncDirection === "outbound" || base.syncDirection === "both") {
-      details.contractOut         = await syncContractsOutbound(token, base.baseId, organisationId);
-      details.contractProductsOut = await syncContractProductsOutbound(token, base.baseId, organisationId);
+      await runWithTenantSchema(tenantSlug, async () => {
+        details.contractOut         = await syncContractsOutbound(token, base.baseId, organisationId);
+        details.contractProductsOut = await syncContractProductsOutbound(token, base.baseId, organisationId);
+      });
     }
 
     console.log(`[Airtable] Sync complete for ${base.name}: ${JSON.stringify(details)}`);
