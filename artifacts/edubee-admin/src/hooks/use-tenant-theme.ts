@@ -40,9 +40,12 @@ const NON_TENANT_SUBDOMAINS = new Set(["www", "app", "admin", "api", "mail"]);
 
 function getSubdomain(): string | null {
   const parts = window.location.hostname.split(".");
-  if (parts.length >= 3) {
+  // prod: timest.edubee.co (3+ parts) | dev: timest.localhost (2 parts, last = "localhost")
+  const isLocalhost = parts[parts.length - 1] === "localhost";
+  const hasSub = parts.length >= 3 || (isLocalhost && parts.length >= 2);
+  if (hasSub) {
     const sub = parts[0].toLowerCase();
-    if (!NON_TENANT_SUBDOMAINS.has(sub)) return sub;
+    if (!NON_TENANT_SUBDOMAINS.has(sub) && sub !== "localhost") return sub;
   }
   return null;
 }

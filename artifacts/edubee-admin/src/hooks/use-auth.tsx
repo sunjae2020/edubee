@@ -48,8 +48,10 @@ axios.interceptors.request.use((config) => {
   //   impersonation override 또는 JWT의 organisationId 전송
   const NON_TENANT_SUBS = new Set(["www", "app", "admin", "api", "mail"]);
   const hostParts = window.location.hostname.split(".");
-  const currentSub = hostParts.length >= 3 ? hostParts[0].toLowerCase() : null;
-  const isOnTenantSubdomain = !!currentSub && !NON_TENANT_SUBS.has(currentSub);
+  const _isLocalhost = hostParts[hostParts.length - 1] === "localhost";
+  const _hasSub = hostParts.length >= 3 || (_isLocalhost && hostParts.length >= 2);
+  const currentSub = _hasSub ? hostParts[0].toLowerCase() : null;
+  const isOnTenantSubdomain = !!currentSub && !NON_TENANT_SUBS.has(currentSub) && currentSub !== "localhost";
 
   let orgId: string | null = null;
   if (!isOnTenantSubdomain) {
@@ -170,8 +172,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 테넌트 서브도메인에서는 super_admin이라도 /superadmin 으로 이동하지 않음
     const NON_TENANT_SUBS_LOGIN = new Set(["www", "app", "admin", "api", "mail"]);
     const loginHostParts = window.location.hostname.split(".");
-    const loginSub = loginHostParts.length >= 3 ? loginHostParts[0].toLowerCase() : null;
-    const isOnTenantSubdomainLogin = !!loginSub && !NON_TENANT_SUBS_LOGIN.has(loginSub);
+    const _loginIsLocalhost = loginHostParts[loginHostParts.length - 1] === "localhost";
+    const _loginHasSub = loginHostParts.length >= 3 || (_loginIsLocalhost && loginHostParts.length >= 2);
+    const loginSub = _loginHasSub ? loginHostParts[0].toLowerCase() : null;
+    const isOnTenantSubdomainLogin = !!loginSub && !NON_TENANT_SUBS_LOGIN.has(loginSub) && loginSub !== "localhost";
 
     const isSuperAdmin = (res as any).user?.role === "super_admin" || (res as any).role === "super_admin";
     if (!isOnTenantSubdomainLogin && isSuperAdmin) {

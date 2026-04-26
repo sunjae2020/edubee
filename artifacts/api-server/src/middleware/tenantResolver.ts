@@ -180,6 +180,11 @@ function extractSubdomain(host: string, baseDomain: string): string | null {
     return null;
   }
   const cleanHost = host.split(":")[0];
+  // dev: timest.localhost — treat "localhost" as a base domain equivalent
+  if (cleanHost.endsWith(".localhost")) {
+    const sub = cleanHost.slice(0, cleanHost.length - ".localhost".length);
+    return sub && !sub.includes(".") ? sub : null;
+  }
   if (!cleanHost.endsWith(`.${baseDomain}`)) {
     return null;
   }
