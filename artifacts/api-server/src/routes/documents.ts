@@ -36,9 +36,44 @@ const storage = multer.diskStorage({
   },
 });
 
+const ALLOWED_MIMETYPES = new Set([
+  // Documents
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  // Images
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  // Text
+  "text/plain",
+  "text/csv",
+]);
+
+const ALLOWED_EXTENSIONS = new Set([
+  ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+  ".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif",
+  ".txt", ".csv",
+]);
+
 const upload = multer({
   storage,
   limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter(_req, file, cb) {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ALLOWED_MIMETYPES.has(file.mimetype) && ALLOWED_EXTENSIONS.has(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Unsupported file type: ${file.mimetype} (${ext}). Allowed: PDF, Word, Excel, PowerPoint, images, CSV, TXT.`));
+    }
+  },
 });
 
 const GROUP_LABELS: Record<string, string> = {
