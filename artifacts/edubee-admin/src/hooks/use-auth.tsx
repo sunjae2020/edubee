@@ -118,24 +118,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      const currentToken = localStorage.getItem("edubee_token");
-      const viewAsId = getViewAsUserId();
-      const viewAsRole = getViewAsRole();
-      const impersonateOrgId = sessionStorage.getItem("admin_impersonate_org_id");
-      const personalOrgId = currentToken ? (parseJwt(currentToken)?.organisationId ?? null) : null;
-      const orgId = impersonateOrgId || personalOrgId;
+      // Auth endpoints must NOT receive stale session headers — skip injection for login/refresh
+      const resolvedUrl = typeof input === "string" ? input : input instanceof URL ? input.toString() : (input as Request).url;
+      const isAuthEndpoint = /\/api\/auth\/(login|refresh)/.test(resolvedUrl);
 
-      if (currentToken || viewAsId || viewAsRole || orgId) {
-        init = init || {};
-        const headers = new Headers(init.headers as HeadersInit);
-        if (currentToken) headers.set("Authorization", `Bearer ${currentToken}`);
-        if (viewAsRole) {
-          headers.set("X-View-As-Role", viewAsRole);
-        } else if (viewAsId) {
-          headers.set("X-View-As-User-Id", viewAsId);
+      if (!isAuthEndpoint) {
+        const currentToken = localStorage.getItem("edubee_token");
+        const viewAsId = getViewAsUserId();
+        const viewAsRole = getViewAsRole();
+        const impersonateOrgId = sessionStorage.getItem("admin_impersonate_org_id");
+        const personalOrgId = currentToken ? (parseJwt(currentToken)?.organisationId ?? null) : null;
+        const orgId = impersonateOrgId || personalOrgId;
+
+        if (currentToken || viewAsId || viewAsRole || orgId) {
+          init = init || {};
+          const headers = new Headers(init.headers as HeadersInit);
+          if (currentToken) headers.set("Authorization", `Bearer ${currentToken}`);
+          if (viewAsRole) {
+            headers.set("X-View-As-Role", viewAsRole);
+          } else if (viewAsId) {
+            headers.set("X-View-As-User-Id", viewAsId);
+          }
+          if (orgId) headers.set("X-Organisation-Id", orgId);
+          init.headers = headers;
         }
-        if (orgId) headers.set("X-Organisation-Id", orgId);
-        init.headers = headers;
       }
       const response = await originalFetch(input, init);
       if (response.status === 401 && !input.toString().includes("/login")) {
