@@ -103,7 +103,17 @@ export default defineConfig({
     host: "0.0.0.0",
     allowedHosts: true,
     proxy: {
-      "/api": { target: "http://localhost:3000", changeOrigin: true },
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on("proxyReq", (proxyReq, req) => {
+            // Forward original host so tenantResolver can detect *.localhost subdomains
+            const host = req.headers["host"] ?? "";
+            if (host) proxyReq.setHeader("X-Forwarded-Host", host);
+          });
+        },
+      },
     },
     fs: {
       strict: true,
