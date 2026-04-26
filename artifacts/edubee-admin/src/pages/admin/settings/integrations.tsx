@@ -104,6 +104,15 @@ const SCHEDULE_LABELS: Record<string, string> = {
   every6h: "Every 6 hours (4x daily)",
 };
 
+const STAT_TABLES = [
+  { key: "Staff",             label: "Staff" },
+  { key: "Student",           label: "Students" },
+  { key: "Partner",           label: "Partners" },
+  { key: "Contract",          label: "Contracts" },
+  { key: "Contract Products", label: "Products" },
+  { key: "Payments",          label: "Payments" },
+];
+
 // ── Airtable Base Card ────────────────────────────────────────────────────────
 function AirtableBaseCard({
   base, onEdit, onDelete, onSync, syncing,
@@ -114,6 +123,14 @@ function AirtableBaseCard({
   onSync: (id: string) => void;
   syncing: boolean;
 }) {
+  const { data: stats } = useQuery<Record<string, number>>({
+    queryKey: ["airtable-stats", base.baseId],
+    queryFn: () => axios.get(`${BASE}/api/airtable/stats/${base.baseId}`).then(r => r.data),
+    staleTime: 30_000,
+  });
+
+  const hasStats = stats && Object.keys(stats).length > 0;
+
   return (
     <div className="border border-[#E8E6E2] rounded-xl p-4 bg-white space-y-3">
       <div className="flex items-start justify-between gap-2">
@@ -159,45 +176,30 @@ function AirtableBaseCard({
         </span>
       </div>
 
-      {base.lastSyncedAt && (
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs">
-            {base.lastSyncStatus === "success" ? (
-              <CheckCircle2 size={11} className="text-green-500" />
-            ) : (
-              <XCircle size={11} className="text-red-500" />
-            )}
-            <span className="text-[#A8A29E]">
-              Last synced: {new Date(base.lastSyncedAt).toLocaleString("en-AU")}
+      {/* ── Synced record counts ── */}
+      <div className="grid grid-cols-3 gap-x-4 gap-y-2 pt-1 border-t border-[#F4F3F1]">
+        {STAT_TABLES.map(({ key, label }) => (
+          <div key={key} className="flex items-center justify-between">
+            <span className="text-[11px] text-[#A8A29E]">{label}</span>
+            <span className="text-[11px] font-semibold text-[#1C1917]">
+              {hasStats ? (stats[key] ?? 0).toLocaleString() : "—"}
             </span>
           </div>
-          {base.lastSyncMessage && base.lastSyncStatus === "success" && (() => {
-            try {
-              const raw = base.lastSyncMessage.replace(/^Synced:\s*/, "");
-              const d = JSON.parse(raw);
-              const items = [
-                d.staff          && `Staff ${d.staff.synced ?? 0}`,
-                d.student        && `Students ${(d.student.created ?? 0) + (d.student.synced ?? 0)}`,
-                d.partner        && `Partners ${(d.partner.created ?? 0) + (d.partner.synced ?? 0)}`,
-                d.contract       && `Contracts ${(d.contract.created ?? 0) + (d.contract.synced ?? 0)}`,
-                d.contractProducts && `Products ${(d.contractProducts.created ?? 0) + (d.contractProducts.synced ?? 0)}`,
-                d.payments       && `Payments ${(d.payments.created ?? 0) + (d.payments.synced ?? 0)}`,
-                d.contractOut    && `Contract→AT ${(d.contractOut.pushed ?? 0) + (d.contractOut.created ?? 0)}`,
-              ].filter(Boolean);
-              if (!items.length) return null;
-              return (
-                <div className="flex flex-wrap gap-1.5">
-                  {items.map((item, i) => (
-                    <span key={i} className="px-2 py-0.5 rounded-full text-[10px] bg-green-50 text-green-700 border border-green-100">
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              );
-            } catch { return null; }
-          })()}
+        ))}
+      </div>
+
+      {base.lastSyncedAt && (
+        <div className="flex items-center gap-1.5 text-xs pt-0.5">
+          {base.lastSyncStatus === "success" ? (
+            <CheckCircle2 size={11} className="text-green-500 shrink-0" />
+          ) : (
+            <XCircle size={11} className="text-red-500 shrink-0" />
+          )}
+          <span className="text-[#A8A29E]">
+            Last synced: {new Date(base.lastSyncedAt).toLocaleString("en-AU")}
+          </span>
           {base.lastSyncStatus === "error" && base.lastSyncMessage && (
-            <p className="text-xs text-red-500 truncate">{base.lastSyncMessage}</p>
+            <span className="text-red-500 truncate">{base.lastSyncMessage}</span>
           )}
         </div>
       )}

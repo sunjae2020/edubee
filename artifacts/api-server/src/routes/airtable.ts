@@ -1,7 +1,7 @@
 import { Router, Request } from "express";
-import { db } from "@workspace/db";
-import { platformSettings } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { db, staticDb } from "@workspace/db";
+import { platformSettings, airtableSyncMap } from "@workspace/db/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { encryptField, decryptField } from "../lib/crypto.js";
@@ -241,6 +241,34 @@ router.post("/airtable/sync/:id", ...guard, async (req, res) => {
   } catch (err: any) {
     console.error("[Airtable] POST /sync error:", err);
     return res.status(500).json({ error: err.message ?? "Internal server error" });
+  }
+});
+
+// ── GET /api/airtable/stats/:baseId ─────────────────────────────────────────
+// Returns record counts per Airtable table from sync map
+router.get("/airtable/stats/:baseId", ...guard, async (req, res) => {
+  try {
+    const orgId = getOrgId(req);
+    if (!orgId) return res.status(400).json({ error: "Organisation not resolved" });
+
+    const rows = await staticDb
+      .select({
+        table: airtableSyncMap.airtableTable,
+        count: sql<number>`cast(count(*) as int)`,
+      })
+      .from(airtableSyncMap)
+      .where(
+        sql`${airtableSyncMap.airtableBaseId} = ${req.params.baseId}
+            AND ${airtableSyncMap.organisationId} = ${orgId}::uuid`
+      )
+      .groupBy(airtableSyncMap.airtableTable);
+
+    const stats: Record<string, number> = {};
+    for (const r of rows) stats[r.table] = r.count;
+    return res.json(stats);
+  } catch (err) {
+    console.error("[Airtable] GET /stats error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
