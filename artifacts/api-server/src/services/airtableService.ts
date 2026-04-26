@@ -1,4 +1,4 @@
-import { db } from "@workspace/db";
+import { db, staticDb } from "@workspace/db";
 import {
   platformSettings, users, contacts, accounts, account_contacts,
   contracts, contractProducts, airtableSyncMap, transactions,
@@ -22,7 +22,7 @@ interface AirtableBase {
 // ── Airtable API helpers ──────────────────────────────────────────────────────
 async function getToken(organisationId: string): Promise<string> {
   const key = `airtable.token.${organisationId}`;
-  const rows = await db.select().from(platformSettings)
+  const rows = await staticDb.select().from(platformSettings)
     .where(eq(platformSettings.key, key)).limit(1);
   const enc = rows[0]?.value ?? null;
   const token = decryptField(enc);
@@ -60,7 +60,7 @@ async function fetchAllRecords(token: string, baseId: string, table: string): Pr
   let offset: string | undefined;
   do {
     const qs = offset ? `?offset=${offset}` : "";
-    const data = await fetchAirtable(token, `/v0/${baseId}/${encodeURIComponent(table)}${qs}`);
+    const data = await fetchAirtable(token, `/${baseId}/${encodeURIComponent(table)}${qs}`);
     records.push(...(data.records ?? []));
     offset = data.offset;
   } while (offset);
@@ -71,7 +71,7 @@ async function fetchAllRecords(token: string, baseId: string, table: string): Pr
 async function findCrmId(
   airtableBaseId: string, airtableTable: string, airtableRecordId: string,
 ): Promise<string | null> {
-  const rows = await db.select({ crmId: airtableSyncMap.crmId })
+  const rows = await staticDb.select({ crmId: airtableSyncMap.crmId })
     .from(airtableSyncMap)
     .where(and(
       eq(airtableSyncMap.airtableBaseId, airtableBaseId),
@@ -85,7 +85,7 @@ async function findCrmId(
 async function findAirtableId(
   airtableBaseId: string, airtableTable: string, crmId: string,
 ): Promise<string | null> {
-  const rows = await db.select({ recId: airtableSyncMap.airtableRecordId })
+  const rows = await staticDb.select({ recId: airtableSyncMap.airtableRecordId })
     .from(airtableSyncMap)
     .where(and(
       eq(airtableSyncMap.airtableBaseId, airtableBaseId),
@@ -99,7 +99,7 @@ async function upsertSyncMap(entry: {
   airtableBaseId: string; airtableTable: string; airtableRecordId: string;
   crmTable: string; crmId: string; organisationId?: string;
 }) {
-  await db.insert(airtableSyncMap).values({
+  await staticDb.insert(airtableSyncMap).values({
     ...entry,
     syncDirection: "inbound",
     lastSyncedAt: new Date(),
@@ -112,7 +112,7 @@ async function upsertSyncMap(entry: {
 // ── Get org & default owner ───────────────────────────────────────────────────
 async function getDefaultOwner(organisationId: string): Promise<string> {
   const rows = await db.execute(sql`
-    SELECT id FROM users
+    SELECT id FROM public.users
     WHERE organisation_id = ${organisationId}
       AND role IN ('super_admin', 'admin')
       AND status = 'active'
@@ -135,15 +135,15 @@ async function syncStaff(
     const email: string | undefined = f["Email"]?.trim().toLowerCase();
     if (!email) { skipped++; continue; }
 
-    // Find existing user by email in this org
-    const existing = await db.select({ id: users.id })
+    // Find existing user by email in this org (public schema — platform table)
+    const existing = await staticDb.select({ id: users.id })
       .from(users)
       .where(and(eq(users.email, email), eq(users.organisationId, organisationId)))
       .limit(1);
 
     if (existing.length > 0) {
       // Update name/phone if changed
-      await db.update(users).set({
+      await staticDb.update(users).set({
         firstName:  f["First Name"] ?? undefined,
         lastName:   f["Last Name"] ?? undefined,
         phone:      f["Contact No"] ?? undefined,
@@ -682,7 +682,7 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
 // ── Sync all active bases for an organisation ─────────────────────────────────
 export async function syncAllBases(organisationId: string): Promise<SyncResult[]> {
   const basesKey = `airtable.bases.${organisationId}`;
-  const rows = await db.select().from(platformSettings)
+  const rows = await staticDb.select().from(platformSettings)
     .where(eq(platformSettings.key, basesKey)).limit(1);
   const bases: AirtableBase[] = JSON.parse(rows[0]?.value ?? "[]");
   const activeBases = bases.filter(b => b.isActive);
@@ -693,7 +693,7 @@ export async function syncAllBases(organisationId: string): Promise<SyncResult[]
     results.push(result);
 
     // Refresh from DB to avoid stale overwrite
-    const fresh = await db.select().from(platformSettings)
+    const fresh = await staticDb.select().from(platformSettings)
       .where(eq(platformSettings.key, basesKey)).limit(1);
     const all: AirtableBase[] = JSON.parse(fresh[0]?.value ?? "[]");
     const idx = all.findIndex(b => b.id === base.id);
@@ -703,7 +703,7 @@ export async function syncAllBases(organisationId: string): Promise<SyncResult[]
       all[idx].lastSyncMessage = result.success
         ? `Synced: ${JSON.stringify(result.details)}`
         : result.error ?? "Unknown error";
-      await db.insert(platformSettings)
+      await staticDb.insert(platformSettings)
         .values({ key: basesKey, value: JSON.stringify(all), updatedAt: new Date() })
         .onConflictDoUpdate({ target: platformSettings.key, set: { value: JSON.stringify(all), updatedAt: new Date() } });
     }
