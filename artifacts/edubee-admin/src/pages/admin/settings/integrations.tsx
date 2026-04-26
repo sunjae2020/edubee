@@ -97,11 +97,11 @@ interface AirtableBase {
 const DIRECTION_LABELS: Record<string, string> = {
   inbound: "Airtable → CRM",
   outbound: "CRM → Airtable",
-  both: "양방향",
+  both: "Bidirectional",
 };
 const SCHEDULE_LABELS: Record<string, string> = {
-  manual: "수동만",
-  every6h: "6시간마다 (일 4회)",
+  manual: "Manual only",
+  every6h: "Every 6 hours (4x daily)",
 };
 
 // ── Airtable Base Card ────────────────────────────────────────────────────────
@@ -128,21 +128,21 @@ function AirtableBaseCard({
           <button
             onClick={() => onSync(base.id)}
             disabled={syncing}
-            title="수동 동기화"
+            title="Manual Sync"
             className="p-1.5 rounded-lg hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#1C1917] transition disabled:opacity-40"
           >
             <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
           </button>
           <button
             onClick={() => onEdit(base)}
-            title="편집"
+            title="Edit"
             className="p-1.5 rounded-lg hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#1C1917] transition"
           >
             <Edit2 size={14} />
           </button>
           <button
             onClick={() => onDelete(base.id)}
-            title="삭제"
+            title="Delete"
             className="p-1.5 rounded-lg hover:bg-red-50 text-[#A8A29E] hover:text-red-500 transition"
           >
             <Trash2 size={14} />
@@ -168,7 +168,7 @@ function AirtableBaseCard({
               <XCircle size={11} className="text-red-500" />
             )}
             <span className="text-[#A8A29E]">
-              마지막 동기화: {new Date(base.lastSyncedAt).toLocaleString("ko-KR")}
+              Last synced: {new Date(base.lastSyncedAt).toLocaleString("en-AU")}
             </span>
           </div>
           {base.lastSyncMessage && base.lastSyncStatus === "success" && (() => {
@@ -176,13 +176,13 @@ function AirtableBaseCard({
               const raw = base.lastSyncMessage.replace(/^Synced:\s*/, "");
               const d = JSON.parse(raw);
               const items = [
-                d.staff          && `직원 ${d.staff.synced ?? 0}건`,
-                d.student        && `학생 ${(d.student.created ?? 0) + (d.student.synced ?? 0)}건`,
-                d.partner        && `파트너 ${(d.partner.created ?? 0) + (d.partner.synced ?? 0)}건`,
-                d.contract       && `계약 ${(d.contract.created ?? 0) + (d.contract.synced ?? 0)}건`,
-                d.contractProducts && `상품 ${(d.contractProducts.created ?? 0) + (d.contractProducts.synced ?? 0)}건`,
-                d.payments       && `결제 ${(d.payments.created ?? 0) + (d.payments.synced ?? 0)}건`,
-                d.contractOut    && `계약→AT ${(d.contractOut.pushed ?? 0) + (d.contractOut.created ?? 0)}건`,
+                d.staff          && `Staff ${d.staff.synced ?? 0}`,
+                d.student        && `Students ${(d.student.created ?? 0) + (d.student.synced ?? 0)}`,
+                d.partner        && `Partners ${(d.partner.created ?? 0) + (d.partner.synced ?? 0)}`,
+                d.contract       && `Contracts ${(d.contract.created ?? 0) + (d.contract.synced ?? 0)}`,
+                d.contractProducts && `Products ${(d.contractProducts.created ?? 0) + (d.contractProducts.synced ?? 0)}`,
+                d.payments       && `Payments ${(d.payments.created ?? 0) + (d.payments.synced ?? 0)}`,
+                d.contractOut    && `Contract→AT ${(d.contractOut.pushed ?? 0) + (d.contractOut.created ?? 0)}`,
               ].filter(Boolean);
               if (!items.length) return null;
               return (
@@ -227,17 +227,17 @@ function BaseModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4">
         <h3 className="text-base font-semibold text-[#1C1917]">
-          {initial?.id ? "Base 편집" : "Base 추가"}
+          {initial?.id ? "Edit Base" : "Add Base"}
         </h3>
 
         <div className="space-y-3">
           <div>
-            <label className={label}>이름 (별칭)</label>
+            <label className={label}>Name (alias)</label>
             <input
               className={inp}
               value={form.name ?? ""}
               onChange={e => set("name", e.target.value)}
-              placeholder="예: TS Students & Institute"
+              placeholder="e.g. TS Students & Institute"
             />
           </div>
           <div>
@@ -248,29 +248,29 @@ function BaseModal({
               onChange={e => set("baseId", e.target.value)}
               placeholder="appXXXXXXXXXXXXXX"
             />
-            <p className="text-xs text-[#A8A29E] mt-1">Airtable URL에서 확인: airtable.com/<strong>appXXX</strong>/...</p>
+            <p className="text-xs text-[#A8A29E] mt-1">Find in your Airtable URL: airtable.com/<strong>appXXX</strong>/...</p>
           </div>
           <div>
-            <label className={label}>동기화 방향</label>
+            <label className={label}>Sync Direction</label>
             <select
               className={inp}
               value={form.syncDirection}
               onChange={e => set("syncDirection", e.target.value as AirtableBase["syncDirection"])}
             >
-              <option value="inbound">Airtable → CRM (수신)</option>
-              <option value="outbound">CRM → Airtable (송신)</option>
-              <option value="both">양방향</option>
+              <option value="inbound">Airtable → CRM (Inbound)</option>
+              <option value="outbound">CRM → Airtable (Outbound)</option>
+              <option value="both">Bidirectional</option>
             </select>
           </div>
           <div>
-            <label className={label}>자동 동기화 주기</label>
+            <label className={label}>Auto Sync Schedule</label>
             <select
               className={inp}
               value={form.syncSchedule}
               onChange={e => set("syncSchedule", e.target.value as AirtableBase["syncSchedule"])}
             >
-              <option value="manual">수동만</option>
-              <option value="every6h">6시간마다 (일 4회)</option>
+              <option value="manual">Manual only</option>
+              <option value="every6h">Every 6 hours (4x daily)</option>
             </select>
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
@@ -280,7 +280,7 @@ function BaseModal({
               onChange={e => set("isActive", e.target.checked)}
               className="w-4 h-4 accent-orange-500"
             />
-            <span className="text-sm text-[#1C1917]">활성화</span>
+            <span className="text-sm text-[#1C1917]">Active</span>
           </label>
         </div>
 
@@ -289,7 +289,7 @@ function BaseModal({
             onClick={onClose}
             className="px-4 py-2 rounded-lg text-sm font-medium text-[#57534E] hover:bg-[#F4F3F1] transition"
           >
-            취소
+            Cancel
           </button>
           <button
             onClick={() => onSave(form)}
@@ -298,7 +298,7 @@ function BaseModal({
             style={{ background: "var(--e-orange)" }}
           >
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            저장
+            Save
           </button>
         </div>
       </div>
@@ -327,19 +327,19 @@ function AirtableSection() {
   const saveToken = useMutation({
     mutationFn: (token: string) => axios.put(`${BASE}/api/airtable/token`, { token }).then(r => r.data),
     onSuccess: () => {
-      toast({ title: "Airtable 토큰 저장 완료" });
+      toast({ title: "Airtable token saved" });
       setTokenInput("");
       qc.invalidateQueries({ queryKey: ["airtable-config"] });
     },
     onError: (e: any) => {
-      toast({ title: "저장 실패", description: e?.response?.data?.error ?? "오류가 발생했습니다", variant: "destructive" });
+      toast({ title: "Save failed", description: e?.response?.data?.error ?? "An error occurred", variant: "destructive" });
     },
   });
 
   const removeToken = useMutation({
     mutationFn: () => axios.delete(`${BASE}/api/airtable/token`).then(r => r.data),
     onSuccess: () => {
-      toast({ title: "Airtable 연동 해제" });
+      toast({ title: "Airtable disconnected" });
       qc.invalidateQueries({ queryKey: ["airtable-config"] });
     },
   });
@@ -348,12 +348,12 @@ function AirtableSection() {
     mutationFn: (payload: Partial<AirtableBase>) =>
       axios.post(`${BASE}/api/airtable/bases`, payload).then(r => r.data),
     onSuccess: () => {
-      toast({ title: "Base 추가 완료" });
+      toast({ title: "Base added" });
       setModalBase(false);
       qc.invalidateQueries({ queryKey: ["airtable-config"] });
     },
     onError: (e: any) => {
-      toast({ title: "추가 실패", description: e?.response?.data?.error, variant: "destructive" });
+      toast({ title: "Failed to add", description: e?.response?.data?.error, variant: "destructive" });
     },
   });
 
@@ -361,19 +361,19 @@ function AirtableSection() {
     mutationFn: ({ id, ...payload }: Partial<AirtableBase> & { id: string }) =>
       axios.put(`${BASE}/api/airtable/bases/${id}`, payload).then(r => r.data),
     onSuccess: () => {
-      toast({ title: "Base 수정 완료" });
+      toast({ title: "Base updated" });
       setModalBase(false);
       qc.invalidateQueries({ queryKey: ["airtable-config"] });
     },
     onError: (e: any) => {
-      toast({ title: "수정 실패", description: e?.response?.data?.error, variant: "destructive" });
+      toast({ title: "Failed to update", description: e?.response?.data?.error, variant: "destructive" });
     },
   });
 
   const deleteBase = useMutation({
     mutationFn: (id: string) => axios.delete(`${BASE}/api/airtable/bases/${id}`).then(r => r.data),
     onSuccess: () => {
-      toast({ title: "Base 삭제 완료" });
+      toast({ title: "Base deleted" });
       qc.invalidateQueries({ queryKey: ["airtable-config"] });
     },
   });
@@ -382,10 +382,10 @@ function AirtableSection() {
     setSyncingId(id);
     try {
       await axios.post(`${BASE}/api/airtable/sync/${id}`);
-      toast({ title: "동기화 완료" });
+      toast({ title: "Sync complete" });
       qc.invalidateQueries({ queryKey: ["airtable-config"] });
     } catch (e: any) {
-      toast({ title: "동기화 실패", description: e?.response?.data?.error, variant: "destructive" });
+      toast({ title: "Sync failed", description: e?.response?.data?.error, variant: "destructive" });
     } finally {
       setSyncingId(null);
     }
@@ -415,7 +415,7 @@ function AirtableSection() {
         iconBg="bg-[#F0FDF4]"
         iconColor="text-green-600"
         name="Airtable"
-        description="Airtable Base와 CRM 데이터를 양방향으로 동기화합니다"
+        description="Sync data bidirectionally between Airtable Base and your CRM"
         badge={<StatusBadge connected={data?.hasToken} />}
         defaultOpen={false}
       >
@@ -439,7 +439,7 @@ function AirtableSection() {
                     className="h-9 px-3 rounded-lg border border-red-200 text-red-500 text-sm hover:bg-red-50 transition flex items-center gap-1.5"
                   >
                     {removeToken.isPending ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-                    해제
+                    Disconnect
                   </button>
                 </div>
               ) : (
@@ -468,11 +468,11 @@ function AirtableSection() {
                       style={{ background: "var(--e-orange)" }}
                     >
                       {saveToken.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-                      저장
+                      Save
                     </button>
                   </div>
                   <p className="text-xs text-[#A8A29E]">
-                    Airtable → Builder Hub → Personal access tokens 에서 발급
+                    Generate at Airtable → Builder Hub → Personal access tokens
                   </p>
                 </div>
               )}
@@ -482,23 +482,23 @@ function AirtableSection() {
             {data?.hasToken && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className={label}>연결된 Bases ({data.bases.length})</p>
+                  <p className={label}>Connected Bases ({data.bases.length})</p>
                   <button
                     onClick={() => setModalBase({})}
                     className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#E8E6E2] hover:bg-[#F4F3F1] text-[#57534E] transition"
                   >
-                    <Plus size={12} /> Base 추가
+                    <Plus size={12} /> Add Base
                   </button>
                 </div>
 
                 {data.bases.length === 0 ? (
                   <div className="border border-dashed border-[#E8E6E2] rounded-xl p-6 text-center text-sm text-[#A8A29E]">
-                    아직 연결된 Base가 없습니다.<br />
+                    No Bases connected yet.<br />
                     <button
                       onClick={() => setModalBase({})}
                       className="mt-2 text-orange-500 font-semibold hover:underline"
                     >
-                      + Base 추가
+                      + Add Base
                     </button>
                   </div>
                 ) : (
