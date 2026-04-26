@@ -33,11 +33,18 @@ async function getToken(organisationId: string): Promise<string> {
 }
 
 async function fetchAirtable(token: string, path: string): Promise<any> {
-  const res = await fetch(`https://api.airtable.com/v0${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error(`Airtable API ${path} → ${res.status}: ${await res.text()}`);
-  return res.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000); // 30s timeout
+  try {
+    const res = await fetch(`https://api.airtable.com/v0${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`Airtable API ${path} → ${res.status}: ${await res.text()}`);
+    return res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function writeAirtable(
@@ -47,11 +54,19 @@ async function writeAirtable(
   const url = recordId
     ? `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${recordId}`
     : `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}`;
-  const res = await fetch(url, {
-    method,
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ fields }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ fields }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
   if (!res.ok) throw new Error(`Airtable write ${table} → ${res.status}: ${await res.text()}`);
   const data: any = await res.json();
   return data.id as string;
@@ -464,6 +479,38 @@ async function syncContractProducts(
     }
   }
   return { synced, created, failed };
+}
+
+// ── Post-sync: backfill agentName / packageName on contracts from contract_products ──
+async function backfillContractDenormFields(organisationId: string): Promise<{ updated: number }> {
+  const rows = await db.execute(sql`
+    SELECT DISTINCT ON (cp.contract_id)
+      cp.contract_id,
+      cp.name          AS package_name,
+      a.name           AS agent_name
+    FROM contract_products cp
+    LEFT JOIN accounts a ON a.id = cp.provider_account_id
+    WHERE cp.organisation_id = ${organisationId}
+      AND (cp.name IS NOT NULL OR a.name IS NOT NULL)
+    ORDER BY cp.contract_id, cp.created_at
+  `);
+
+  let updated = 0;
+  for (const row of rows.rows as any[]) {
+    const { contract_id, package_name, agent_name } = row;
+    if (!contract_id) continue;
+    await db.execute(sql`
+      UPDATE contracts
+      SET package_name  = COALESCE(${package_name}, package_name),
+          agent_name    = COALESCE(${agent_name}, agent_name),
+          updated_at    = NOW()
+      WHERE id = ${contract_id}::uuid
+        AND organisation_id = ${organisationId}
+        AND (package_name IS NULL OR agent_name IS NULL)
+    `);
+    updated++;
+  }
+  return { updated };
 }
 
 // ── Sync: Payments → transactions ────────────────────────────────────────────
@@ -1073,7 +1120,7 @@ export interface SyncResult {
   success: boolean;
   error?: string;
   elapsed: number;
-  details: Record<string, { synced?: number; created?: number; skipped?: number; pushed?: number }>;
+  details: Record<string, { synced?: number; created?: number; skipped?: number; pushed?: number; updated?: number }>;
 }
 
 export async function syncAirtableBase(base: AirtableBase, organisationId: string): Promise<SyncResult> {
@@ -1124,6 +1171,10 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
 
         try { details.contractProducts = await syncContractProducts(token, base.baseId, organisationId); }
         catch (e: any) { if (!e.message?.includes("403")) throw e; }
+
+        // Backfill denormalized agentName / packageName on contracts
+        try { details.contractBackfill = await backfillContractDenormFields(organisationId); }
+        catch (e: any) { console.error("[Airtable] backfillContractDenormFields failed:", e.message); }
 
         try { details.payments = await syncPayments(token, base.baseId, organisationId); }
         catch (e: any) { if (!e.message?.includes("403")) throw e; }
