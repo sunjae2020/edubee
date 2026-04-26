@@ -5,7 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Mail, Zap, MessageSquare, Chrome, Building2,
   CheckCircle2, XCircle, ChevronDown, ChevronUp,
-  Loader2, Save, Cable,
+  Loader2, Save, Cable, Database, Plus, Trash2,
+  Edit2, RefreshCw, Eye, EyeOff,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -77,6 +78,419 @@ function IntegrationCard({
         </div>
       )}
     </div>
+  );
+}
+
+// ── Airtable types ────────────────────────────────────────────────────────────
+interface AirtableBase {
+  id: string;
+  name: string;
+  baseId: string;
+  syncDirection: "inbound" | "outbound" | "both";
+  syncSchedule: "manual" | "every6h";
+  isActive: boolean;
+  lastSyncedAt: string | null;
+  lastSyncStatus: "success" | "error" | null;
+  lastSyncMessage: string | null;
+}
+
+const DIRECTION_LABELS: Record<string, string> = {
+  inbound: "Airtable → CRM",
+  outbound: "CRM → Airtable",
+  both: "양방향",
+};
+const SCHEDULE_LABELS: Record<string, string> = {
+  manual: "수동만",
+  every6h: "6시간마다 (일 4회)",
+};
+
+// ── Airtable Base Card ────────────────────────────────────────────────────────
+function AirtableBaseCard({
+  base, onEdit, onDelete, onSync, syncing,
+}: {
+  base: AirtableBase;
+  onEdit: (b: AirtableBase) => void;
+  onDelete: (id: string) => void;
+  onSync: (id: string) => void;
+  syncing: boolean;
+}) {
+  return (
+    <div className="border border-[#E8E6E2] rounded-xl p-4 bg-white space-y-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${base.isActive ? "bg-green-500" : "bg-[#D4D0CB]"}`} />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[#1C1917] truncate">{base.name}</p>
+            <p className="text-xs text-[#A8A29E] font-mono truncate">{base.baseId}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => onSync(base.id)}
+            disabled={syncing}
+            title="수동 동기화"
+            className="p-1.5 rounded-lg hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#1C1917] transition disabled:opacity-40"
+          >
+            <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+          </button>
+          <button
+            onClick={() => onEdit(base)}
+            title="편집"
+            className="p-1.5 rounded-lg hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#1C1917] transition"
+          >
+            <Edit2 size={14} />
+          </button>
+          <button
+            onClick={() => onDelete(base.id)}
+            title="삭제"
+            className="p-1.5 rounded-lg hover:bg-red-50 text-[#A8A29E] hover:text-red-500 transition"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 text-xs">
+        <span className="px-2 py-0.5 rounded-full bg-[#F4F3F1] text-[#57534E]">
+          {DIRECTION_LABELS[base.syncDirection]}
+        </span>
+        <span className="px-2 py-0.5 rounded-full bg-[#F4F3F1] text-[#57534E]">
+          {SCHEDULE_LABELS[base.syncSchedule]}
+        </span>
+      </div>
+
+      {base.lastSyncedAt && (
+        <div className="flex items-center gap-1.5 text-xs">
+          {base.lastSyncStatus === "success" ? (
+            <CheckCircle2 size={11} className="text-green-500" />
+          ) : (
+            <XCircle size={11} className="text-red-500" />
+          )}
+          <span className="text-[#A8A29E]">
+            마지막 동기화: {new Date(base.lastSyncedAt).toLocaleString("ko-KR")}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Airtable Base Modal ───────────────────────────────────────────────────────
+function BaseModal({
+  initial, onSave, onClose, saving,
+}: {
+  initial: Partial<AirtableBase> | null;
+  onSave: (data: Partial<AirtableBase>) => void;
+  onClose: () => void;
+  saving: boolean;
+}) {
+  const [form, setForm] = useState<Partial<AirtableBase>>({
+    name: initial?.name ?? "",
+    baseId: initial?.baseId ?? "",
+    syncDirection: initial?.syncDirection ?? "both",
+    syncSchedule: initial?.syncSchedule ?? "every6h",
+    isActive: initial?.isActive ?? true,
+  });
+  const set = (k: keyof AirtableBase, v: any) => setForm(f => ({ ...f, [k]: v }));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4">
+        <h3 className="text-base font-semibold text-[#1C1917]">
+          {initial?.id ? "Base 편집" : "Base 추가"}
+        </h3>
+
+        <div className="space-y-3">
+          <div>
+            <label className={label}>이름 (별칭)</label>
+            <input
+              className={inp}
+              value={form.name ?? ""}
+              onChange={e => set("name", e.target.value)}
+              placeholder="예: TS Students & Institute"
+            />
+          </div>
+          <div>
+            <label className={label}>Base ID</label>
+            <input
+              className={inp}
+              value={form.baseId ?? ""}
+              onChange={e => set("baseId", e.target.value)}
+              placeholder="appXXXXXXXXXXXXXX"
+            />
+            <p className="text-xs text-[#A8A29E] mt-1">Airtable URL에서 확인: airtable.com/<strong>appXXX</strong>/...</p>
+          </div>
+          <div>
+            <label className={label}>동기화 방향</label>
+            <select
+              className={inp}
+              value={form.syncDirection}
+              onChange={e => set("syncDirection", e.target.value as AirtableBase["syncDirection"])}
+            >
+              <option value="inbound">Airtable → CRM (수신)</option>
+              <option value="outbound">CRM → Airtable (송신)</option>
+              <option value="both">양방향</option>
+            </select>
+          </div>
+          <div>
+            <label className={label}>자동 동기화 주기</label>
+            <select
+              className={inp}
+              value={form.syncSchedule}
+              onChange={e => set("syncSchedule", e.target.value as AirtableBase["syncSchedule"])}
+            >
+              <option value="manual">수동만</option>
+              <option value="every6h">6시간마다 (일 4회)</option>
+            </select>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.isActive ?? true}
+              onChange={e => set("isActive", e.target.checked)}
+              className="w-4 h-4 accent-orange-500"
+            />
+            <span className="text-sm text-[#1C1917]">활성화</span>
+          </label>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-[#57534E] hover:bg-[#F4F3F1] transition"
+          >
+            취소
+          </button>
+          <button
+            onClick={() => onSave(form)}
+            disabled={saving || !form.name || !form.baseId}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition disabled:opacity-60"
+            style={{ background: "var(--e-orange)" }}
+          >
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            저장
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Airtable Section ──────────────────────────────────────────────────────────
+function AirtableSection() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [showToken, setShowToken] = useState(false);
+  const [tokenInput, setTokenInput] = useState("");
+  const [modalBase, setModalBase] = useState<Partial<AirtableBase> | null | false>(false);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+
+  const { data, isLoading } = useQuery<{
+    hasToken: boolean;
+    tokenMasked: string | null;
+    bases: AirtableBase[];
+  }>({
+    queryKey: ["airtable-config"],
+    queryFn: () => axios.get(`${BASE}/api/airtable/config`).then(r => r.data),
+  });
+
+  const saveToken = useMutation({
+    mutationFn: (token: string) => axios.put(`${BASE}/api/airtable/token`, { token }).then(r => r.data),
+    onSuccess: () => {
+      toast({ title: "Airtable 토큰 저장 완료" });
+      setTokenInput("");
+      qc.invalidateQueries({ queryKey: ["airtable-config"] });
+    },
+    onError: (e: any) => {
+      toast({ title: "저장 실패", description: e?.response?.data?.error ?? "오류가 발생했습니다", variant: "destructive" });
+    },
+  });
+
+  const removeToken = useMutation({
+    mutationFn: () => axios.delete(`${BASE}/api/airtable/token`).then(r => r.data),
+    onSuccess: () => {
+      toast({ title: "Airtable 연동 해제" });
+      qc.invalidateQueries({ queryKey: ["airtable-config"] });
+    },
+  });
+
+  const addBase = useMutation({
+    mutationFn: (payload: Partial<AirtableBase>) =>
+      axios.post(`${BASE}/api/airtable/bases`, payload).then(r => r.data),
+    onSuccess: () => {
+      toast({ title: "Base 추가 완료" });
+      setModalBase(false);
+      qc.invalidateQueries({ queryKey: ["airtable-config"] });
+    },
+    onError: (e: any) => {
+      toast({ title: "추가 실패", description: e?.response?.data?.error, variant: "destructive" });
+    },
+  });
+
+  const editBase = useMutation({
+    mutationFn: ({ id, ...payload }: Partial<AirtableBase> & { id: string }) =>
+      axios.put(`${BASE}/api/airtable/bases/${id}`, payload).then(r => r.data),
+    onSuccess: () => {
+      toast({ title: "Base 수정 완료" });
+      setModalBase(false);
+      qc.invalidateQueries({ queryKey: ["airtable-config"] });
+    },
+    onError: (e: any) => {
+      toast({ title: "수정 실패", description: e?.response?.data?.error, variant: "destructive" });
+    },
+  });
+
+  const deleteBase = useMutation({
+    mutationFn: (id: string) => axios.delete(`${BASE}/api/airtable/bases/${id}`).then(r => r.data),
+    onSuccess: () => {
+      toast({ title: "Base 삭제 완료" });
+      qc.invalidateQueries({ queryKey: ["airtable-config"] });
+    },
+  });
+
+  const syncBase = async (id: string) => {
+    setSyncingId(id);
+    try {
+      await axios.post(`${BASE}/api/airtable/sync/${id}`);
+      toast({ title: "동기화 완료" });
+      qc.invalidateQueries({ queryKey: ["airtable-config"] });
+    } catch (e: any) {
+      toast({ title: "동기화 실패", description: e?.response?.data?.error, variant: "destructive" });
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
+  const handleSaveBase = (form: Partial<AirtableBase>) => {
+    if (modalBase && (modalBase as AirtableBase).id) {
+      editBase.mutate({ ...(modalBase as AirtableBase), ...form });
+    } else {
+      addBase.mutate(form);
+    }
+  };
+
+  return (
+    <>
+      {modalBase !== false && (
+        <BaseModal
+          initial={modalBase}
+          onSave={handleSaveBase}
+          onClose={() => setModalBase(false)}
+          saving={addBase.isPending || editBase.isPending}
+        />
+      )}
+
+      <IntegrationCard
+        icon={Database}
+        iconBg="bg-[#F0FDF4]"
+        iconColor="text-green-600"
+        name="Airtable"
+        description="Airtable Base와 CRM 데이터를 양방향으로 동기화합니다"
+        badge={<StatusBadge connected={data?.hasToken} />}
+        defaultOpen={false}
+      >
+        {isLoading ? (
+          <div className="flex justify-center py-4">
+            <Loader2 size={20} className="animate-spin text-[#A8A29E]" />
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {/* Token section */}
+            <div className="space-y-3">
+              <p className={label}>Personal Access Token</p>
+              {data?.hasToken ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-9 px-3 flex items-center border border-[#E8E6E2] rounded-lg bg-[#F4F3F1] text-sm text-[#57534E] font-mono">
+                    {data.tokenMasked}
+                  </div>
+                  <button
+                    onClick={() => removeToken.mutate()}
+                    disabled={removeToken.isPending}
+                    className="h-9 px-3 rounded-lg border border-red-200 text-red-500 text-sm hover:bg-red-50 transition flex items-center gap-1.5"
+                  >
+                    {removeToken.isPending ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                    해제
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        className={inp}
+                        type={showToken ? "text" : "password"}
+                        value={tokenInput}
+                        onChange={e => setTokenInput(e.target.value)}
+                        placeholder="pat••••••••••••••••••••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowToken(s => !s)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-[#57534E]"
+                      >
+                        {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => saveToken.mutate(tokenInput)}
+                      disabled={saveToken.isPending || !tokenInput.trim()}
+                      className="h-9 px-4 rounded-lg text-sm font-semibold text-white flex items-center gap-1.5 transition disabled:opacity-60"
+                      style={{ background: "var(--e-orange)" }}
+                    >
+                      {saveToken.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                      저장
+                    </button>
+                  </div>
+                  <p className="text-xs text-[#A8A29E]">
+                    Airtable → Builder Hub → Personal access tokens 에서 발급
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Bases section — only show when token is configured */}
+            {data?.hasToken && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className={label}>연결된 Bases ({data.bases.length})</p>
+                  <button
+                    onClick={() => setModalBase({})}
+                    className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#E8E6E2] hover:bg-[#F4F3F1] text-[#57534E] transition"
+                  >
+                    <Plus size={12} /> Base 추가
+                  </button>
+                </div>
+
+                {data.bases.length === 0 ? (
+                  <div className="border border-dashed border-[#E8E6E2] rounded-xl p-6 text-center text-sm text-[#A8A29E]">
+                    아직 연결된 Base가 없습니다.<br />
+                    <button
+                      onClick={() => setModalBase({})}
+                      className="mt-2 text-orange-500 font-semibold hover:underline"
+                    >
+                      + Base 추가
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {data.bases.map(b => (
+                      <AirtableBaseCard
+                        key={b.id}
+                        base={b}
+                        onEdit={base => setModalBase(base)}
+                        onDelete={id => deleteBase.mutate(id)}
+                        onSync={syncBase}
+                        syncing={syncingId === b.id}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </IntegrationCard>
+    </>
   );
 }
 
@@ -237,6 +651,12 @@ export default function TenantIntegrations() {
             </button>
           </div>
         </IntegrationCard>
+      </section>
+
+      {/* ── Data Sync ──────────────────────────────────────────────────────── */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-bold text-[#A8A29E] uppercase tracking-widest">Data Sync</h2>
+        <AirtableSection />
       </section>
 
       {/* ── Coming Soon ─────────────────────────────────────────────────────── */}
