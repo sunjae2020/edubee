@@ -428,14 +428,15 @@ async function syncContractProducts(
         providerAccountId = await findCrmId(baseId, "Partner", providerRecIds[0]);
       }
 
-      const productName: string = (f["Course(Product) Name"] ?? f["CP Name"] ?? "").trim();
-      const unitPrice   = f["Standard Fee"] ?? null;
-      const totalPrice  = f["Payable"] ?? null;
-      const commAmount  = f["Comm Amount"] ?? null;
-      const gstAmount   = f["GST Amount"] ?? null;
-      const grossAmount = f["Total Amount"] ?? null;
-      const arDueDate   = f["Due Date(Service Start)"] ?? null;
-      const apDueDate   = f["Payment Date"] ?? null;
+      const strField = (v: any): string | null => (typeof v === "string" ? v.trim() : null);
+      const productName: string = strField(f["Course(Product) Name"]) ?? strField(f["CP Name"]) ?? "";
+      const unitPrice   = typeof f["Standard Fee"] === "number" ? f["Standard Fee"] : (f["Standard Fee"] ?? null);
+      const totalPrice  = typeof f["Payable"] === "number" ? f["Payable"] : (f["Payable"] ?? null);
+      const commAmount  = typeof f["Comm Amount"] === "number" ? f["Comm Amount"] : (f["Comm Amount"] ?? null);
+      const gstAmount   = typeof f["GST Amount"] === "number" ? f["GST Amount"] : (f["GST Amount"] ?? null);
+      const grossAmount = typeof f["Total Amount"] === "number" ? f["Total Amount"] : (f["Total Amount"] ?? null);
+      const arDueDate   = strField(f["Due Date(Service Start)"]);
+      const apDueDate   = strField(f["Payment Date"]);
       const crmStatus   = cpStatusMap[f["Status"]] ?? "pending";
       const existingCrmId = await findCrmId(baseId, "Contract Products", rec.id);
 
