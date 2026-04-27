@@ -42,6 +42,13 @@
 - **Vercel**: 각 프론트엔드 앱 개별 배포, `vercel.json`으로 `/api/*` → Railway 프록시
 - **GitHub**: `git push origin master` → Vercel 자동 배포 트리거
 
+## 배포 규칙 (필수)
+- **모든 코드 수정은 로컬에서 먼저 확인 후, 사용자의 명시적 배포 요청 시에만 `git push`**
+- UI 변경만: `localhost:3001` 확인으로 충분
+- API 변경 포함: `localhost:3000`(api-server)도 실행 후 확인 필요
+- 로컬 서버가 꺼져 있으면 서버를 먼저 실행하도록 안내 (자동 `git push` 금지)
+- 주의: 로컬과 프로덕션이 **동일한 Supabase DB** 공유 → DB 변경은 즉시 프로덕션에 영향
+
 ## 금지 사항
 - 인증/권한 관련 코드 임의 수정
 - 스키마를 읽지 않고 필드명 추측

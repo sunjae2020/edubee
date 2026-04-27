@@ -199,14 +199,18 @@ async function syncStudent(
 
       const existingCrmId = await findCrmId(baseId, "Student", rec.id);
 
+      let needsInsert = false;
       if (existingCrmId) {
-        await db.update(accounts).set({
+        const updated = await db.update(accounts).set({
           name: `${firstName} ${lastName}`.trim(),
           email: email || undefined,
           modifiedOn: new Date(),
-        }).where(eq(accounts.id, existingCrmId));
-        synced++;
+        }).where(eq(accounts.id, existingCrmId)).returning({ id: accounts.id });
+        if (updated.length > 0) { synced++; } else { needsInsert = true; }
       } else {
+        needsInsert = true;
+      }
+      if (needsInsert) {
         const [contact] = await db.insert(contacts).values({
           firstName, lastName,
           fullName:    `${firstName} ${lastName}`.trim(),
@@ -229,7 +233,6 @@ async function syncStudent(
           organisationId,
         }).returning({ id: accounts.id });
 
-        // Link contact to account — ignore if already exists
         await db.insert(account_contacts).values({
           accountId: account.id,
           contactId: contact.id,
@@ -262,8 +265,9 @@ async function syncPartner(
 
       const existingCrmId = await findCrmId(baseId, "Partner", rec.id);
 
+      let needsInsertPartner = false;
       if (existingCrmId) {
-        await db.update(accounts).set({
+        const updated = await db.update(accounts).set({
           name:       partnerName,
           email:      f["Company Email"] ?? undefined,
           phoneNumber: f["Contact Number"] ?? undefined,
@@ -271,9 +275,12 @@ async function syncPartner(
           address:    f["Address"] ?? undefined,
           country:    f["Country"] ?? undefined,
           modifiedOn: new Date(),
-        }).where(eq(accounts.id, existingCrmId));
-        synced++;
+        }).where(eq(accounts.id, existingCrmId)).returning({ id: accounts.id });
+        if (updated.length > 0) { synced++; } else { needsInsertPartner = true; }
       } else {
+        needsInsertPartner = true;
+      }
+      if (needsInsertPartner) {
         const cpName: string = (f["Contact Person"] ?? "").trim();
         const cpParts = cpName.split(" ");
         const cpFirst = cpParts[0] ?? partnerName;
@@ -307,7 +314,6 @@ async function syncPartner(
           organisationId,
         }).returning({ id: accounts.id });
 
-        // Link contact to account — ignore if already exists
         await db.insert(account_contacts).values({
           accountId: account.id,
           contactId: contact.id,
@@ -361,31 +367,29 @@ async function syncContracts(
       const crmStatus = statusMap[f["Contract Status"]] ?? "draft";
       const existingCrmId = await findCrmId(baseId, "Contract", rec.id);
 
+      const contractValues = {
+        status:          crmStatus,
+        startDate:       f["Contract Start Date"] ?? undefined,
+        endDate:         f["Contract End Date"] ?? undefined,
+        courseStartDate: f["Contract Start Date"] ?? undefined,
+        courseEndDate:   f["Contract End Date"] ?? undefined,
+        studentName:     studentName ?? undefined,
+        accountId:       studentAccountId ?? undefined,
+      };
+      let needsInsertContract = false;
       if (existingCrmId) {
-        await db.update(contracts).set({
-          status:          crmStatus,
-          startDate:       f["Contract Start Date"] ?? undefined,
-          endDate:         f["Contract End Date"] ?? undefined,
-          courseStartDate: f["Contract Start Date"] ?? undefined,
-          courseEndDate:   f["Contract End Date"] ?? undefined,
-          studentName:     studentName ?? undefined,
-          accountId:       studentAccountId ?? undefined,
-          updatedAt:       new Date(),
-        }).where(eq(contracts.id, existingCrmId));
-        synced++;
+        const updated = await db.update(contracts).set({ ...contractValues, updatedAt: new Date() })
+          .where(eq(contracts.id, existingCrmId)).returning({ id: contracts.id });
+        if (updated.length > 0) { synced++; } else { needsInsertContract = true; }
       } else {
+        needsInsertContract = true;
+      }
+      if (needsInsertContract) {
         const [contract] = await db.insert(contracts).values({
-          status:          crmStatus,
-          startDate:       f["Contract Start Date"] ?? undefined,
-          endDate:         f["Contract End Date"] ?? undefined,
-          courseStartDate: f["Contract Start Date"] ?? undefined,
-          courseEndDate:   f["Contract End Date"] ?? undefined,
-          studentName:     studentName ?? undefined,
-          accountId:       studentAccountId ?? undefined,
-          currency:        "AUD",
+          ...contractValues,
+          currency: "AUD",
           organisationId,
         }).returning({ id: contracts.id });
-
         await upsertSyncMap({ airtableBaseId: baseId, airtableTable: "Contract", airtableRecordId: rec.id, crmTable: "contracts", crmId: contract.id, organisationId });
         created++;
       }
@@ -435,41 +439,37 @@ async function syncContractProducts(
       const crmStatus   = cpStatusMap[f["Status"]] ?? "pending";
       const existingCrmId = await findCrmId(baseId, "Contract Products", rec.id);
 
+      const cpValues = {
+        name:             productName || "Unnamed Product",
+        unitPrice:        unitPrice != null ? String(unitPrice) : null,
+        totalPrice:       totalPrice != null ? String(totalPrice) : null,
+        commissionAmount: commAmount != null ? String(commAmount) : null,
+        gstAmount:        gstAmount != null ? String(gstAmount) : null,
+        grossAmount:      grossAmount != null ? String(grossAmount) : null,
+        arDueDate:        arDueDate ?? undefined,
+        apDueDate:        apDueDate ?? undefined,
+        status:           crmStatus,
+        providerAccountId: providerAccountId ?? undefined,
+      };
+      let needsInsertCp = false;
       if (existingCrmId) {
-        await db.update(contractProducts).set({
-          name:             productName || undefined,
-          unitPrice:        unitPrice != null ? String(unitPrice) : undefined,
-          totalPrice:       totalPrice != null ? String(totalPrice) : undefined,
-          commissionAmount: commAmount != null ? String(commAmount) : undefined,
-          gstAmount:        gstAmount != null ? String(gstAmount) : undefined,
-          grossAmount:      grossAmount != null ? String(grossAmount) : undefined,
-          arDueDate:        arDueDate ?? undefined,
-          apDueDate:        apDueDate ?? undefined,
-          status:           crmStatus,
-          providerAccountId: providerAccountId ?? undefined,
-        }).where(eq(contractProducts.id, existingCrmId));
-        synced++;
+        const updated = await db.update(contractProducts).set(cpValues)
+          .where(eq(contractProducts.id, existingCrmId)).returning({ id: contractProducts.id });
+        if (updated.length > 0) { synced++; } else { needsInsertCp = true; }
       } else {
+        needsInsertCp = true;
+      }
+      if (needsInsertCp) {
         const [cp] = await db.insert(contractProducts).values({
+          ...cpValues,
           contractId,
           organisationId,
-          name:             productName || "Unnamed Product",
-          unitPrice:        unitPrice != null ? String(unitPrice) : null,
-          totalPrice:       totalPrice != null ? String(totalPrice) : null,
-          arAmount:         totalPrice != null ? String(totalPrice) : null,
-          apAmount:         commAmount != null ? String(commAmount) : null,
-          commissionAmount: commAmount != null ? String(commAmount) : null,
-          gstAmount:        gstAmount != null ? String(gstAmount) : null,
-          grossAmount:      grossAmount != null ? String(grossAmount) : null,
-          arDueDate:        arDueDate ?? undefined,
-          apDueDate:        apDueDate ?? undefined,
-          status:           crmStatus,
-          arStatus:         "scheduled",
-          apStatus:         "pending",
-          providerAccountId: providerAccountId ?? undefined,
-          sortIndex:        0,
+          arAmount:  totalPrice != null ? String(totalPrice) : null,
+          apAmount:  commAmount != null ? String(commAmount) : null,
+          arStatus:  "scheduled",
+          apStatus:  "pending",
+          sortIndex: 0,
         }).returning({ id: contractProducts.id });
-
         await upsertSyncMap({ airtableBaseId: baseId, airtableTable: "Contract Products", airtableRecordId: rec.id, crmTable: "contract_products", crmId: cp.id, organisationId });
         created++;
       }
