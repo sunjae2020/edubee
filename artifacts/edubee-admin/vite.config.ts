@@ -74,29 +74,7 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes("node_modules")) return undefined;
-          // React core + wouter (wouter uses React hooks — must be in same chunk)
-          if (id.includes("/react/") || id.includes("/react-dom/") || id.includes("/scheduler/") || id.includes("/wouter/")) return "vendor-react";
-          // Data fetching
-          if (id.includes("/@tanstack/")) return "vendor-query";
-          // UI primitives
-          if (id.includes("/@radix-ui/")) return "vendor-ui";
-          // Chart library (heavy, rarely first page)
-          if (id.includes("/recharts/") || id.includes("/d3-") || id.includes("/victory-")) return "vendor-charts";
-          // Rich text editor (heavy, only report/doc pages)
-          if (id.includes("/@tiptap/") || id.includes("/prosemirror")) return "vendor-editor";
-          // i18n
-          if (id.includes("/i18next") || id.includes("/react-i18next")) return "vendor-i18n";
-          // Pure JS utilities (no React dependency)
-          if (id.includes("/date-fns/") || id.includes("/axios/") || id.includes("/zod/")) return "vendor-utils";
-          // Everything else in node_modules
-          return "vendor-misc";
-        },
-      },
-    },
+    chunkSizeWarningLimit: 1000,
   },
   server: {
     port,
