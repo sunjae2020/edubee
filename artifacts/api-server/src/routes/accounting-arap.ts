@@ -18,9 +18,12 @@ function buildWhere(
     search,
     dateFrom,
     dateTo,
-  }: { status?: string; search?: string; dateFrom?: string; dateTo?: string }
+    orgId,
+  }: { status?: string; search?: string; dateFrom?: string; dateTo?: string; orgId?: string | null }
 ): SQL | undefined {
   const conds: SQL[] = [];
+
+  if (orgId) conds.push(eq(contractProducts.organisationId, orgId));
 
   if (status) {
     const statuses = status.split(",").map(s => s.trim()).filter(Boolean);
@@ -50,6 +53,9 @@ router.get(
   requireRole(...STAFF_ROLES),
   async (req, res) => {
     try {
+      const orgId = req.user!.organisationId ?? null;
+      const orgCond = orgId ? eq(contractProducts.organisationId, orgId) : undefined;
+
       const rows = await db
         .select({
           arStatus: contractProducts.arStatus,
@@ -57,6 +63,7 @@ router.get(
           cnt:   count(contractProducts.id).mapWith(Number),
         })
         .from(contractProducts)
+        .where(orgCond)
         .groupBy(contractProducts.arStatus);
 
       const summary: Record<string, { total: number; count: number }> = {};
@@ -82,9 +89,10 @@ router.get(
       const pageNum  = Math.max(1, parseInt(page));
       const limitNum = Math.min(100, parseInt(limit));
       const offset   = (pageNum - 1) * limitNum;
+      const orgId    = req.user!.organisationId ?? null;
 
       const where = buildWhere("arStatus", "arDueDate", {
-        status: ar_status, search, dateFrom: date_from, dateTo: date_to,
+        status: ar_status, search, dateFrom: date_from, dateTo: date_to, orgId,
       });
 
       const [totalResult] = await db
@@ -111,10 +119,10 @@ router.get(
           createdAt:         contractProducts.createdAt,
         })
         .from(contractProducts)
-        .leftJoin(contracts,     eq(contractProducts.contractId,      contracts.id))
+        .leftJoin(contracts,     eq(contractProducts.contractId,       contracts.id))
         .leftJoin(accounts,      eq(contractProducts.providerAccountId, accounts.id))
-        .leftJoin(studentAccAr,  eq(contracts.accountId,              studentAccAr.id))
-        .leftJoin(users,         eq(studentAccAr.ownerId,             users.id))
+        .leftJoin(studentAccAr,  eq(contracts.accountId,               studentAccAr.id))
+        .leftJoin(users,         eq(studentAccAr.ownerId,              users.id))
         .where(where)
         .orderBy(desc(contractProducts.arDueDate))
         .limit(limitNum)
@@ -147,9 +155,10 @@ router.get(
       const pageNum  = Math.max(1, parseInt(page));
       const limitNum = Math.min(100, parseInt(limit));
       const offset   = (pageNum - 1) * limitNum;
+      const orgId    = req.user!.organisationId ?? null;
 
       const where = buildWhere("apStatus", "apDueDate", {
-        status: ap_status, search, dateFrom: date_from, dateTo: date_to,
+        status: ap_status, search, dateFrom: date_from, dateTo: date_to, orgId,
       });
 
       const [totalResult] = await db
@@ -177,10 +186,10 @@ router.get(
           createdAt:         contractProducts.createdAt,
         })
         .from(contractProducts)
-        .leftJoin(contracts,    eq(contractProducts.contractId,       contracts.id))
-        .leftJoin(accounts,     eq(contractProducts.providerAccountId, accounts.id))
-        .leftJoin(studentAccAp, eq(contracts.accountId,               studentAccAp.id))
-        .leftJoin(ownerUserAp,  eq(studentAccAp.ownerId,              ownerUserAp.id))
+        .leftJoin(contracts,    eq(contractProducts.contractId,        contracts.id))
+        .leftJoin(accounts,     eq(contractProducts.providerAccountId,  accounts.id))
+        .leftJoin(studentAccAp, eq(contracts.accountId,                studentAccAp.id))
+        .leftJoin(ownerUserAp,  eq(studentAccAp.ownerId,               ownerUserAp.id))
         .where(where)
         .orderBy(desc(contractProducts.apDueDate))
         .limit(limitNum)
@@ -272,8 +281,10 @@ router.get(
   async (req, res) => {
     try {
       const { contractId, arStatus, apStatus, dueDateFrom, dueDateTo } = req.query as Record<string, string | undefined>;
+      const orgId = req.user!.organisationId ?? null;
 
       const conds: SQL[] = [];
+      if (orgId)       conds.push(eq(contractProducts.organisationId, orgId));
       if (contractId)  conds.push(eq(contractProducts.contractId, contractId));
       if (arStatus)    conds.push(eq(contractProducts.arStatus,   arStatus));
       if (apStatus)    conds.push(eq(contractProducts.apStatus,   apStatus));
@@ -308,10 +319,10 @@ router.get(
           createdAt:         contractProducts.createdAt,
         })
         .from(contractProducts)
-        .leftJoin(contracts,    eq(contractProducts.contractId,       contracts.id))
-        .leftJoin(accounts,     eq(contracts.accountId,               accounts.id))
-        .leftJoin(providerAcc,  eq(contractProducts.providerAccountId, providerAcc.id))
-        .leftJoin(ownerUserSch, eq(accounts.ownerId,                  ownerUserSch.id))
+        .leftJoin(contracts,    eq(contractProducts.contractId,        contracts.id))
+        .leftJoin(accounts,     eq(contracts.accountId,                accounts.id))
+        .leftJoin(providerAcc,  eq(contractProducts.providerAccountId,  providerAcc.id))
+        .leftJoin(ownerUserSch, eq(accounts.ownerId,                   ownerUserSch.id))
         .where(where)
         .orderBy(desc(contractProducts.arDueDate));
 
