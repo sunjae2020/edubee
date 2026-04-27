@@ -31,7 +31,7 @@ const ReportNavIcon = ({ size, style }: { size?: number; style?: React.CSSProper
 );
 
 type NavItem  = { icon: LucideIcon; label: string; href: string };
-type NavGroup = { key: string; label: string; catIcon: LucideIcon; items: NavItem[] };
+type NavGroup = { key: string; label: string; catIcon: LucideIcon; items: NavItem[]; href?: string };
 
 // ── Camp Coordinator — 캠프 전용 네비게이션 ────────────────────────────────
 // CC는 일반 CRM/상담/서비스와 완전히 분리된 캠프 전용 메뉴만 노출
@@ -42,6 +42,7 @@ function buildCCNav(): NavGroup[] {
       key: "dashboard",
       label: "Dashboard",
       catIcon: LayoutDashboard,
+      href: "/admin/dashboard/crm",
       items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard/crm" }],
     },
     {
@@ -113,6 +114,7 @@ function buildNav(effectiveRole: string): NavGroup[] {
 
   nav.push({
     key: "dashboard", label: "Dashboard", catIcon: LayoutDashboard,
+    href: "/admin/dashboard/crm",
     items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard/crm" }],
   });
 
@@ -635,14 +637,25 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
         {collapsed ? (
           /* ── Collapsed: flyout per group + locked icons ── */
           <>
-            {nav.map(group => (
-              <CollapsedGroupFlyout
-                key={group.key}
-                group={group}
-                location={location}
-                onNavClick={onNavClick}
-              />
-            ))}
+            {nav.map(group => {
+              if (group.href) {
+                const isActive = location === group.href || location.startsWith(group.href + "/");
+                const Icon = group.catIcon;
+                return (
+                  <div key={group.key} className="mb-0.5 flex flex-col items-center gap-0.5 py-1">
+                    <CollapsedIconItem item={{ icon: Icon, label: group.label, href: group.href }} Icon={Icon} isActive={isActive} onNavClick={onNavClick} />
+                  </div>
+                );
+              }
+              return (
+                <CollapsedGroupFlyout
+                  key={group.key}
+                  group={group}
+                  location={location}
+                  onNavClick={onNavClick}
+                />
+              );
+            })}
             {lockedGroups.map(group => (
               <Link key={group.key} href="/admin/settings/plan">
                 <div
@@ -659,8 +672,20 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
           /* ── Expanded: normal accordion + locked group rows ── */
           <>
             {nav.map(group => {
+              // Direct-link group (no section header, no accordion)
+              if (group.href) {
+                const isActive = location === group.href || location.startsWith(group.href + "/");
+                const Icon = group.catIcon;
+                return (
+                  <div key={group.key} className="mb-0.5">
+                    <Link href={group.href} onClick={onNavClick}>
+                      <SidebarNavItem icon={Icon} label={group.label} isActive={isActive} collapsed={false} />
+                    </Link>
+                  </div>
+                );
+              }
+
               const open      = isGroupOpen(group);
-              const CatIcon   = group.catIcon;
               const hasActive = group.items.some(
                 item => location === item.href || location.startsWith(item.href + "/")
               );
