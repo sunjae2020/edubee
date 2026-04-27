@@ -78,8 +78,8 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;
-          // React core — always needed
-          if (id.includes("/react/") || id.includes("/react-dom/") || id.includes("/scheduler/")) return "vendor-react";
+          // React core + wouter (wouter uses React hooks — must be in same chunk)
+          if (id.includes("/react/") || id.includes("/react-dom/") || id.includes("/scheduler/") || id.includes("/wouter/")) return "vendor-react";
           // Data fetching
           if (id.includes("/@tanstack/")) return "vendor-query";
           // UI primitives
@@ -90,8 +90,8 @@ export default defineConfig({
           if (id.includes("/@tiptap/") || id.includes("/prosemirror")) return "vendor-editor";
           // i18n
           if (id.includes("/i18next") || id.includes("/react-i18next")) return "vendor-i18n";
-          // Utilities
-          if (id.includes("/date-fns/") || id.includes("/axios/") || id.includes("/wouter/") || id.includes("/zod/")) return "vendor-utils";
+          // Pure JS utilities (no React dependency)
+          if (id.includes("/date-fns/") || id.includes("/axios/") || id.includes("/zod/")) return "vendor-utils";
           // Everything else in node_modules
           return "vendor-misc";
         },
