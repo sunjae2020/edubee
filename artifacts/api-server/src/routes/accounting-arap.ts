@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { contractProducts, contracts, accounts } from "@workspace/db/schema";
+import { contractProducts, contracts, accounts, users } from "@workspace/db/schema";
 import { eq, and, or, ilike, gte, lte, inArray, sql, count, sum, desc, SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate } from "../middleware/authenticate.js";
@@ -93,6 +93,7 @@ router.get(
         .leftJoin(contracts, eq(contractProducts.contractId, contracts.id))
         .where(where);
 
+      const studentAccAr = alias(accounts, "student_acc_ar");
       const rows = await db
         .select({
           id:                contractProducts.id,
@@ -106,12 +107,14 @@ router.get(
           arAmount:          contractProducts.arAmount,
           arStatus:          contractProducts.arStatus,
           coaArCode:         contractProducts.coaArCode,
-          ownerName:         contracts.agentName,
+          ownerName:         users.fullName,
           createdAt:         contractProducts.createdAt,
         })
         .from(contractProducts)
-        .leftJoin(contracts, eq(contractProducts.contractId, contracts.id))
-        .leftJoin(accounts, eq(contractProducts.providerAccountId, accounts.id))
+        .leftJoin(contracts,     eq(contractProducts.contractId,      contracts.id))
+        .leftJoin(accounts,      eq(contractProducts.providerAccountId, accounts.id))
+        .leftJoin(studentAccAr,  eq(contracts.accountId,              studentAccAr.id))
+        .leftJoin(users,         eq(studentAccAr.ownerId,             users.id))
         .where(where)
         .orderBy(desc(contractProducts.arDueDate))
         .limit(limitNum)
@@ -155,13 +158,14 @@ router.get(
         .leftJoin(contracts, eq(contractProducts.contractId, contracts.id))
         .where(where);
 
+      const studentAccAp = alias(accounts, "student_acc_ap");
+      const ownerUserAp  = alias(users, "owner_user_ap");
       const rows = await db
         .select({
           id:                contractProducts.id,
           contractId:        contractProducts.contractId,
           contractNumber:    contracts.contractNumber,
           studentName:       contracts.studentName,
-          agentName:         contracts.agentName,
           providerName:      accounts.name,
           name:              contractProducts.name,
           serviceModuleType: contractProducts.serviceModuleType,
@@ -169,12 +173,14 @@ router.get(
           apAmount:          contractProducts.apAmount,
           apStatus:          contractProducts.apStatus,
           coaApCode:         contractProducts.coaApCode,
-          ownerName:         contracts.agentName,
+          ownerName:         ownerUserAp.fullName,
           createdAt:         contractProducts.createdAt,
         })
         .from(contractProducts)
-        .leftJoin(contracts, eq(contractProducts.contractId, contracts.id))
-        .leftJoin(accounts, eq(contractProducts.providerAccountId, accounts.id))
+        .leftJoin(contracts,    eq(contractProducts.contractId,       contracts.id))
+        .leftJoin(accounts,     eq(contractProducts.providerAccountId, accounts.id))
+        .leftJoin(studentAccAp, eq(contracts.accountId,               studentAccAp.id))
+        .leftJoin(ownerUserAp,  eq(studentAccAp.ownerId,              ownerUserAp.id))
         .where(where)
         .orderBy(desc(contractProducts.apDueDate))
         .limit(limitNum)
@@ -276,7 +282,8 @@ router.get(
 
       const where = conds.length ? and(...conds) : undefined;
 
-      const providerAcc = alias(accounts, "provider_acc");
+      const providerAcc  = alias(accounts, "provider_acc");
+      const ownerUserSch = alias(users, "owner_user_sch");
 
       const rows = await db
         .select({
@@ -296,14 +303,15 @@ router.get(
           apStatus:          contractProducts.apStatus,
           coaArCode:         contractProducts.coaArCode,
           coaApCode:         contractProducts.coaApCode,
-          ownerName:         contracts.agentName,
+          ownerName:         ownerUserSch.fullName,
           serviceModuleType: contractProducts.serviceModuleType,
           createdAt:         contractProducts.createdAt,
         })
         .from(contractProducts)
-        .leftJoin(contracts,    eq(contractProducts.contractId,    contracts.id))
-        .leftJoin(accounts,     eq(contracts.accountId,            accounts.id))
+        .leftJoin(contracts,    eq(contractProducts.contractId,       contracts.id))
+        .leftJoin(accounts,     eq(contracts.accountId,               accounts.id))
         .leftJoin(providerAcc,  eq(contractProducts.providerAccountId, providerAcc.id))
+        .leftJoin(ownerUserSch, eq(accounts.ownerId,                  ownerUserSch.id))
         .where(where)
         .orderBy(desc(contractProducts.arDueDate));
 
