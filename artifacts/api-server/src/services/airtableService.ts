@@ -418,9 +418,15 @@ async function syncContractProducts(
       const f = rec.fields;
 
       const contractRecIds: string[] = f["Contract Name"] ?? [];
-      if (contractRecIds.length === 0) continue;
+      if (contractRecIds.length === 0) {
+        console.warn(`[Airtable] CP ${rec.id} skipped: no Contract Name linked`);
+        continue;
+      }
       const contractId = await findCrmId(baseId, "Contract", contractRecIds[0]);
-      if (!contractId) continue;
+      if (!contractId) {
+        console.warn(`[Airtable] CP ${rec.id} skipped: contract ${contractRecIds[0]} not in sync_map`);
+        continue;
+      }
 
       const providerRecIds: string[] = f["Provider"] ?? [];
       let providerAccountId: string | null = null;
