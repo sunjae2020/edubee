@@ -1203,8 +1203,11 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
 
     if (base.syncDirection === "outbound" || base.syncDirection === "both") {
       await runWithTenantSchema(tenantSlug, async () => {
-        details.contractOut         = await syncContractsOutbound(token, base.baseId, organisationId);
-        details.contractProductsOut = await syncContractProductsOutbound(token, base.baseId, organisationId);
+        try { details.contractOut = await syncContractsOutbound(token, base.baseId, organisationId); }
+        catch (e: any) { if (!e.message?.includes("403")) throw e; }
+
+        try { details.contractProductsOut = await syncContractProductsOutbound(token, base.baseId, organisationId); }
+        catch (e: any) { if (!e.message?.includes("403")) throw e; }
       });
     }
 
