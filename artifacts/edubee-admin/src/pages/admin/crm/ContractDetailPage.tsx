@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, Fragment, lazy, Suspense, useMemo } from "react";
 const ContractSignatureTab = lazy(() => import("@/components/contracts/ContractSignatureTab"));
 import { formatDate, formatDateTime } from "@/lib/date-format";
 import { useParams, useLocation } from "wouter";
@@ -18,6 +18,7 @@ import PaymentStatementModal from "../../../components/finance/PaymentStatementM
 import { ClientNameDisplay } from "@/components/common/ClientNameDisplay";
 import { nameFromAccount } from "@/lib/nameUtils";
 import { useToast } from "@/hooks/use-toast";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 import { fetchLogoSrc, logoImgHtml } from "@/lib/branding";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -1258,6 +1259,8 @@ function GenerateScheduleModal({ contract, onClose }: { contract: any; onClose: 
 
 function PaymentScheduleTab({ contract }: { contract: any }) {
   const products: any[] = contract.contractProducts ?? [];
+  const { sortBy, sortDir, onSort } = useSortState("arDueDate", "asc");
+  const sortedProducts = useSorted(products, sortBy, sortDir);
   const totalAr = products.reduce((s: number, p: any) => s + (p.arAmount ?? 0), 0);
   const totalAp = products.reduce((s: number, p: any) => s + (p.apAmount ?? 0), 0);
   const [showStatementModal, setShowStatementModal] = useState(false);
@@ -1409,19 +1412,19 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">#</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Label</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1]">AR Due Date</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1]">AR Amount</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1]">AR Status</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Due Date</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Amount</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412]">AP Status</th>
-                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E]">Actions</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] whitespace-nowrap">#</th>
+                <SortableTh col="name"      sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] whitespace-nowrap">Label</SortableTh>
+                <SortableTh col="arDueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1] whitespace-nowrap">AR Due Date</SortableTh>
+                <SortableTh col="arAmount"  sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1] whitespace-nowrap">AR Amount</SortableTh>
+                <SortableTh col="arStatus"  sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1] whitespace-nowrap">AR Status</SortableTh>
+                <SortableTh col="apDueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412] whitespace-nowrap">AP Due Date</SortableTh>
+                <SortableTh col="apAmount"  sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412] whitespace-nowrap">AP Amount</SortableTh>
+                <SortableTh col="apStatus"  sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#9A3412] whitespace-nowrap">AP Status</SortableTh>
+                <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {products.map((cp: any, i: number) =>
+              {sortedProducts.map((cp: any, i: number) =>
                 editingId === cp.id && draft ? (
                   <ScheduleEditRow key={cp.id}
                     draft={draft}
