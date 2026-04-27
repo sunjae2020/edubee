@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { formatDate, formatDateTime } from "@/lib/date-format";
+import { formatDate } from "@/lib/date-format";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Calendar, TrendingUp, TrendingDown, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -146,7 +147,7 @@ function endOfCurrentMonth(): string {
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function PaymentScheduleTab() {
   const [, navigate] = useLocation();
-  // "all" | "not_paid" | specific status
+  const { sortBy, sortDir, onSort } = useSortState("arDueDate", "desc");
   const [arFilter, setArFilter] = useState<string>("not_paid");
   const [apFilter, setApFilter] = useState<string>("not_paid");
   const [search, setSearch]     = useState("");
@@ -154,7 +155,6 @@ export default function PaymentScheduleTab() {
   const [page, setPage]         = useState(1);
   const PAGE_SIZE = 20;
 
-  // Always fetch all from API; filter client-side for not_paid / dateTo
   const { data, isLoading, error } = useQuery<{ success: boolean; data: PaymentScheduleRow[] }>({
     queryKey: ["payment-schedule"],
     queryFn: async () => {
@@ -167,21 +167,17 @@ export default function PaymentScheduleTab() {
   const allRows = data?.data ?? EMPTY_ROWS;
 
   const filteredRows = allRows.filter(r => {
-    // AR status filter
     const arOk = arFilter === "all"
       ? true
       : arFilter === "not_paid"
         ? r.arStatus !== "paid"
         : r.arStatus === arFilter;
-    // AP status filter
     const apOk = apFilter === "all"
       ? true
       : apFilter === "not_paid"
         ? r.apStatus !== "paid"
         : r.apStatus === apFilter;
-    // date filter (by arDueDate <= dateTo)
     const dateOk = !dateTo || !r.arDueDate || r.arDueDate <= dateTo;
-    // search filter
     const q = search.toLowerCase();
     const searchOk = !search || (
       r.studentName?.toLowerCase().includes(q) ||
@@ -190,36 +186,18 @@ export default function PaymentScheduleTab() {
       r.name?.toLowerCase().includes(q)
     );
     return arOk && apOk && dateOk && searchOk;
-  // sort: arDueDate descending (most recent first)
-  }).sort((a, b) => {
-    const da = a.arDueDate ?? "";
-    const db = b.arDueDate ?? "";
-    return db.localeCompare(da);
   });
 
-  const totalPages = Math.ceil(filteredRows.length / PAGE_SIZE);
-  const rows = filteredRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const sortedRows = useSorted(filteredRows, sortBy, sortDir);
+  const totalPages = Math.ceil(sortedRows.length / PAGE_SIZE);
+  const rows = sortedRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // KPI aggregates (based on all filtered rows, not just current page)
   const totalAr   = filteredRows.reduce((s, r) => s + Number(r.arAmount ?? 0), 0);
   const totalAp   = filteredRows.reduce((s, r) => s + Number(r.apAmount ?? 0), 0);
   const overdueAr = filteredRows.filter(r => r.arStatus === "overdue").length;
   const readyAp   = filteredRows.filter(r => r.apStatus === "ready").length;
 
-  const TABLE_HEADERS = [
-    "Contract #",
-    "Student",
-    "Provider",
-    "Product",
-    "AR Due",
-    "AR Amount",
-    "AR Status",
-    "AP Due",
-    "AP Amount",
-    "AP Status",
-    "Owner",
-    "Net",
-  ];
+  const thStyle = "text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap";
 
   if (isLoading) {
     return (
@@ -241,24 +219,9 @@ export default function PaymentScheduleTab() {
     <div style={{ padding: "24px 0" }}>
 
       {/* KPI row */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 16,
-          marginBottom: 24,
-        }}
-      >
-        <KpiCard
-          icon={TrendingUp}
-          label="Total AR Outstanding"
-          value={fmt(totalAr)}
-        />
-        <KpiCard
-          icon={TrendingDown}
-          label="Total AP Payable"
-          value={fmt(totalAp)}
-        />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
+        <KpiCard icon={TrendingUp}   label="Total AR Outstanding" value={fmt(totalAr)} />
+        <KpiCard icon={TrendingDown} label="Total AP Payable"     value={fmt(totalAp)} />
         <KpiCard
           icon={AlertCircle}
           label="Overdue AR"
@@ -284,9 +247,8 @@ export default function PaymentScheduleTab() {
           style={{ height: 40, border: "1.5px solid #E8E6E2", borderRadius: 8, padding: "0 12px", fontSize: 14, color: "#1C1917", background: "#FFFFFF", outline: "none", minWidth: 220 }}
         />
 
-        {/* Date To */}
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 13, color: "#57534E", whiteSpace: "nowrap" }}>~ 마감일</span>
+          <span style={{ fontSize: 13, color: "#57534E", whiteSpace: "nowrap" }}>Due by</span>
           <input
             type="date"
             value={dateTo}
@@ -295,14 +257,13 @@ export default function PaymentScheduleTab() {
           />
         </div>
 
-        {/* AR Status */}
         <select
           value={arFilter}
           onChange={e => { setArFilter(e.target.value); setPage(1); }}
           style={{ height: 40, border: "1.5px solid #E8E6E2", borderRadius: 8, padding: "0 12px", fontSize: 14, color: "#1C1917", background: "#FFFFFF", cursor: "pointer" }}
         >
-          <option value="all">AR: 전체</option>
-          <option value="not_paid">AR: Paid 제외</option>
+          <option value="all">AR: All</option>
+          <option value="not_paid">AR: Excl. Paid</option>
           <option value="scheduled">AR: Scheduled</option>
           <option value="invoiced">AR: Invoiced</option>
           <option value="partial">AR: Partial</option>
@@ -310,14 +271,13 @@ export default function PaymentScheduleTab() {
           <option value="overdue">AR: Overdue</option>
         </select>
 
-        {/* AP Status */}
         <select
           value={apFilter}
           onChange={e => { setApFilter(e.target.value); setPage(1); }}
           style={{ height: 40, border: "1.5px solid #E8E6E2", borderRadius: 8, padding: "0 12px", fontSize: 14, color: "#1C1917", background: "#FFFFFF", cursor: "pointer" }}
         >
-          <option value="all">AP: 전체</option>
-          <option value="not_paid">AP: Paid 제외</option>
+          <option value="all">AP: All</option>
+          <option value="not_paid">AP: Excl. Paid</option>
           <option value="pending">AP: Pending</option>
           <option value="ready">AP: Ready</option>
           <option value="paid">AP: Paid</option>
@@ -325,7 +285,7 @@ export default function PaymentScheduleTab() {
         </select>
 
         <span style={{ fontSize: 13, color: "#A8A29E", marginLeft: "auto" }}>
-          {filteredRows.length}건
+          {filteredRows.length} records
         </span>
       </div>
 
@@ -339,36 +299,27 @@ export default function PaymentScheduleTab() {
           boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
         }}
       >
-        <table style={{ minWidth: 1450, width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ background: "#FAFAF9" }}>
-              {TABLE_HEADERS.map(h => (
-                <th
-                  key={h}
-                  style={{
-                    padding: "10px 16px",
-                    textAlign: "left",
-                    fontSize: 12,
-                    fontWeight: 500,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    color: "#57534E",
-                    borderBottom: "1px solid #E8E6E2",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {h}
-                </th>
-              ))}
+        <table style={{ minWidth: 1450, width: "100%", borderCollapse: "collapse" }} className="text-sm">
+          <thead className="bg-stone-50 border-b border-stone-200">
+            <tr>
+              <SortableTh col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={c => { onSort(c); setPage(1); }} className={thStyle}>Contract #</SortableTh>
+              <SortableTh col="studentName"    sortBy={sortBy} sortDir={sortDir} onSort={c => { onSort(c); setPage(1); }} className={thStyle}>Student</SortableTh>
+              <SortableTh col="providerName"   sortBy={sortBy} sortDir={sortDir} onSort={c => { onSort(c); setPage(1); }} className={thStyle}>Provider</SortableTh>
+              <SortableTh col="name"           sortBy={sortBy} sortDir={sortDir} onSort={c => { onSort(c); setPage(1); }} className={thStyle}>Product</SortableTh>
+              <SortableTh col="arDueDate"      sortBy={sortBy} sortDir={sortDir} onSort={c => { onSort(c); setPage(1); }} className={thStyle}>AR Due</SortableTh>
+              <SortableTh col="arAmount"       sortBy={sortBy} sortDir={sortDir} onSort={c => { onSort(c); setPage(1); }} className={thStyle}>AR Amount</SortableTh>
+              <SortableTh col="arStatus"       sortBy={sortBy} sortDir={sortDir} onSort={c => { onSort(c); setPage(1); }} className={thStyle}>AR Status</SortableTh>
+              <SortableTh col="apDueDate"      sortBy={sortBy} sortDir={sortDir} onSort={c => { onSort(c); setPage(1); }} className={thStyle}>AP Due</SortableTh>
+              <SortableTh col="apAmount"       sortBy={sortBy} sortDir={sortDir} onSort={c => { onSort(c); setPage(1); }} className={thStyle}>AP Amount</SortableTh>
+              <SortableTh col="apStatus"       sortBy={sortBy} sortDir={sortDir} onSort={c => { onSort(c); setPage(1); }} className={thStyle}>AP Status</SortableTh>
+              <SortableTh col="ownerName"      sortBy={sortBy} sortDir={sortDir} onSort={c => { onSort(c); setPage(1); }} className={thStyle}>Owner</SortableTh>
+              <th className={thStyle}>Net</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td
-                  colSpan={12}
-                  style={{ padding: 40, textAlign: "center", color: "#A8A29E", fontSize: 14 }}
-                >
+                <td colSpan={12} style={{ padding: 40, textAlign: "center", color: "#A8A29E", fontSize: 14 }}>
                   No payment schedule records found.
                 </td>
               </tr>
@@ -387,68 +338,45 @@ export default function PaymentScheduleTab() {
                     onMouseEnter={e => (e.currentTarget.style.background = "var(--e-orange-lt)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                   >
-                    {/* Contract # */}
                     <td style={{ padding: "14px 16px", fontFamily: "monospace", fontSize: 12, color: "#57534E", whiteSpace: "nowrap" }}>
                       {row.contractNumber || <span style={{ color: "#A8A29E", fontStyle: "italic" }}>No #</span>}
                     </td>
-
-                    {/* Student */}
                     <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 500, color: "#1C1917", whiteSpace: "nowrap" }}>
                       {row.studentName || row.accountName || "—"}
                     </td>
-
-                    {/* Provider */}
                     <td style={{ padding: "14px 16px", fontSize: 13, color: "#57534E", whiteSpace: "nowrap" }}>
                       {row.providerName || "—"}
                     </td>
-
-                    {/* Product */}
                     <td style={{ padding: "14px 16px", fontSize: 13, color: "#1C1917", whiteSpace: "nowrap" }}>
                       {row.name || (row.sortIndex != null ? `Item ${row.sortIndex}` : "—")}
                     </td>
-
-                    {/* AR Due */}
                     <td style={{ padding: "14px 16px", fontSize: 13, color: "#57534E", whiteSpace: "nowrap" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <Calendar size={13} />
                         {fmtDate(row.arDueDate)}
                       </div>
                     </td>
-
-                    {/* AR Amount */}
                     <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 500, color: "#1C1917", whiteSpace: "nowrap" }}>
                       {fmt(row.arAmount)}
                     </td>
-
-                    {/* AR Status */}
                     <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <StatusBadge status={row.arStatus} config={AR_STATUS_CONFIG} />
                     </td>
-
-                    {/* AP Due */}
                     <td style={{ padding: "14px 16px", fontSize: 13, color: "#57534E", whiteSpace: "nowrap" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <Clock size={13} />
                         {fmtDate(row.apDueDate)}
                       </div>
                     </td>
-
-                    {/* AP Amount */}
                     <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 500, color: "#1C1917", whiteSpace: "nowrap" }}>
                       {fmt(row.apAmount)}
                     </td>
-
-                    {/* AP Status */}
                     <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       <StatusBadge status={row.apStatus} config={AP_STATUS_CONFIG} />
                     </td>
-
-                    {/* Owner */}
                     <td style={{ padding: "14px 16px", fontSize: 13, color: "#57534E", whiteSpace: "nowrap" }}>
                       {row.ownerName || "—"}
                     </td>
-
-                    {/* Net */}
                     <td
                       style={{
                         padding: "14px 16px",
@@ -472,7 +400,7 @@ export default function PaymentScheduleTab() {
       {totalPages > 1 && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16 }}>
           <span style={{ fontSize: 13, color: "#A8A29E" }}>
-            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filteredRows.length)} / {filteredRows.length}건
+            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, sortedRows.length)} / {sortedRows.length} records
           </span>
           <div style={{ display: "flex", gap: 6 }}>
             <button
@@ -488,7 +416,7 @@ export default function PaymentScheduleTab() {
                 cursor: page === 1 ? "default" : "pointer",
               }}
             >
-              이전
+              Prev
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1)
               .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
@@ -533,7 +461,7 @@ export default function PaymentScheduleTab() {
                 cursor: page === totalPages ? "default" : "pointer",
               }}
             >
-              다음
+              Next
             </button>
           </div>
         </div>
