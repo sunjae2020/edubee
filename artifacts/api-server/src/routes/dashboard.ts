@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { applications, contracts, leads, notifications, users, pickupMgt, tourMgt } from "@workspace/db/schema";
+import { applications, contracts, leads, notifications, users, pickupMgt, tourMgt, accounts } from "@workspace/db/schema";
 import { eq, count, ne, sql, and, inArray } from "drizzle-orm";
 import { authenticate } from "../middleware/authenticate.js";
 
@@ -32,9 +32,10 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
         .where(tenantId ? eq(leads.organisationId, tenantId) : undefined);
       const [activeLeads] = await db.select({ count: count() }).from(leads)
         .where(tenantId ? and(eq(leads.organisationId, tenantId), ne(leads.status, "converted")) : ne(leads.status, "converted"));
-      // users 테이블에 organisation_id 없음 → 임프로소네이션 시 0
-      const [totalUsers] = tenantId ? [{ count: 0 }] : await db.select({ count: count() }).from(users);
-      const [activeUsers] = tenantId ? [{ count: 0 }] : await db.select({ count: count() }).from(users).where(eq(users.status, "active"));
+      const [totalUsers] = await db.select({ count: count() }).from(accounts)
+        .where(tenantId ? eq(accounts.organisationId, tenantId) : undefined);
+      const [activeUsers] = await db.select({ count: count() }).from(accounts)
+        .where(tenantId ? and(eq(accounts.organisationId, tenantId), eq(accounts.status, "Active")) : eq(accounts.status, "Active"));
 
       const recentApplications = tenantId ? [] : await db.select({
         id: applications.id,

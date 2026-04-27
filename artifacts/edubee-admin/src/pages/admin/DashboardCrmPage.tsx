@@ -83,11 +83,11 @@ function fmtRelative(d: string | null | undefined) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function KpiCard({
-  icon: Icon, value, label, subLabel, trend, trendType, accentLeft, iconBg, iconColor, progressValue, progressColor,
+  icon: Icon, value, label, subLabel, trend, trendType, accentLeft, iconBg, iconColor, valueColor, progressValue, progressColor,
 }: {
   icon: React.ElementType; value: string | number; label: string;
   subLabel?: string; trend?: string; trendType?: "up" | "down" | "neutral" | "warning" | "danger";
-  accentLeft?: string; iconBg?: string; iconColor?: string;
+  accentLeft?: string; iconBg?: string; iconColor?: string; valueColor?: string;
   progressValue?: number; progressColor?: string;
 }) {
   const trendColors = { up: T.success, down: T.danger, neutral: T.neutral400, warning: T.warning, danger: T.danger };
@@ -109,7 +109,7 @@ function KpiCard({
           <Icon className="w-5 h-5" style={{ color: iconColor ?? T.orange }} strokeWidth={1.8} />
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: T.neutral900, lineHeight: 1 }}>{value}</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: valueColor ?? T.neutral900, lineHeight: 1 }}>{value}</div>
           <div style={{ fontSize: 13, color: T.neutral600, marginTop: 4 }}>{label}</div>
           {subLabel && <div style={{ fontSize: 11, color: T.neutral400, marginTop: 2 }}>{subLabel}</div>}
           {trend && (
@@ -305,9 +305,9 @@ function OverviewTab({ data, loading }: { data: OverviewData | undefined; loadin
               <Users className="w-5 h-5" style={{ color: T.orange }} strokeWidth={1.8} />
             </div>
             <div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: T.neutral900, lineHeight: 1 }}>{data?.totalLeads ?? 0}</div>
-              <div style={{ fontSize: 13, color: T.neutral600, marginTop: 4 }}>Total Leads</div>
-              <div style={{ fontSize: 11, color: T.neutral400, marginTop: 2 }}>{data?.activeLeads ?? 0} active</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: T.orange, lineHeight: 1 }}>{data?.activeLeads ?? 0}</div>
+              <div style={{ fontSize: 13, color: T.neutral600, marginTop: 4 }}>Active Leads</div>
+              <div style={{ fontSize: 11, color: T.neutral400, marginTop: 2 }}>Total: {data?.totalLeads ?? 0}</div>
               <div style={{ marginTop: 6 }}>
                 <MoMBadge pct={data?.leadMoMPct ?? 0} thisMonth={data?.thisMonthLeads ?? 0} />
               </div>
@@ -321,9 +321,9 @@ function OverviewTab({ data, loading }: { data: OverviewData | undefined; loadin
               <FileText className="w-5 h-5" style={{ color: T.orange }} strokeWidth={1.8} />
             </div>
             <div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: T.neutral900, lineHeight: 1 }}>{data?.totalContracts ?? 0}</div>
-              <div style={{ fontSize: 13, color: T.neutral600, marginTop: 4 }}>Total Contracts</div>
-              <div style={{ fontSize: 11, color: T.neutral400, marginTop: 2 }}>{data?.activeContracts ?? 0} active</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: T.orange, lineHeight: 1 }}>{data?.activeContracts ?? 0}</div>
+              <div style={{ fontSize: 13, color: T.neutral600, marginTop: 4 }}>Active Contracts</div>
+              <div style={{ fontSize: 11, color: T.neutral400, marginTop: 2 }}>Total: {data?.totalContracts ?? 0}</div>
               <div style={{ marginTop: 6 }}>
                 <MoMBadge pct={data?.contractMoMPct ?? 0} thisMonth={data?.thisMonthContracts ?? 0} />
               </div>
@@ -331,7 +331,7 @@ function OverviewTab({ data, loading }: { data: OverviewData | undefined; loadin
           </div>
         </div>
 
-        <KpiCard icon={Users}     value={data?.totalUsers ?? 0}      label="Total Users"      subLabel={`${data?.activeUsers ?? 0} active`} />
+        <KpiCard icon={Users}     value={data?.activeUsers ?? 0}     label="Active Accounts"   subLabel={`Total: ${data?.totalUsers ?? 0}`} accentLeft={T.orange} iconBg={T.orangeLight} iconColor={T.orange} valueColor={T.orange} />
         <KpiCard icon={TrendingUp} value={fmtAUD(kpi?.netRevenue ?? 0)} label="Net Revenue (MTD)" accentLeft={T.orange} />
       </div>
 
