@@ -332,8 +332,9 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
         WHERE c.id = ${id}::uuid
       `),
       db.execute(sql`
-        SELECT cp.*
+        SELECT cp.*, a.name AS provider_name
         FROM contract_products cp
+        LEFT JOIN accounts a ON a.id = cp.provider_account_id
         WHERE cp.contract_id = ${id}::uuid
         ORDER BY COALESCE(cp.sort_index, 0), cp.created_at
       `),
@@ -414,6 +415,7 @@ router.get("/crm/contracts/:id", authenticate, async (req, res) => {
     const contractProducts = r(cpRes).map((cp: any) => ({
       id: cp.id, name: cp.name, sortIndex: cp.sort_index,
       isInitialPayment: cp.is_initial_payment,
+      providerName: cp.provider_name ?? null,
       arDueDate: cp.ar_due_date, arAmount: parseFloat(cp.ar_amount ?? "0"), arStatus: cp.ar_status,
       apDueDate: cp.ap_due_date, apAmount: parseFloat(cp.ap_amount ?? "0"), apStatus: cp.ap_status,
       serviceModuleType: cp.service_module_type,

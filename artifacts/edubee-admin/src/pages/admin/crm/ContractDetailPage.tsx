@@ -515,7 +515,7 @@ function ScheduleEditRow({
       </tr>
       {errMsg && (
         <tr className="bg-red-50">
-          <td colSpan={9} className="px-4 py-1 text-[11px] text-red-600">{errMsg}</td>
+          <td colSpan={10} className="px-4 py-1 text-[11px] text-red-600">{errMsg}</td>
         </tr>
       )}
     </>
@@ -1413,7 +1413,8 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
             <thead>
               <tr className="border-b border-[#E8E6E2]" style={{ background:"#FAFAF9" }}>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] whitespace-nowrap">#</th>
-                <SortableTh col="name"      sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] whitespace-nowrap">Label</SortableTh>
+                <SortableTh col="providerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] whitespace-nowrap">Provider</SortableTh>
+                <SortableTh col="name"         sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#A8A29E] whitespace-nowrap">Product</SortableTh>
                 <SortableTh col="arDueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1] whitespace-nowrap">AR Due Date</SortableTh>
                 <SortableTh col="arAmount"  sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-right px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1] whitespace-nowrap">AR Amount</SortableTh>
                 <SortableTh col="arStatus"  sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-[#0369A1] whitespace-nowrap">AR Status</SortableTh>
@@ -1440,6 +1441,7 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                       className={`transition-colors group ${expandedCpIds.has(cp.id) ? "bg-[#FFFCF9]" : "border-b border-[#E8E6E2]"}`}
                       style={!expandedCpIds.has(cp.id) && cp.apStatus === "ready" ? { background:"#FFFCF9" } : {}}>
                       <td className="px-4 py-3 text-xs text-[#A8A29E]">{i + 1}</td>
+                      <td className="px-4 py-3 text-[12px] text-[#57534E] whitespace-nowrap">{cp.providerName ?? "—"}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           {cp.isInitialPayment && <span className="text-[#CA8A04] text-xs">★</span>}
@@ -1495,7 +1497,7 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
                     </tr>
                     {expandedCpIds.has(cp.id) && (
                       <tr className="border-b border-[#E8E6E2]">
-                        <td colSpan={9} className="p-0">
+                        <td colSpan={10} className="p-0">
                           <CostLinePanel cp={cp} contractId={contract.id} />
                         </td>
                       </tr>
@@ -1516,7 +1518,7 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
             </tbody>
             <tfoot>
               <tr style={{ background:"#FAFAF9" }}>
-                <td colSpan={3} className="px-4 py-3 text-right text-xs font-semibold text-[#57534E]">Total AR</td>
+                <td colSpan={4} className="px-4 py-3 text-right text-xs font-semibold text-[#57534E]">Total AR</td>
                 <td className="px-4 py-3 text-right">
                   <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ background:"var(--e-orange)" }}>{fmtMoney(totalAr)}</span>
                 </td>
