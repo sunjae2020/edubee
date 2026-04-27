@@ -72,11 +72,21 @@ async function writeAirtable(
   return data.id as string;
 }
 
-async function fetchAllRecords(token: string, baseId: string, table: string): Promise<any[]> {
+async function fetchAllRecords(
+  token: string, baseId: string, table: string,
+  modifiedSince?: Date,
+): Promise<any[]> {
   const records: any[] = [];
   let offset: string | undefined;
   do {
-    const qs = offset ? `?offset=${offset}` : "";
+    const params = new URLSearchParams();
+    if (offset) params.set("offset", offset);
+    if (modifiedSince) {
+      // 5-min buffer so records modified right at the boundary are never missed
+      const cutoff = new Date(modifiedSince.getTime() - 5 * 60 * 1000);
+      params.set("filterByFormula", `IS_AFTER(LAST_MODIFIED_TIME(), "${cutoff.toISOString()}")`);
+    }
+    const qs = params.toString() ? `?${params.toString()}` : "";
     const data = await fetchAirtable(token, `/${baseId}/${encodeURIComponent(table)}${qs}`);
     records.push(...(data.records ?? []));
     offset = data.offset;
@@ -150,8 +160,9 @@ async function getDefaultOwner(organisationId: string): Promise<string> {
 // ── Sync: Staff → users ───────────────────────────────────────────────────────
 async function syncStaff(
   token: string, baseId: string, organisationId: string,
+  modifiedSince?: Date,
 ): Promise<{ synced: number; skipped: number }> {
-  const records = await fetchAllRecords(token, baseId, "Staff");
+  const records = await fetchAllRecords(token, baseId, "Staff", modifiedSince);
   let synced = 0, skipped = 0;
 
   for (const rec of records) {
@@ -185,8 +196,9 @@ async function syncStaff(
 // ── Sync: Student → contacts + accounts ──────────────────────────────────────
 async function syncStudent(
   token: string, baseId: string, organisationId: string, ownerId: string,
+  modifiedSince?: Date,
 ): Promise<{ synced: number; created: number; failed: number }> {
-  const records = await fetchAllRecords(token, baseId, "Student");
+  const records = await fetchAllRecords(token, baseId, "Student", modifiedSince);
   let synced = 0, created = 0, failed = 0;
 
   for (const rec of records) {
@@ -253,8 +265,9 @@ async function syncStudent(
 // ── Sync: Partner → contacts + accounts ──────────────────────────────────────
 async function syncPartner(
   token: string, baseId: string, organisationId: string, ownerId: string,
+  modifiedSince?: Date,
 ): Promise<{ synced: number; created: number; failed: number }> {
-  const records = await fetchAllRecords(token, baseId, "Partner");
+  const records = await fetchAllRecords(token, baseId, "Partner", modifiedSince);
   let synced = 0, created = 0, failed = 0;
 
   for (const rec of records) {
@@ -334,8 +347,9 @@ async function syncPartner(
 // ── Sync: Contract → contracts ────────────────────────────────────────────────
 async function syncContracts(
   token: string, baseId: string, organisationId: string, ownerId: string,
+  modifiedSince?: Date,
 ): Promise<{ synced: number; created: number; failed: number }> {
-  const records = await fetchAllRecords(token, baseId, "Contract");
+  const records = await fetchAllRecords(token, baseId, "Contract", modifiedSince);
   let synced = 0, created = 0, failed = 0;
 
   const statusMap: Record<string, string> = {
@@ -404,8 +418,9 @@ async function syncContracts(
 // ── Sync: Contract Products → contract_products ───────────────────────────────
 async function syncContractProducts(
   token: string, baseId: string, organisationId: string,
+  modifiedSince?: Date,
 ): Promise<{ synced: number; created: number; failed: number }> {
-  const records = await fetchAllRecords(token, baseId, "Contract Products");
+  const records = await fetchAllRecords(token, baseId, "Contract Products", modifiedSince);
   let synced = 0, created = 0, failed = 0;
 
   const cpStatusMap: Record<string, string> = {
@@ -515,8 +530,9 @@ async function backfillContractDenormFields(organisationId: string): Promise<{ u
 // ── Sync: Payments → transactions ────────────────────────────────────────────
 async function syncPayments(
   token: string, baseId: string, organisationId: string,
+  modifiedSince?: Date,
 ): Promise<{ synced: number; created: number; failed: number }> {
-  const records = await fetchAllRecords(token, baseId, "Payments");
+  const records = await fetchAllRecords(token, baseId, "Payments", modifiedSince);
   let synced = 0, created = 0, failed = 0;
 
   const paymentMethodMap: Record<string, string> = {
@@ -747,8 +763,9 @@ async function syncContractProductsOutbound(
 // ── Sync: Package Groups → package_groups ────────────────────────────────────
 async function syncPackageGroups(
   token: string, baseId: string, organisationId: string,
+  modifiedSince?: Date,
 ): Promise<{ synced: number; created: number; failed: number }> {
-  const records = await fetchAllRecords(token, baseId, "Package Groups");
+  const records = await fetchAllRecords(token, baseId, "Package Groups", modifiedSince);
   let synced = 0, created = 0, failed = 0;
 
   const statusMap: Record<string, string> = {
@@ -822,8 +839,9 @@ async function syncPackageGroups(
 // ── Sync: Packages → packages ─────────────────────────────────────────────────
 async function syncPackages(
   token: string, baseId: string, organisationId: string,
+  modifiedSince?: Date,
 ): Promise<{ synced: number; created: number; failed: number }> {
-  const records = await fetchAllRecords(token, baseId, "Packages");
+  const records = await fetchAllRecords(token, baseId, "Packages", modifiedSince);
   let synced = 0, created = 0, failed = 0;
 
   for (const rec of records) {
@@ -904,8 +922,9 @@ async function syncPackages(
 // ── Sync: Camp MGT → contracts ────────────────────────────────────────────────
 async function syncCampContracts(
   token: string, baseId: string, organisationId: string,
+  modifiedSince?: Date,
 ): Promise<{ synced: number; created: number; failed: number }> {
-  const records = await fetchAllRecords(token, baseId, "Camp MGT");
+  const records = await fetchAllRecords(token, baseId, "Camp MGT", modifiedSince);
   let synced = 0, created = 0, failed = 0;
 
   const statusMap: Record<string, string> = {
@@ -994,8 +1013,9 @@ async function syncCampContracts(
 // ── Sync: Enrollment Spots → enrollment_spots ─────────────────────────────────
 async function syncEnrollmentSpots(
   token: string, baseId: string, organisationId: string,
+  modifiedSince?: Date,
 ): Promise<{ synced: number; created: number; failed: number }> {
-  const records = await fetchAllRecords(token, baseId, "Enrollment Spots");
+  const records = await fetchAllRecords(token, baseId, "Enrollment Spots", modifiedSince);
   let synced = 0, created = 0, failed = 0;
 
   for (const rec of records) {
@@ -1052,8 +1072,9 @@ async function syncEnrollmentSpots(
 // ── Sync: Interview MGT → interview_schedules ─────────────────────────────────
 async function syncInterviewMgt(
   token: string, baseId: string, organisationId: string,
+  modifiedSince?: Date,
 ): Promise<{ synced: number; created: number; failed: number }> {
-  const records = await fetchAllRecords(token, baseId, "Interview MGT");
+  const records = await fetchAllRecords(token, baseId, "Interview MGT", modifiedSince);
   let synced = 0, created = 0, failed = 0;
 
   const statusMap: Record<string, string> = {
@@ -1154,6 +1175,41 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
   const start = Date.now();
   const details: SyncResult["details"] = {};
 
+  // Incremental sync: only fetch records modified since last successful sync.
+  // Fall back to full sync on first run or when last sync was > 7 days ago (weekly refresh).
+  const lastSync = base.lastSyncedAt ? new Date(base.lastSyncedAt) : null;
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const modifiedSince = lastSync && lastSync > sevenDaysAgo ? lastSync : undefined;
+
+  console.log(
+    modifiedSince
+      ? `[Airtable] Incremental sync for ${base.name}: changes since ${modifiedSince.toISOString()}`
+      : `[Airtable] Full sync for ${base.name} (first sync or weekly refresh)`
+  );
+
+  // Persist sync status to DB so the result survives process restarts
+  const persistStatus = async (result: SyncResult) => {
+    try {
+      const basesKey = `airtable.bases.${organisationId}`;
+      const fresh = await staticDb.select().from(platformSettings)
+        .where(eq(platformSettings.key, basesKey)).limit(1);
+      const all: AirtableBase[] = JSON.parse(fresh[0]?.value ?? "[]");
+      const idx = all.findIndex(b => b.id === base.id);
+      if (idx !== -1) {
+        all[idx].lastSyncedAt    = new Date().toISOString();
+        all[idx].lastSyncStatus  = result.success ? "success" : "error";
+        all[idx].lastSyncMessage = result.success
+          ? `Synced: ${JSON.stringify(result.details)}`
+          : result.error ?? "Unknown error";
+        await staticDb.insert(platformSettings)
+          .values({ key: basesKey, value: JSON.stringify(all), updatedAt: new Date() })
+          .onConflictDoUpdate({ target: platformSettings.key, set: { value: JSON.stringify(all), updatedAt: new Date() } });
+      }
+    } catch (e: any) {
+      console.error("[Airtable] persistStatus failed:", e.message);
+    }
+  };
+
   try {
     const token = await getToken(organisationId);
     const ownerId = await getDefaultOwner(organisationId);
@@ -1167,43 +1223,43 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
     if (base.syncDirection === "inbound" || base.syncDirection === "both") {
       await runWithTenantSchema(tenantSlug, async () => {
         // All syncs wrapped individually — gracefully skip tables that don't exist in this base
-        try { details.staff = await syncStaff(token, base.baseId, organisationId); }
+        try { details.staff = await syncStaff(token, base.baseId, organisationId, modifiedSince); }
         catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-        try { details.student = await syncStudent(token, base.baseId, organisationId, ownerId); }
+        try { details.student = await syncStudent(token, base.baseId, organisationId, ownerId, modifiedSince); }
         catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-        try { details.partner = await syncPartner(token, base.baseId, organisationId, ownerId); }
+        try { details.partner = await syncPartner(token, base.baseId, organisationId, ownerId, modifiedSince); }
         catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
         // Camp CRM: Package Groups → Packages → Contracts (order matters)
-        try { details.packageGroups = await syncPackageGroups(token, base.baseId, organisationId); }
+        try { details.packageGroups = await syncPackageGroups(token, base.baseId, organisationId, modifiedSince); }
         catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-        try { details.packages = await syncPackages(token, base.baseId, organisationId); }
+        try { details.packages = await syncPackages(token, base.baseId, organisationId, modifiedSince); }
         catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-        try { details.campContracts = await syncCampContracts(token, base.baseId, organisationId); }
+        try { details.campContracts = await syncCampContracts(token, base.baseId, organisationId, modifiedSince); }
         catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
         // Enrollment Spots depend on Package Groups being synced first
-        try { details.enrollmentSpots = await syncEnrollmentSpots(token, base.baseId, organisationId); }
+        try { details.enrollmentSpots = await syncEnrollmentSpots(token, base.baseId, organisationId, modifiedSince); }
         catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-        try { details.interviewMgt = await syncInterviewMgt(token, base.baseId, organisationId); }
+        try { details.interviewMgt = await syncInterviewMgt(token, base.baseId, organisationId, modifiedSince); }
         catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-        try { details.contract = await syncContracts(token, base.baseId, organisationId, ownerId); }
+        try { details.contract = await syncContracts(token, base.baseId, organisationId, ownerId, modifiedSince); }
         catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
-        try { details.contractProducts = await syncContractProducts(token, base.baseId, organisationId); }
+        try { details.contractProducts = await syncContractProducts(token, base.baseId, organisationId, modifiedSince); }
         catch (e: any) { if (!e.message?.includes("403")) throw e; }
 
         // Backfill denormalized agentName / packageName on contracts
         try { details.contractBackfill = await backfillContractDenormFields(organisationId); }
         catch (e: any) { console.error("[Airtable] backfillContractDenormFields failed:", e.message); }
 
-        try { details.payments = await syncPayments(token, base.baseId, organisationId); }
+        try { details.payments = await syncPayments(token, base.baseId, organisationId, modifiedSince); }
         catch (e: any) { if (!e.message?.includes("403")) throw e; }
       });
     }
@@ -1218,13 +1274,17 @@ export async function syncAirtableBase(base: AirtableBase, organisationId: strin
       });
     }
 
+    const result: SyncResult = { baseId: base.id, baseName: base.name, success: true, elapsed: Date.now() - start, details };
     console.log(`[Airtable] Sync complete for ${base.name}: ${JSON.stringify(details)}`);
-    return { baseId: base.id, baseName: base.name, success: true, elapsed: Date.now() - start, details };
+    await persistStatus(result);
+    return result;
   } catch (err: any) {
     const causeMsg = err.cause?.message ?? err.cause ?? "";
     const fullError = causeMsg ? `${err.message} | cause: ${causeMsg}` : err.message;
     console.error(`[Airtable] Sync failed for ${base.name}:`, err.message, causeMsg ? `\n  cause: ${causeMsg}` : "");
-    return { baseId: base.id, baseName: base.name, success: false, error: fullError, elapsed: Date.now() - start, details };
+    const result: SyncResult = { baseId: base.id, baseName: base.name, success: false, error: fullError, elapsed: Date.now() - start, details };
+    await persistStatus(result);
+    return result;
   }
 }
 
@@ -1240,22 +1300,7 @@ export async function syncAllBases(organisationId: string): Promise<SyncResult[]
   for (const base of activeBases) {
     const result = await syncAirtableBase(base, organisationId);
     results.push(result);
-
-    // Refresh from DB to avoid stale overwrite
-    const fresh = await staticDb.select().from(platformSettings)
-      .where(eq(platformSettings.key, basesKey)).limit(1);
-    const all: AirtableBase[] = JSON.parse(fresh[0]?.value ?? "[]");
-    const idx = all.findIndex(b => b.id === base.id);
-    if (idx !== -1) {
-      all[idx].lastSyncedAt    = new Date().toISOString();
-      all[idx].lastSyncStatus  = result.success ? "success" : "error";
-      all[idx].lastSyncMessage = result.success
-        ? `Synced: ${JSON.stringify(result.details)}`
-        : result.error ?? "Unknown error";
-      await staticDb.insert(platformSettings)
-        .values({ key: basesKey, value: JSON.stringify(all), updatedAt: new Date() })
-        .onConflictDoUpdate({ target: platformSettings.key, set: { value: JSON.stringify(all), updatedAt: new Date() } });
-    }
+    // Status is persisted inside syncAirtableBase
   }
   return results;
 }
