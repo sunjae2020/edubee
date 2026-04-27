@@ -268,8 +268,127 @@ interface FinanceData {
 
 // CHART_COLORS는 DashboardCrmPage() 컴포넌트 내에서 테마 기반으로 생성됨
 
+// ─── Date Range ──────────────────────────────────────────────────────────────
+type PresetKey = "this_week"|"last_week"|"this_month"|"last_month"|"this_quarter"|"last_quarter"|"this_year"|"last_year"|"custom";
+
+const PRESET_GROUPS: [PresetKey, PresetKey][] = [
+  ["this_week",    "last_week"],
+  ["this_month",   "last_month"],
+  ["this_quarter", "last_quarter"],
+  ["this_year",    "last_year"],
+];
+
+const PRESET_LABELS: Record<PresetKey, string> = {
+  this_week: "This Week", last_week: "Last Week",
+  this_month: "This Month", last_month: "Last Month",
+  this_quarter: "This Quarter", last_quarter: "Last Quarter",
+  this_year: "This Year", last_year: "Last Year",
+  custom: "Custom",
+};
+
+const COMPARE_LABELS: Record<PresetKey, string> = {
+  this_week:    "vs last week",
+  last_week:    "vs prev week",
+  this_month:   "vs last month",
+  last_month:   "vs prev month",
+  this_quarter: "vs last quarter",
+  last_quarter: "vs prev quarter",
+  this_year:    "vs last year",
+  last_year:    "vs prev year",
+  custom:       "vs prev period",
+};
+
+function isoDate(d: Date): string { return d.toISOString().split("T")[0]; }
+
+function computeRange(key: PresetKey, customFrom: string, customTo: string): { from: string; to: string } {
+  const now = new Date();
+  switch (key) {
+    case "this_week": {
+      const dow = now.getDay();
+      const mon = new Date(now); mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+      return { from: isoDate(mon), to: isoDate(now) };
+    }
+    case "last_week": {
+      const dow = now.getDay();
+      const thisMon = new Date(now); thisMon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+      const lastMon = new Date(thisMon); lastMon.setDate(thisMon.getDate() - 7);
+      const lastSun = new Date(thisMon); lastSun.setDate(thisMon.getDate() - 1);
+      return { from: isoDate(lastMon), to: isoDate(lastSun) };
+    }
+    case "this_month":
+      return { from: isoDate(new Date(now.getFullYear(), now.getMonth(), 1)), to: isoDate(now) };
+    case "last_month": {
+      const from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const to   = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { from: isoDate(from), to: isoDate(to) };
+    }
+    case "this_quarter": {
+      const q = Math.floor(now.getMonth() / 3);
+      return { from: isoDate(new Date(now.getFullYear(), q * 3, 1)), to: isoDate(now) };
+    }
+    case "last_quarter": {
+      const q = Math.floor(now.getMonth() / 3);
+      const from = new Date(now.getFullYear(), (q - 1) * 3, 1);
+      const to   = new Date(now.getFullYear(), q * 3, 0);
+      return { from: isoDate(from), to: isoDate(to) };
+    }
+    case "this_year":
+      return { from: `${now.getFullYear()}-01-01`, to: isoDate(now) };
+    case "last_year": {
+      const y = now.getFullYear() - 1;
+      return { from: `${y}-01-01`, to: `${y}-12-31` };
+    }
+    case "custom":
+      return {
+        from: customFrom || isoDate(new Date(now.getFullYear(), now.getMonth(), 1)),
+        to:   customTo   || isoDate(now),
+      };
+  }
+}
+
+function DateRangeBar({ preset, onPreset, customFrom, onCustomFrom, customTo, onCustomTo }: {
+  preset: PresetKey;
+  onPreset: (k: PresetKey) => void;
+  customFrom: string; onCustomFrom: (v: string) => void;
+  customTo:   string; onCustomTo:   (v: string) => void;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      {PRESET_GROUPS.map(([a, b]) => (
+        <div key={a} style={{ display: "flex", border: `1px solid ${T.border}`, borderRadius: 8, overflow: "hidden" }}>
+          {([a, b] as PresetKey[]).map((k, i) => (
+            <button key={k} onClick={() => onPreset(k)} style={{
+              padding: "5px 12px", fontSize: 12, fontWeight: 500, cursor: "pointer", border: "none",
+              borderRight: i === 0 ? `1px solid ${T.border}` : "none",
+              background: preset === k ? T.orange : T.card,
+              color: preset === k ? "#fff" : T.neutral600,
+              transition: "all 120ms",
+            }}>{PRESET_LABELS[k]}</button>
+          ))}
+        </div>
+      ))}
+      <button onClick={() => onPreset("custom")} style={{
+        padding: "5px 12px", fontSize: 12, fontWeight: 500, cursor: "pointer",
+        border: `1px solid ${T.border}`, borderRadius: 8,
+        background: preset === "custom" ? T.orange : T.card,
+        color: preset === "custom" ? "#fff" : T.neutral600,
+        transition: "all 120ms",
+      }}>Custom</button>
+      {preset === "custom" && (
+        <>
+          <input type="date" value={customFrom} onChange={e => onCustomFrom(e.target.value)}
+            style={{ padding: "4px 10px", fontSize: 12, border: `1px solid ${T.border}`, borderRadius: 8, color: T.neutral900, background: T.card }} />
+          <span style={{ fontSize: 12, color: T.neutral400 }}>–</span>
+          <input type="date" value={customTo} onChange={e => onCustomTo(e.target.value)}
+            style={{ padding: "4px 10px", fontSize: 12, border: `1px solid ${T.border}`, borderRadius: 8, color: T.neutral900, background: T.card }} />
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── MoM badge ───────────────────────────────────────────────────────────────
-function MoMBadge({ pct, thisMonth }: { pct: number; thisMonth: number }) {
+function MoMBadge({ pct, thisMonth, label = "vs prev period" }: { pct: number; thisMonth: number; label?: string }) {
   if (thisMonth === 0 && pct === 0) return null;
   const up = pct >= 0;
   return (
@@ -279,13 +398,13 @@ function MoMBadge({ pct, thisMonth }: { pct: number; thisMonth: number }) {
       background: up ? T.successBg : T.dangerBg,
       color: up ? T.success : T.danger,
     }}>
-      {up ? "↑" : "↓"} {Math.abs(pct)}% vs last month
+      {up ? "↑" : "↓"} {Math.abs(pct)}% {label}
     </span>
   );
 }
 
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
-function OverviewTab({ data, loading }: { data: OverviewData | undefined; loading: boolean }) {
+function OverviewTab({ data, loading, rangeLabel, compareLabel }: { data: OverviewData | undefined; loading: boolean; rangeLabel: string; compareLabel: string }) {
   const [, navigate] = useLocation();
   const chartPrimary = getCssVar("--e-orange", "#F5821F");
   const chartPrimLt  = getCssVar("--e-orange-lt", "#FEF0E3");
@@ -309,7 +428,7 @@ function OverviewTab({ data, loading }: { data: OverviewData | undefined; loadin
               <div style={{ fontSize: 13, color: T.neutral600, marginTop: 4 }}>Active Leads</div>
               <div style={{ fontSize: 11, color: T.neutral400, marginTop: 2 }}>Total: {data?.totalLeads ?? 0}</div>
               <div style={{ marginTop: 6 }}>
-                <MoMBadge pct={data?.leadMoMPct ?? 0} thisMonth={data?.thisMonthLeads ?? 0} />
+                <MoMBadge pct={data?.leadMoMPct ?? 0} thisMonth={data?.thisMonthLeads ?? 0} label={compareLabel} />
               </div>
             </div>
           </div>
@@ -325,7 +444,7 @@ function OverviewTab({ data, loading }: { data: OverviewData | undefined; loadin
               <div style={{ fontSize: 13, color: T.neutral600, marginTop: 4 }}>Active Contracts</div>
               <div style={{ fontSize: 11, color: T.neutral400, marginTop: 2 }}>Total: {data?.totalContracts ?? 0}</div>
               <div style={{ marginTop: 6 }}>
-                <MoMBadge pct={data?.contractMoMPct ?? 0} thisMonth={data?.thisMonthContracts ?? 0} />
+                <MoMBadge pct={data?.contractMoMPct ?? 0} thisMonth={data?.thisMonthContracts ?? 0} label={compareLabel} />
               </div>
             </div>
           </div>
@@ -365,7 +484,7 @@ function OverviewTab({ data, loading }: { data: OverviewData | undefined; loadin
 
       {/* Recent Leads + Quick Actions */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 16 }}>
-        <Card title="Recent Leads">
+        <Card title={`Leads · ${rangeLabel}`}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${T.border}` }}>
@@ -1206,6 +1325,14 @@ export default function DashboardCrmPage() {
   const isSA = user?.role === "super_admin";
   const isSAorAD = isSA || user?.role === "admin";
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [preset, setPreset]         = useState<PresetKey>("this_month");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo,   setCustomTo]   = useState("");
+  const { from, to } = useMemo(() => computeRange(preset, customFrom, customTo), [preset, customFrom, customTo]);
+  const rangeLabel   = preset !== "custom"
+    ? PRESET_LABELS[preset]
+    : (customFrom && customTo ? `${customFrom} – ${customTo}` : "Custom");
+  const compareLabel = COMPARE_LABELS[preset];
 
   // ── Tab state synced to URL (wouter v3: useSearch() returns query string without "?") ──
   const searchParams = new URLSearchParams(search);
@@ -1217,29 +1344,29 @@ export default function DashboardCrmPage() {
 
   // ── New V2 API queries ──
   const { data: overviewData, isLoading: overviewLoading } = useQuery<OverviewData>({
-    queryKey: ["dashboard-v2-overview"],
-    queryFn: () => axios.get(`${BASE}/api/dashboard/v2/overview`).then(r => r.data),
+    queryKey: ["dashboard-v2-overview", from, to],
+    queryFn: () => axios.get(`${BASE}/api/dashboard/v2/overview?from=${from}&to=${to}`).then(r => r.data),
     enabled: isSAorAD,
     staleTime: 60_000,
   });
 
   const { data: operationData, isLoading: operationLoading } = useQuery<OperationData>({
-    queryKey: ["dashboard-v2-operation"],
-    queryFn: () => axios.get(`${BASE}/api/dashboard/v2/operation`).then(r => r.data),
+    queryKey: ["dashboard-v2-operation", from, to],
+    queryFn: () => axios.get(`${BASE}/api/dashboard/v2/operation?from=${from}&to=${to}`).then(r => r.data),
     enabled: isSAorAD && activeTab === "operation",
     staleTime: 60_000,
   });
 
   const { data: salesData, isLoading: salesLoading } = useQuery<SalesData>({
-    queryKey: ["dashboard-v2-sales"],
-    queryFn: () => axios.get(`${BASE}/api/dashboard/v2/sales`).then(r => r.data),
+    queryKey: ["dashboard-v2-sales", from, to],
+    queryFn: () => axios.get(`${BASE}/api/dashboard/v2/sales?from=${from}&to=${to}`).then(r => r.data),
     enabled: isSAorAD && activeTab === "sales",
     staleTime: 60_000,
   });
 
   const { data: financeData, isLoading: financeLoading } = useQuery<FinanceData>({
-    queryKey: ["dashboard-v2-finance"],
-    queryFn: () => axios.get(`${BASE}/api/dashboard/v2/finance`).then(r => r.data),
+    queryKey: ["dashboard-v2-finance", from, to],
+    queryFn: () => axios.get(`${BASE}/api/dashboard/v2/finance?from=${from}&to=${to}`).then(r => r.data),
     enabled: isSAorAD && activeTab === "finance",
     staleTime: 60_000,
   });
@@ -1334,8 +1461,19 @@ export default function DashboardCrmPage() {
         </div>
       </div>
 
+      {/* Date Range Bar — shared across all tabs */}
+      <div style={{ padding: "12px 0 20px" }}>
+        <DateRangeBar
+          preset={preset} onPreset={setPreset}
+          customFrom={customFrom} onCustomFrom={setCustomFrom}
+          customTo={customTo}   onCustomTo={setCustomTo}
+        />
+      </div>
+
       {/* Tab Content */}
-      {activeTab === "overview"  && <OverviewTab  data={overviewData}  loading={overviewLoading}  />}
+      {activeTab === "overview" && (
+        <OverviewTab data={overviewData} loading={overviewLoading} rangeLabel={rangeLabel} compareLabel={compareLabel} />
+      )}
       {activeTab === "operation" && <OperationTab data={operationData} loading={operationLoading} />}
       {activeTab === "sales"     && <SalesTab     salesData={salesData} salesLoading={salesLoading} funnelData={funnelData} />}
       {activeTab === "finance"   && (

@@ -68,7 +68,7 @@ export default function SuperAdminDashboard() {
           icon={Clock} color="#0369A1"
         />
         <StatCard
-          label="Total Users"    value={stats?.totalUsers ?? 0}
+          label="Total Accounts" value={stats?.totalAccounts ?? 0}
           icon={Users} color="#15803D"
         />
         <StatCard

@@ -25,6 +25,23 @@ async function scalar(q: SQL): Promise<number> {
 // ── GET /api/dashboard/v2/overview ────────────────────────────────────────
 router.get("/dashboard/v2/overview", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
+    // super_admin (no orgId) → global view; admin → own tenant only
+    const orgId = req.user!.organisationId ?? null;
+
+    // Date range: from frontend presets or custom; default = current month
+    const now = new Date();
+    const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+    const defaultTo   = now.toISOString().split("T")[0];
+    const rangeFrom = (typeof req.query.from === "string" && req.query.from) ? req.query.from : defaultFrom;
+    const rangeTo   = (typeof req.query.to   === "string" && req.query.to)   ? req.query.to   : defaultTo;
+
+    // Compute previous period of same duration
+    const msFrom = new Date(rangeFrom).getTime();
+    const msTo   = new Date(rangeTo).getTime();
+    const durMs  = msTo - msFrom + 86_400_000; // inclusive
+    const prevTo   = new Date(msFrom - 86_400_000).toISOString().split("T")[0];
+    const prevFrom = new Date(msFrom - durMs).toISOString().split("T")[0];
+
     const [
       totalLeads,
       activeLeads,
@@ -33,48 +50,68 @@ router.get("/dashboard/v2/overview", authenticate, requireRole(...ADMIN_ROLES), 
       totalUsers,
       activeUsers,
     ] = await Promise.all([
-      scalar(sql`SELECT COUNT(*)::int AS val FROM leads`),
-      scalar(sql`SELECT COUNT(*)::int AS val FROM leads WHERE status NOT IN ('closed_won','closed_lost','cancelled','converted') AND is_active = true`),
-      scalar(sql`SELECT COUNT(*)::int AS val FROM contracts`),
-      scalar(sql`SELECT COUNT(*)::int AS val FROM contracts WHERE status = 'active'`),
-      scalar(sql`SELECT COUNT(*)::int AS val FROM users WHERE role != 'super_admin'`),
-      scalar(sql`SELECT COUNT(*)::int AS val FROM users WHERE status = 'active' AND role != 'super_admin'`),
+      orgId
+        ? scalar(sql`SELECT COUNT(*)::int AS val FROM leads WHERE organisation_id = ${orgId}`)
+        : scalar(sql`SELECT COUNT(*)::int AS val FROM leads`),
+      orgId
+        ? scalar(sql`SELECT COUNT(*)::int AS val FROM leads WHERE organisation_id = ${orgId} AND status NOT IN ('closed_won','closed_lost','cancelled','converted') AND is_active = true`)
+        : scalar(sql`SELECT COUNT(*)::int AS val FROM leads WHERE status NOT IN ('closed_won','closed_lost','cancelled','converted') AND is_active = true`),
+      orgId
+        ? scalar(sql`SELECT COUNT(*)::int AS val FROM contracts WHERE organisation_id = ${orgId}`)
+        : scalar(sql`SELECT COUNT(*)::int AS val FROM contracts`),
+      orgId
+        ? scalar(sql`SELECT COUNT(*)::int AS val FROM contracts WHERE organisation_id = ${orgId} AND status = 'active'`)
+        : scalar(sql`SELECT COUNT(*)::int AS val FROM contracts WHERE status = 'active'`),
+      orgId
+        ? scalar(sql`SELECT COUNT(*)::int AS val FROM accounts WHERE organisation_id = ${orgId}`)
+        : scalar(sql`SELECT COUNT(*)::int AS val FROM accounts`),
+      orgId
+        ? scalar(sql`SELECT COUNT(*)::int AS val FROM accounts WHERE organisation_id = ${orgId} AND status = 'Active'`)
+        : scalar(sql`SELECT COUNT(*)::int AS val FROM accounts WHERE status = 'Active'`),
     ]);
 
-    // Month-over-month lead comparison
-    const [leadMoM] = await rows(sql`
-      SELECT
-        COUNT(*) FILTER (WHERE created_at >= date_trunc('month', NOW()))::int               AS this_month,
-        COUNT(*) FILTER (WHERE created_at >= date_trunc('month', NOW()) - INTERVAL '1 month'
-                           AND created_at < date_trunc('month', NOW()))::int                AS last_month
-      FROM leads
-    `);
-    const thisMonthLeads  = Number(leadMoM?.this_month  ?? 0);
-    const lastMonthLeads  = Number(leadMoM?.last_month  ?? 0);
+    // Period-based lead comparison (selected range vs previous equivalent period)
+    const [leadPeriod] = orgId
+      ? await rows(sql`
+          SELECT
+            COUNT(*) FILTER (WHERE created_at::date >= ${rangeFrom}::date AND created_at::date <= ${rangeTo}::date)::int   AS this_period,
+            COUNT(*) FILTER (WHERE created_at::date >= ${prevFrom}::date  AND created_at::date <= ${prevTo}::date)::int    AS prev_period
+          FROM leads WHERE organisation_id = ${orgId}
+        `)
+      : await rows(sql`
+          SELECT
+            COUNT(*) FILTER (WHERE created_at::date >= ${rangeFrom}::date AND created_at::date <= ${rangeTo}::date)::int   AS this_period,
+            COUNT(*) FILTER (WHERE created_at::date >= ${prevFrom}::date  AND created_at::date <= ${prevTo}::date)::int    AS prev_period
+          FROM leads
+        `);
+    const thisMonthLeads  = Number(leadPeriod?.this_period ?? 0);
+    const lastMonthLeads  = Number(leadPeriod?.prev_period ?? 0);
     const leadMoMPct = lastMonthLeads > 0
       ? Math.round(((thisMonthLeads - lastMonthLeads) / lastMonthLeads) * 100)
       : (thisMonthLeads > 0 ? 100 : 0);
 
-    // Contract MoM
-    const [contractMoM] = await rows(sql`
-      SELECT
-        COUNT(*) FILTER (WHERE created_at >= date_trunc('month', NOW()))::int  AS this_month,
-        COUNT(*) FILTER (WHERE created_at >= date_trunc('month', NOW()) - INTERVAL '1 month'
-                           AND created_at < date_trunc('month', NOW()))::int   AS last_month
-      FROM contracts
-    `);
-    const thisMonthContracts = Number(contractMoM?.this_month ?? 0);
-    const lastMonthContracts = Number(contractMoM?.last_month ?? 0);
+    // Period-based contract comparison
+    const [contractPeriod] = orgId
+      ? await rows(sql`
+          SELECT
+            COUNT(*) FILTER (WHERE created_at::date >= ${rangeFrom}::date AND created_at::date <= ${rangeTo}::date)::int   AS this_period,
+            COUNT(*) FILTER (WHERE created_at::date >= ${prevFrom}::date  AND created_at::date <= ${prevTo}::date)::int    AS prev_period
+          FROM contracts WHERE organisation_id = ${orgId}
+        `)
+      : await rows(sql`
+          SELECT
+            COUNT(*) FILTER (WHERE created_at::date >= ${rangeFrom}::date AND created_at::date <= ${rangeTo}::date)::int   AS this_period,
+            COUNT(*) FILTER (WHERE created_at::date >= ${prevFrom}::date  AND created_at::date <= ${prevTo}::date)::int    AS prev_period
+          FROM contracts
+        `);
+    const thisMonthContracts = Number(contractPeriod?.this_period ?? 0);
+    const lastMonthContracts = Number(contractPeriod?.prev_period ?? 0);
     const contractMoMPct = lastMonthContracts > 0
       ? Math.round(((thisMonthContracts - lastMonthContracts) / lastMonthContracts) * 100)
       : (thisMonthContracts > 0 ? 100 : 0);
 
-    const periodStart = new Date();
-    periodStart.setDate(1);
-    const periodStartStr = periodStart.toISOString().split("T")[0];
-    const now = new Date();
-    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const periodEndStr = periodEnd.toISOString().split("T")[0];
+    const periodStartStr = rangeFrom;
+    const periodEndStr   = rangeTo;
 
     const [kpiRow] = await rows(sql`
       SELECT
@@ -99,12 +136,22 @@ router.get("/dashboard/v2/overview", authenticate, requireRole(...ADMIN_ROLES), 
       incentiveStaffCount: Number(kpiRow?.incentive_staff_count ?? 0),
     };
 
-    const recentLeadsRows = await rows(sql`
-      SELECT id, full_name AS name, status, source, created_at AS "createdAt"
-      FROM leads
-      ORDER BY created_at DESC
-      LIMIT 5
-    `);
+    const recentLeadsRows = orgId
+      ? await rows(sql`
+          SELECT id, full_name AS name, status, source, created_at AS "createdAt"
+          FROM leads
+          WHERE organisation_id = ${orgId}
+            AND created_at::date >= ${rangeFrom}::date
+            AND created_at::date <= ${rangeTo}::date
+          ORDER BY created_at DESC LIMIT 10
+        `)
+      : await rows(sql`
+          SELECT id, full_name AS name, status, source, created_at AS "createdAt"
+          FROM leads
+          WHERE created_at::date >= ${rangeFrom}::date
+            AND created_at::date <= ${rangeTo}::date
+          ORDER BY created_at DESC LIMIT 10
+        `);
 
     setCache(res);
     return res.json({
@@ -131,17 +178,23 @@ router.get("/dashboard/v2/overview", authenticate, requireRole(...ADMIN_ROLES), 
 // ── GET /api/dashboard/v2/operation ───────────────────────────────────────
 router.get("/dashboard/v2/operation", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
+    const now = new Date();
+    const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+    const defaultTo   = now.toISOString().split("T")[0];
+    const rangeFrom = (typeof req.query.from === "string" && req.query.from) ? req.query.from : defaultFrom;
+    const rangeTo   = (typeof req.query.to   === "string" && req.query.to)   ? req.query.to   : defaultTo;
+
     const [
       tasksDueCount,
       tasksOverdueCount,
-      interviewsThisWeek,
+      interviewsInPeriod,
       visaPendingCount,
       visaUrgentCount,
       tasksUrgentCount,
     ] = await Promise.all([
       scalar(sql`SELECT COUNT(*)::int AS val FROM tasks WHERE status NOT IN ('closed','resolved','done') AND due_date >= CURRENT_DATE AND due_date <= CURRENT_DATE + INTERVAL '7 days'`),
       scalar(sql`SELECT COUNT(*)::int AS val FROM tasks WHERE status NOT IN ('closed','resolved','done') AND due_date < CURRENT_DATE`),
-      scalar(sql`SELECT COUNT(*)::int AS val FROM interview_schedules WHERE scheduled_datetime >= date_trunc('week', NOW()) AND scheduled_datetime < date_trunc('week', NOW()) + INTERVAL '7 days'`),
+      scalar(sql`SELECT COUNT(*)::int AS val FROM interview_schedules WHERE scheduled_datetime::date >= ${rangeFrom}::date AND scheduled_datetime::date <= ${rangeTo}::date`),
       scalar(sql`SELECT COUNT(*)::int AS val FROM visa_services_mgt WHERE status NOT IN ('granted','rejected') OR status IS NULL`),
       scalar(sql`SELECT COUNT(*)::int AS val FROM visa_services_mgt WHERE end_date <= CURRENT_DATE + INTERVAL '30 days' AND end_date >= CURRENT_DATE`),
       scalar(sql`SELECT COUNT(*)::int AS val FROM tasks WHERE status NOT IN ('closed','resolved','done') AND priority = 'urgent'`),
@@ -169,7 +222,6 @@ router.get("/dashboard/v2/operation", authenticate, requireRole(...ADMIN_ROLES),
       LIMIT 8
     `);
 
-    // Interview: join to interviewer (users) for the name
     const upcomingInterviewsRows = await rows(sql`
       SELECT
         i.id,
@@ -180,7 +232,8 @@ router.get("/dashboard/v2/operation", authenticate, requireRole(...ADMIN_ROLES),
         i.scheduled_datetime AS "scheduledAt"
       FROM interview_schedules i
       LEFT JOIN users u ON u.id = i.interviewer_id
-      WHERE i.scheduled_datetime >= NOW()
+      WHERE i.scheduled_datetime::date >= ${rangeFrom}::date
+        AND i.scheduled_datetime::date <= ${rangeTo}::date
         AND i.status = 'pending'
       ORDER BY i.scheduled_datetime ASC
       LIMIT 5
@@ -191,6 +244,8 @@ router.get("/dashboard/v2/operation", authenticate, requireRole(...ADMIN_ROLES),
         'Lead: ' || full_name AS description,
         updated_at AS "createdAt"
       FROM leads
+      WHERE updated_at::date >= ${rangeFrom}::date
+        AND updated_at::date <= ${rangeTo}::date
       ORDER BY updated_at DESC
       LIMIT 5
     `);
@@ -210,7 +265,7 @@ router.get("/dashboard/v2/operation", authenticate, requireRole(...ADMIN_ROLES),
       tasksDueCount,
       tasksOverdueCount,
       tasksUrgentCount,
-      interviewsThisWeek,
+      interviewsThisWeek: interviewsInPeriod,
       visaPendingCount,
       visaUrgentCount,
       enrollmentTotal: 0,
@@ -234,53 +289,62 @@ router.get("/dashboard/v2/operation", authenticate, requireRole(...ADMIN_ROLES),
 // ── GET /api/dashboard/v2/sales ───────────────────────────────────────────
 router.get("/dashboard/v2/sales", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
+    const now = new Date();
+    const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+    const defaultTo   = now.toISOString().split("T")[0];
+    const rangeFrom = (typeof req.query.from === "string" && req.query.from) ? req.query.from : defaultFrom;
+    const rangeTo   = (typeof req.query.to   === "string" && req.query.to)   ? req.query.to   : defaultTo;
+
+    // Pipeline: always current active snapshot
     const pipelineRows = await rows(sql`
       SELECT COALESCE(status, 'new') AS status, COUNT(*)::int AS count
       FROM leads
       WHERE is_active = true
       GROUP BY status
     `);
-
     const statusMap: Record<string, number> = {};
     for (const r of pipelineRows) statusMap[r.status] = Number(r.count);
-
     const pipeline = {
-      new:        statusMap["new"]         ?? 0,
-      open:       statusMap["open"]        ?? 0,
-      inProgress: (statusMap["in_progress"] ?? 0),
-      qualified:  statusMap["qualified"]   ?? 0,
-      contracted: statusMap["converted"]   ?? 0,
+      new:        statusMap["new"]          ?? 0,
+      open:       statusMap["open"]         ?? 0,
+      inProgress: statusMap["in_progress"]  ?? 0,
+      qualified:  statusMap["qualified"]    ?? 0,
+      contracted: statusMap["converted"]    ?? 0,
       total:      Object.values(statusMap).reduce((a, b) => a + b, 0),
     };
 
+    // Monthly trend: show months covered by range (min 2 months for chart)
     const monthlyLeadsRows = await rows(sql`
       SELECT
         to_char(date_trunc('month', created_at), 'Mon') AS month,
         EXTRACT(YEAR FROM created_at)::int               AS year,
         COUNT(*)::int                                    AS count
       FROM leads
-      WHERE created_at >= date_trunc('month', NOW()) - INTERVAL '5 months'
+      WHERE created_at::date >= ${rangeFrom}::date
+        AND created_at::date <= ${rangeTo}::date
       GROUP BY date_trunc('month', created_at), month, year
       ORDER BY date_trunc('month', created_at)
     `);
 
-    // Monthly contracts
     const monthlyContractsRows = await rows(sql`
       SELECT
         to_char(date_trunc('month', created_at), 'Mon') AS month,
         COUNT(*)::int AS count
       FROM contracts
-      WHERE created_at >= date_trunc('month', NOW()) - INTERVAL '5 months'
+      WHERE created_at::date >= ${rangeFrom}::date
+        AND created_at::date <= ${rangeTo}::date
       GROUP BY date_trunc('month', created_at), month
       ORDER BY date_trunc('month', created_at)
     `);
     const contractMap: Record<string, number> = {};
     for (const r of monthlyContractsRows) contractMap[r.month] = Number(r.count);
 
+    // Lead sources: filter by range
     const sourceRows = await rows(sql`
       SELECT COALESCE(source,'Unknown') AS source, COUNT(*)::int AS count
       FROM leads
-      WHERE created_at >= date_trunc('month', NOW()) - INTERVAL '5 months'
+      WHERE created_at::date >= ${rangeFrom}::date
+        AND created_at::date <= ${rangeTo}::date
       GROUP BY source
       ORDER BY count DESC
     `);
@@ -291,6 +355,7 @@ router.get("/dashboard/v2/sales", authenticate, requireRole(...ADMIN_ROLES), asy
       percentage: srcTotal > 0 ? Math.round((Number(r.count) / srcTotal) * 100) : 0,
     }));
 
+    // Recent quotes: filter by range
     const recentQuotesRows = await rows(sql`
       SELECT
         q.id,
@@ -303,6 +368,8 @@ router.get("/dashboard/v2/sales", authenticate, requireRole(...ADMIN_ROLES), asy
         q.quote_status AS status,
         q.created_on   AS "createdAt"
       FROM quotes q
+      WHERE q.created_on::date >= ${rangeFrom}::date
+        AND q.created_on::date <= ${rangeTo}::date
       ORDER BY q.created_on DESC
       LIMIT 5
     `);
@@ -313,13 +380,10 @@ router.get("/dashboard/v2/sales", authenticate, requireRole(...ADMIN_ROLES), asy
       WHERE status = 'Active'
     `);
 
-    const thisMonth          = await scalar(sql`SELECT COUNT(*)::int AS val FROM leads WHERE created_at >= date_trunc('month', NOW())`);
-    const thisMonthContracts = await scalar(sql`SELECT COUNT(*)::int AS val FROM contracts WHERE created_at >= date_trunc('month', NOW())`);
-
-    // Conversion rate (new leads this month → contracts)
-    const conversionRate = thisMonth > 0
-      ? Math.round((thisMonthContracts / thisMonth) * 100)
-      : 0;
+    // Goals: count new leads/contracts in selected period
+    const periodLeads     = await scalar(sql`SELECT COUNT(*)::int AS val FROM leads     WHERE created_at::date >= ${rangeFrom}::date AND created_at::date <= ${rangeTo}::date`);
+    const periodContracts = await scalar(sql`SELECT COUNT(*)::int AS val FROM contracts WHERE created_at::date >= ${rangeFrom}::date AND created_at::date <= ${rangeTo}::date`);
+    const conversionRate  = periodLeads > 0 ? Math.round((periodContracts / periodLeads) * 100) : 0;
 
     setCache(res);
     return res.json({
@@ -334,9 +398,9 @@ router.get("/dashboard/v2/sales", authenticate, requireRole(...ADMIN_ROLES), asy
       recentQuotes: recentQuotesRows.map((r: any) => ({ ...r, totalAmount: Number(r.totalAmount) })),
       goals: {
         newLeadsTarget:      50,
-        newLeadsActual:      thisMonth,
+        newLeadsActual:      periodLeads,
         contractsTarget:     10,
-        contractsActual:     thisMonthContracts,
+        contractsActual:     periodContracts,
         conversionRate,
       },
       totalQuoteValue,
@@ -350,6 +414,13 @@ router.get("/dashboard/v2/sales", authenticate, requireRole(...ADMIN_ROLES), asy
 // ── GET /api/dashboard/v2/finance ─────────────────────────────────────────
 router.get("/dashboard/v2/finance", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
+    const now = new Date();
+    const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+    const defaultTo   = now.toISOString().split("T")[0];
+    const rangeFrom = (typeof req.query.from === "string" && req.query.from) ? req.query.from : defaultFrom;
+    const rangeTo   = (typeof req.query.to   === "string" && req.query.to)   ? req.query.to   : defaultTo;
+
+    // KPI: sum for all months that overlap with the selected range
     const [kpiRow] = await rows(sql`
       SELECT
         COALESCE(SUM(ar_collected),0)::numeric   AS ar_collected,
@@ -359,7 +430,8 @@ router.get("/dashboard/v2/finance", authenticate, requireRole(...ADMIN_ROLES), a
         COALESCE(SUM(net_revenue),0)::numeric    AS net_revenue,
         COALESCE(SUM(incentive_amount),0)::numeric AS total_incentive
       FROM staff_kpi_periods
-      WHERE period_start = date_trunc('month', NOW())::date
+      WHERE period_start >= date_trunc('month', ${rangeFrom}::date)
+        AND period_start <= date_trunc('month', ${rangeTo}::date)
     `);
 
     const monthlyRevenueRows = await rows(sql`
@@ -370,7 +442,8 @@ router.get("/dashboard/v2/finance", authenticate, requireRole(...ADMIN_ROLES), a
         COALESCE(SUM(cp.ap_amount),0)::numeric             AS ap
       FROM contract_products cp
       JOIN contracts c ON c.id = cp.contract_id
-      WHERE c.created_at >= date_trunc('month', NOW()) - INTERVAL '5 months'
+      WHERE c.created_at::date >= ${rangeFrom}::date
+        AND c.created_at::date <= ${rangeTo}::date
       GROUP BY date_trunc('month', c.created_at), month, year
       ORDER BY date_trunc('month', c.created_at)
     `);
@@ -420,7 +493,8 @@ router.get("/dashboard/v2/finance", authenticate, requireRole(...ADMIN_ROLES), a
         to_char(k.period_start,'Mon YYYY') AS period
       FROM staff_kpi_periods k
       JOIN users u ON u.id = k.staff_id
-      WHERE k.period_start = date_trunc('month', NOW())::date
+      WHERE k.period_start >= date_trunc('month', ${rangeFrom}::date)
+        AND k.period_start <= date_trunc('month', ${rangeTo}::date)
       ORDER BY k.incentive_amount DESC
       LIMIT 10
     `);

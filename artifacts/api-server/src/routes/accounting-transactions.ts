@@ -181,11 +181,26 @@ router.delete("/transactions/:id", authenticate, requireRole(...ADMIN_ROLES), as
 
 // ─── LOOKUP HELPERS ───────────────────────────────────────────────────────────
 
-router.get("/transactions-lookup/accounts", authenticate, async (_req, res) => {
+router.get("/transactions-lookup/accounts", authenticate, async (req, res) => {
   try {
-    const rows = await db.execute(
-      sql`SELECT id, name FROM accounts WHERE status = 'Active' ORDER BY name LIMIT 200`
-    );
+    const q = (req.query.q as string | undefined)?.trim() ?? "";
+    const rows = await db.execute(sql`
+      SELECT
+        a.id,
+        a.name,
+        a.account_type    AS "accountType",
+        a.email,
+        a.phone_number    AS "phone",
+        a.country,
+        a.primary_contact_id AS "primaryContactId",
+        c.first_name || ' ' || c.last_name AS "primaryContactName"
+      FROM accounts a
+      LEFT JOIN contacts c ON c.id = a.primary_contact_id
+      WHERE a.status = 'Active'
+        ${q ? sql`AND (a.name ILIKE ${"%" + q + "%"} OR a.email ILIKE ${"%" + q + "%"})` : sql``}
+      ORDER BY a.name
+      LIMIT 100
+    `);
     res.json(rows.rows);
   } catch (err) {
     console.error("[GET /transactions-lookup/accounts]", err);

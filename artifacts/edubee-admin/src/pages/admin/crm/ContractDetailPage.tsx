@@ -3657,7 +3657,11 @@ function ActivityTab({ contractId }: { contractId: string }) {
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-  const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const initialTab = (): TabKey => {
+    const hash = window.location.hash.replace("#", "");
+    return TABS.some(t => t.key === hash) ? (hash as TabKey) : "overview";
+  };
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [editingContract,  setEditingContract]  = useState(false);
   const [editingAccount,   setEditingAccount]   = useState(false);
   const [addingService,    setAddingService]    = useState<string | null>(null);

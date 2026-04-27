@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { contractProducts, contracts, accounts } from "@workspace/db/schema";
-import { eq, and, or, ilike, gte, lte, inArray, sql, count, sum, SQL } from "drizzle-orm";
+import { eq, and, or, ilike, gte, lte, inArray, sql, count, sum, desc, SQL } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 
@@ -29,8 +30,15 @@ function buildWhere(
       conds.push(inArray(contractProducts[statusField], statuses));
     }
   }
-  if (dateFrom) conds.push(gte(contractProducts[dueDateField], dateFrom));
-  if (dateTo)   conds.push(lte(contractProducts[dueDateField], dateTo));
+  // NULL due date rows are always included (exclude only if date is set AND exceeds range)
+  if (dateFrom) conds.push(or(
+    sql`${contractProducts[dueDateField]} IS NULL`,
+    gte(contractProducts[dueDateField], dateFrom)
+  )!);
+  if (dateTo)   conds.push(or(
+    sql`${contractProducts[dueDateField]} IS NULL`,
+    lte(contractProducts[dueDateField], dateTo)
+  )!);
 
   return conds.length ? and(...conds) : undefined;
 }
@@ -91,17 +99,21 @@ router.get(
           contractId:        contractProducts.contractId,
           contractNumber:    contracts.contractNumber,
           studentName:       contracts.studentName,
+          providerName:      accounts.name,
+          name:              contractProducts.name,
           serviceModuleType: contractProducts.serviceModuleType,
           arDueDate:         contractProducts.arDueDate,
           arAmount:          contractProducts.arAmount,
           arStatus:          contractProducts.arStatus,
           coaArCode:         contractProducts.coaArCode,
+          ownerName:         contracts.agentName,
           createdAt:         contractProducts.createdAt,
         })
         .from(contractProducts)
         .leftJoin(contracts, eq(contractProducts.contractId, contracts.id))
+        .leftJoin(accounts, eq(contractProducts.providerAccountId, accounts.id))
         .where(where)
-        .orderBy(contractProducts.arDueDate)
+        .orderBy(desc(contractProducts.arDueDate))
         .limit(limitNum)
         .offset(offset);
 
@@ -150,17 +162,21 @@ router.get(
           contractNumber:    contracts.contractNumber,
           studentName:       contracts.studentName,
           agentName:         contracts.agentName,
+          providerName:      accounts.name,
+          name:              contractProducts.name,
           serviceModuleType: contractProducts.serviceModuleType,
           apDueDate:         contractProducts.apDueDate,
           apAmount:          contractProducts.apAmount,
           apStatus:          contractProducts.apStatus,
           coaApCode:         contractProducts.coaApCode,
+          ownerName:         contracts.agentName,
           createdAt:         contractProducts.createdAt,
         })
         .from(contractProducts)
         .leftJoin(contracts, eq(contractProducts.contractId, contracts.id))
+        .leftJoin(accounts, eq(contractProducts.providerAccountId, accounts.id))
         .where(where)
-        .orderBy(contractProducts.apDueDate)
+        .orderBy(desc(contractProducts.apDueDate))
         .limit(limitNum)
         .offset(offset);
 
@@ -260,6 +276,8 @@ router.get(
 
       const where = conds.length ? and(...conds) : undefined;
 
+      const providerAcc = alias(accounts, "provider_acc");
+
       const rows = await db
         .select({
           id:                contractProducts.id,
@@ -267,6 +285,7 @@ router.get(
           contractNumber:    contracts.contractNumber,
           studentName:       contracts.studentName,
           accountName:       accounts.name,
+          providerName:      providerAcc.name,
           name:              contractProducts.name,
           sortIndex:         contractProducts.sortIndex,
           arAmount:          contractProducts.arAmount,
@@ -277,14 +296,16 @@ router.get(
           apStatus:          contractProducts.apStatus,
           coaArCode:         contractProducts.coaArCode,
           coaApCode:         contractProducts.coaApCode,
+          ownerName:         contracts.agentName,
           serviceModuleType: contractProducts.serviceModuleType,
           createdAt:         contractProducts.createdAt,
         })
         .from(contractProducts)
-        .leftJoin(contracts, eq(contractProducts.contractId, contracts.id))
-        .leftJoin(accounts,  eq(contracts.accountId,         accounts.id))
+        .leftJoin(contracts,    eq(contractProducts.contractId,    contracts.id))
+        .leftJoin(accounts,     eq(contracts.accountId,            accounts.id))
+        .leftJoin(providerAcc,  eq(contractProducts.providerAccountId, providerAcc.id))
         .where(where)
-        .orderBy(contractProducts.arDueDate);
+        .orderBy(desc(contractProducts.arDueDate));
 
       return res.json({ success: true, data: rows });
     } catch (err) {

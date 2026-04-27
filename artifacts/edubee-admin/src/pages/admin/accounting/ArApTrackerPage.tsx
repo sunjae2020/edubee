@@ -17,16 +17,28 @@ import { TableFooter } from "@/components/ui/table-footer";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+function endOfCurrentMonth(): string {
+  const now = new Date();
+  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return last.toISOString().split("T")[0];
+}
+
+const AR_DEFAULT_STATUSES = ["scheduled", "invoiced", "overdue"];
+const AP_DEFAULT_STATUSES = ["pending", "ready"];
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface ArRow {
   id: string;
   contractId?: string | null;
   contractNumber?: string | null;
   studentName?: string | null;
+  providerName?: string | null;
+  name?: string | null;
   serviceModuleType?: string | null;
   arDueDate?: string | null;
   arAmount?: string | null;
   arStatus?: string | null;
+  ownerName?: string | null;
 }
 
 interface ApRow {
@@ -35,10 +47,13 @@ interface ApRow {
   contractNumber?: string | null;
   studentName?: string | null;
   agentName?: string | null;
+  providerName?: string | null;
+  name?: string | null;
   serviceModuleType?: string | null;
   apDueDate?: string | null;
   apAmount?: string | null;
   apStatus?: string | null;
+  ownerName?: string | null;
 }
 
 interface Summary {
@@ -279,11 +294,12 @@ function FilterBar({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ArApTrackerPage() {
   const [tab, setTab]                   = useState<"ar" | "ap" | "schedule">("ar");
-  const { sortBy, sortDir, onSort } = useSortState();
+  const [, navigate]                    = useLocation();
+  const { sortBy, sortDir, onSort }     = useSortState("arDueDate", "desc");
   const [search, setSearch]             = useState("");
   const [dateFrom, setDateFrom]         = useState("");
-  const [dateTo, setDateTo]             = useState("");
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [dateTo, setDateTo]             = useState(endOfCurrentMonth);
+  const [statusFilter, setStatusFilter] = useState<string[]>(AR_DEFAULT_STATUSES);
   const [page, setPage]                 = useState(1);
   const [pageSize, setPageSize]         = useState(20);
 
@@ -328,8 +344,13 @@ export default function ArApTrackerPage() {
 
   function handleTabChange(t: "ar" | "ap" | "schedule") {
     setTab(t);
-    setStatusFilter([]);
+    setSearch("");
+    setDateFrom("");
+    setDateTo(endOfCurrentMonth());
     setPage(1);
+    if (t === "ar")       setStatusFilter(AR_DEFAULT_STATUSES);
+    else if (t === "ap")  setStatusFilter(AP_DEFAULT_STATUSES);
+    else                  setStatusFilter([]);
   }
 
   function exportCsv() {
@@ -447,46 +468,53 @@ export default function ArApTrackerPage() {
       {/* AR Table */}
       {tab === "ar" && (
         <div className="rounded-xl border border-stone-200 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="text-sm" style={{ minWidth: 1100, width: "100%" }}>
             <thead className="bg-stone-50 border-b border-stone-200">
               <tr>
-                <>
-                    <SortableTh col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Contract</SortableTh>
-                    <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Student</SortableTh>
-                    <SortableTh col="serviceModuleType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Product</SortableTh>
-                    <SortableTh col="arDueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Due Date</SortableTh>
-                    <SortableTh col="arAmount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Amount (AUD)</SortableTh>
-                    <SortableTh col="arStatus" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
-                  </>
+                <SortableTh col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Contract #</SortableTh>
+                <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Student</SortableTh>
+                <SortableTh col="providerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Provider</SortableTh>
+                <SortableTh col="serviceModuleType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Product</SortableTh>
+                <SortableTh col="arDueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Due Date</SortableTh>
+                <SortableTh col="arAmount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Amount (AUD)</SortableTh>
+                <SortableTh col="arStatus" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Status</SortableTh>
+                <SortableTh col="ownerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Owner</SortableTh>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
               {arLoading && (
-                <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+                <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
               )}
               {!arLoading && arRows.length === 0 && (
-                <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No AR records found</td></tr>
+                <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">No AR records found</td></tr>
               )}
               {sortedAr.map(row => {
                 const isOverdue = row.arStatus === "overdue";
                 const badge = AR_BADGE[row.arStatus ?? "scheduled"] ?? AR_BADGE.scheduled;
                 return (
                   <tr key={row.id}
-                    className="transition-colors"
+                    className="transition-colors cursor-pointer"
                     style={isOverdue ? { backgroundColor: "#FEF2F2" } : undefined}
+                    onClick={() => row.contractId && navigate(`/admin/crm/contracts/${row.contractId}#schedule`)}
                     onMouseEnter={e => { if (!isOverdue) e.currentTarget.style.backgroundColor = "var(--e-orange-lt)"; }}
                     onMouseLeave={e => { if (!isOverdue) e.currentTarget.style.backgroundColor = ""; }}>
-                    <td className="px-4 py-3 font-mono text-xs text-stone-500">
-                      {row.contractNumber ?? "—"}
+                    <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">
+                      {row.contractNumber
+                        ? <span className="text-stone-500">{row.contractNumber}</span>
+                        : <span className="text-stone-400 italic">No #</span>}
                     </td>
-                    <td className="px-4 py-3 font-medium text-stone-800">{row.studentName ?? "—"}</td>
-                    <td className="px-4 py-3 text-stone-600 text-xs">
-                      {MODULE_LABELS[row.serviceModuleType ?? ""] ?? row.serviceModuleType ?? "—"}
+                    <td className="px-4 py-3 font-medium text-stone-800 whitespace-nowrap">{row.studentName ?? "—"}</td>
+                    <td className="px-4 py-3 text-stone-600 text-xs whitespace-nowrap">{row.providerName ?? "—"}</td>
+                    <td className="px-4 py-3 text-stone-700 text-xs whitespace-nowrap">
+                      {row.name
+                        ?? MODULE_LABELS[row.serviceModuleType ?? ""]
+                        ?? row.serviceModuleType
+                        ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-stone-600">{fmtDate(row.arDueDate)}</td>
-                    <td className="px-4 py-3 font-medium text-stone-800">{fmt(row.arAmount)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-stone-600 whitespace-nowrap">{fmtDate(row.arDueDate)}</td>
+                    <td className="px-4 py-3 font-medium text-stone-800 whitespace-nowrap">{fmt(row.arAmount)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span
                         className="px-2.5 py-0.5 rounded-full text-xs capitalize"
                         style={{
@@ -498,7 +526,8 @@ export default function ArApTrackerPage() {
                         {row.arStatus ?? "—"}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-stone-600 text-xs whitespace-nowrap">{row.ownerName ?? "—"}</td>
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <ArActions row={row} />
                     </td>
                   </tr>
@@ -512,43 +541,51 @@ export default function ArApTrackerPage() {
       {/* AP Table */}
       {tab === "ap" && (
         <div className="rounded-xl border border-stone-200 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="text-sm" style={{ minWidth: 1100, width: "100%" }}>
             <thead className="bg-stone-50 border-b border-stone-200">
               <tr>
-                <>
-                    <SortableTh col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Contract</SortableTh>
-                    <SortableTh col="partnerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">School / Partner</SortableTh>
-                    <SortableTh col="serviceModuleType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Product</SortableTh>
-                    <SortableTh col="apDueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Due Date</SortableTh>
-                    <SortableTh col="apAmount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Amount (AUD)</SortableTh>
-                    <SortableTh col="apStatus" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</SortableTh>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Actions</th>
-                  </>
+                <SortableTh col="contractNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Contract #</SortableTh>
+                <SortableTh col="studentName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Student</SortableTh>
+                <SortableTh col="providerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Provider</SortableTh>
+                <SortableTh col="serviceModuleType" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Product</SortableTh>
+                <SortableTh col="apDueDate" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Due Date</SortableTh>
+                <SortableTh col="apAmount" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Amount (AUD)</SortableTh>
+                <SortableTh col="apStatus" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Status</SortableTh>
+                <SortableTh col="ownerName" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Owner</SortableTh>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-stone-500 uppercase tracking-wide whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
               {apLoading && (
-                <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
+                <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">Loading…</td></tr>
               )}
               {!apLoading && apRows.length === 0 && (
-                <tr><td colSpan={7} className="text-center py-12 text-stone-400 text-sm">No AP records found</td></tr>
+                <tr><td colSpan={9} className="text-center py-12 text-stone-400 text-sm">No AP records found</td></tr>
               )}
               {sortedAp.map(row => {
                 const badge = AP_BADGE[row.apStatus ?? "pending"] ?? AP_BADGE.pending;
                 return (
-                  <tr key={row.id} className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-stone-500">
-                      {row.contractNumber ?? "—"}
+                  <tr key={row.id}
+                    className="hover:bg-(--e-orange-lt) cursor-pointer transition-colors"
+                    onClick={() => row.contractId && navigate(`/admin/crm/contracts/${row.contractId}#schedule`)}>
+                    <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">
+                      {row.contractNumber
+                        ? <span className="text-stone-500">{row.contractNumber}</span>
+                        : <span className="text-stone-400 italic">No #</span>}
                     </td>
-                    <td className="px-4 py-3 font-medium text-stone-800">
-                      {row.agentName ?? row.studentName ?? "—"}
+                    <td className="px-4 py-3 font-medium text-stone-800 whitespace-nowrap">
+                      {row.studentName ?? row.agentName ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-stone-600 text-xs">
-                      {MODULE_LABELS[row.serviceModuleType ?? ""] ?? row.serviceModuleType ?? "—"}
+                    <td className="px-4 py-3 text-stone-600 text-xs whitespace-nowrap">{row.providerName ?? "—"}</td>
+                    <td className="px-4 py-3 text-stone-700 text-xs whitespace-nowrap">
+                      {row.name
+                        ?? MODULE_LABELS[row.serviceModuleType ?? ""]
+                        ?? row.serviceModuleType
+                        ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-stone-600">{fmtDate(row.apDueDate)}</td>
-                    <td className="px-4 py-3 font-medium text-stone-800">{fmt(row.apAmount)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-stone-600 whitespace-nowrap">{fmtDate(row.apDueDate)}</td>
+                    <td className="px-4 py-3 font-medium text-stone-800 whitespace-nowrap">{fmt(row.apAmount)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span
                         className="px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
                         style={{ background: badge.bg, color: badge.text }}
@@ -556,7 +593,8 @@ export default function ArApTrackerPage() {
                         {row.apStatus ?? "—"}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-stone-600 text-xs whitespace-nowrap">{row.ownerName ?? "—"}</td>
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <ApActions row={row} />
                     </td>
                   </tr>

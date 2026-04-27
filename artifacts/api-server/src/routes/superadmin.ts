@@ -39,7 +39,7 @@ router.get("/superadmin/stats", ...guard, async (_req, res) => {
           COUNT(*) FILTER (WHERE plan_type = 'enterprise')::int                    AS enterprise_count
         FROM organisations
       `),
-      db.execute(sql`SELECT COUNT(*)::int AS cnt FROM users`),
+      db.execute(sql`SELECT COUNT(*)::int AS cnt FROM accounts`),
       db.execute(sql`SELECT COUNT(*)::int AS cnt FROM accounts WHERE account_type = 'Student'`),
     ]);
 
@@ -57,7 +57,7 @@ router.get("/superadmin/stats", ...guard, async (_req, res) => {
         professional:     t.professional_count ?? 0,
         enterprise:       t.enterprise_count   ?? 0,
       },
-      totalUsers:    u.cnt ?? 0,
+      totalAccounts: u.cnt ?? 0,
       totalStudents: s.cnt ?? 0,
     });
   } catch (err) {
