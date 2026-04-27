@@ -136,15 +136,120 @@ export const TENANT_TABLES = [
 const _tenantPools = new Map<string, InstanceType<typeof Pool>>();
 const _tenantDbs   = new Map<string, NodePgDatabase<typeof schema>>();
 
+// Symbol used to mark pg clients that have already been patched.
+// pg Pool recycles clients — without this guard, each pool.connect() call
+// would wrap the already-wrapped query method, causing exponential nesting.
+const ORIG_QUERY = Symbol("origQuery");
+
 function getTenantPool(tenantSlug: string): InstanceType<typeof Pool> {
   if (!_tenantPools.has(tenantSlug)) {
-    const p = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      max: 5,
-    });
-    p.on("connect", (client: any) => {
-      client.query(`SET search_path = "${tenantSlug}", public`);
-    });
+    const p = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
+
+    // pgBouncer transaction mode: SET search_path on connect is unreliable because
+    // each transaction may land on a different backend connection.
+    //
+    // Strategy: patch each pg PoolClient's query() method so every SQL statement
+    // is automatically wrapped in BEGIN / SET LOCAL search_path / query / COMMIT.
+    //
+    // pg-pool.connect() is called two ways:
+    //   1. Promise-style: pool.connect() — used by Drizzle db.transaction()
+    //   2. Callback-style: pool.connect(cb) — used internally by pool.query(),
+    //      which Drizzle's db.execute() calls.
+    //
+    // Our override must support BOTH call styles.  A pure async function ignores
+    // the callback argument and hangs pool.query() forever.
+    const originalConnect = (p as any).connect.bind(p);
+
+    // Extracts the client-patching logic so it can be shared by both call paths.
+    const patchClient = (client: any) => {
+      // Reset transaction-depth counter on each checkout so stale state
+      // from a previous request doesn't bleed into the next one.
+      client._inTx = 0;
+
+      // Patch only once per pg PoolClient instance to avoid double-wrapping.
+      // pg Pool recycles client objects across checkouts.
+      if (!client[ORIG_QUERY]) {
+        const origQuery = client.query.bind(client);
+        client[ORIG_QUERY] = origQuery;
+
+        // pg-pool calls client.query(text, values, callback) with a 3rd callback
+        // argument internally (from pool.query).  Drizzle calls client.query(text, values)
+        // returning a Promise.  Our wrapper must support BOTH call styles.
+        client.query = function (text: any, values?: any, cb?: any): any {
+          // Normalise 2-arg callback shorthand: query(text, cb)
+          if (typeof values === "function") { cb = values; values = undefined; }
+
+          const sqlText: string = typeof text === "string" ? text : (text?.text ?? "");
+
+          // Control statements: pass through, tracking transaction depth.
+          if (/^\s*BEGIN\b/i.test(sqlText)) {
+            client._inTx = (client._inTx ?? 0) + 1;
+            return typeof cb === "function"
+              ? origQuery(text, values, cb)
+              : origQuery(text, values);
+          }
+          if (/^\s*(COMMIT|ROLLBACK)\b/i.test(sqlText)) {
+            client._inTx = Math.max(0, (client._inTx ?? 0) - 1);
+            return typeof cb === "function"
+              ? origQuery(text, values, cb)
+              : origQuery(text, values);
+          }
+          if (/^\s*(SAVEPOINT|RELEASE|SET\s)/i.test(sqlText)) {
+            return typeof cb === "function"
+              ? origQuery(text, values, cb)
+              : origQuery(text, values);
+          }
+
+          // Core wrapping logic — returns a Promise.
+          const doQuery = async (): Promise<any> => {
+            if ((client._inTx ?? 0) > 0) {
+              await origQuery(`SET LOCAL search_path = "${tenantSlug}", public`);
+              return origQuery(text, values);
+            }
+            await origQuery("BEGIN");
+            await origQuery(`SET LOCAL search_path = "${tenantSlug}", public`);
+            try {
+              const result = await origQuery(text, values);
+              await origQuery("COMMIT");
+              return result;
+            } catch (err) {
+              await origQuery("ROLLBACK").catch(() => undefined);
+              throw err;
+            }
+          };
+
+          if (typeof cb === "function") {
+            // Callback style: fire and pipe result/error to cb.
+            // pg-pool ignores the return value in this code path.
+            doQuery().then((r) => cb(null, r)).catch((e) => cb(e));
+            return;
+          }
+
+          // Promise style (Drizzle db.execute / direct usage).
+          return doQuery();
+        };
+      }
+
+      return client;
+    };
+
+    // Override pool.connect to intercept both call styles.
+    (p as any).connect = function connectOverride(cb?: Function): any {
+      if (typeof cb === "function") {
+        // Callback style — pool.query() calls this.connect(cb) internally.
+        // We must honour the callback so pool.query() can complete.
+        originalConnect((err: any, client: any, release: any) => {
+          if (err) return cb(err, null, release);
+          try { patchClient(client); } catch { /* ignore patch errors */ }
+          cb(null, client, release);
+        });
+        // pool.query() ignores the return value in callback mode.
+        return;
+      }
+      // Promise style — Drizzle db.transaction() uses await pool.connect().
+      return originalConnect().then((client: any) => patchClient(client));
+    };
+
     _tenantPools.set(tenantSlug, p);
   }
   return _tenantPools.get(tenantSlug)!;
