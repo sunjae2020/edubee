@@ -26,7 +26,7 @@ async function loadOrgGoogle(orgId: string) {
 router.put("/google-drive/credentials", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { clientId, clientSecret } = req.body as { clientId?: string; clientSecret?: string };
-    const orgId = req.tenant?.id;
+    const orgId = req.tenant?.id ?? (req as any).user?.organisationId;
     if (!orgId) return res.status(400).json({ error: "No organisation" });
 
     const [org] = await db.select().from(organisations).where(eq(organisations.id, orgId));
@@ -52,7 +52,7 @@ router.put("/google-drive/credentials", authenticate, requireRole(...ADMIN_ROLES
 
 router.get("/google-drive/auth-url", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const orgId = req.tenant?.id ?? "";
+    const orgId = req.tenant?.id ?? (req as any).user?.organisationId ?? "";
     const { g } = await loadOrgGoogle(orgId);
 
     const clientId     = g.clientId;
@@ -137,7 +137,11 @@ router.get("/google-drive/callback", async (req, res) => {
 
 router.get("/google-drive/status", authenticate, async (req, res) => {
   try {
-    const integrations = ((req.tenant?.integrations as any) ?? {}) as Record<string, any>;
+    let integrations = ((req.tenant?.integrations as any) ?? {}) as Record<string, any>;
+    if (!req.tenant?.id && (req as any).user?.organisationId) {
+      const { g: orgG } = await loadOrgGoogle((req as any).user.organisationId);
+      integrations = { google: orgG };
+    }
     const g = integrations.google ?? {};
     res.json({
       credentialsConfigured: !!g.clientId && !!g.clientSecret,
@@ -155,7 +159,7 @@ router.get("/google-drive/status", authenticate, async (req, res) => {
 
 router.post("/google-drive/disconnect", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const orgId = req.tenant?.id;
+    const orgId = req.tenant?.id ?? (req as any).user?.organisationId;
     if (!orgId) return res.status(400).json({ error: "No organisation" });
 
     const [org] = await db.select().from(organisations).where(eq(organisations.id, orgId));
@@ -184,7 +188,7 @@ router.post("/google-drive/disconnect", authenticate, requireRole(...ADMIN_ROLES
 router.put("/google-drive/root-folder", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const { rootFolderId } = req.body as { rootFolderId: string };
-    const orgId = req.tenant?.id;
+    const orgId = req.tenant?.id ?? (req as any).user?.organisationId;
     if (!orgId) return res.status(400).json({ error: "No organisation" });
 
     const [org] = await db.select().from(organisations).where(eq(organisations.id, orgId));
