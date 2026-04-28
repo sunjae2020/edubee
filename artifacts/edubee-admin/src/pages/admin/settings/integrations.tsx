@@ -540,6 +540,8 @@ function GoogleDriveSection() {
   const { data: gdStatus, isLoading } = useQuery<{ connected: boolean; rootFolderId?: string | null }>({
     queryKey: ["google-drive-status"],
     queryFn: () => axios.get(`${BASE}/api/google-drive/status`).then(r => r.data),
+    retry: false,
+    throwOnError: false,
   });
 
   // Handle OAuth redirect result
@@ -559,7 +561,10 @@ function GoogleDriveSection() {
   const connectMutation = useMutation({
     mutationFn: () => axios.get(`${BASE}/api/google-drive/auth-url`).then(r => r.data.url as string),
     onSuccess: (url) => { window.location.href = url; },
-    onError: (e: any) => toast({ title: "Error", description: e?.response?.data?.error ?? "Failed", variant: "destructive" }),
+    onError: (e: any) => {
+      const msg = e?.response?.data?.error ?? e?.response?.data?.message ?? "Failed to connect. Check that GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set in Railway Variables.";
+      toast({ title: "Google Drive Error", description: msg, variant: "destructive" });
+    },
   });
 
   const disconnectMutation = useMutation({
