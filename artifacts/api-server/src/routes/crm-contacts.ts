@@ -308,7 +308,7 @@ router.patch("/crm/contacts/:id/profile-image", authenticate, requireRole(...ADM
   }
 });
 
-// ─── DELETE /api/crm/contacts/bulk  (super_admin 임시/영구 삭제) ──────────────
+// ─── DELETE /api/crm/contacts/bulk  (super_admin soft/permanent delete) ───────
 router.delete("/crm/contacts/bulk", authenticate, async (req, res) => {
   if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
   try {

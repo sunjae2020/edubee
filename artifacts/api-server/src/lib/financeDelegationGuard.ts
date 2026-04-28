@@ -1,7 +1,7 @@
 /**
  * Finance Delegation Guard
- * camp_coordinator 가 Coordinator Tenant 로 재무 데이터에 쓰기 접근 시
- * manage_finance 위임 권한을 검사하는 유틸리티.
+ * Utility to check manage_finance delegation permission when a camp_coordinator
+ * attempts write access to financial data as a Coordinator Tenant.
  */
 import { Response } from "express";
 import { db, staticDb, pool } from "@workspace/db";
@@ -38,10 +38,10 @@ export async function resolvePackageGroupIdFromFinanceItemId(itemId: string): Pr
 }
 
 /**
- * camp_coordinator 의 위임 재무 권한을 검사.
- * - 위임 레코드가 없으면 true 반환 (Owner 경로로 기존 체크 위임)
- * - 위임 있고 manage_finance=false → 403 + false 반환
- * - 위임 있고 manage_finance=true → action별 권한 체크
+ * Checks the delegated finance permission for a camp_coordinator.
+ * - If no delegation record exists, returns true (defers to existing Owner path check)
+ * - If delegation exists and manage_finance=false → 403 + returns false
+ * - If delegation exists and manage_finance=true → checks per-action permissions
  */
 export async function assertFinanceDelegation(
   res: Response,
@@ -51,7 +51,7 @@ export async function assertFinanceDelegation(
   action: "view" | "edit" | "soft_delete",
   ipAddress?: string,
 ): Promise<boolean> {
-  // public 스키마에서 직접 조회 (pgBouncer search_path leakage 방지)
+  // Query directly from public schema (prevents pgBouncer search_path leakage)
   const result = await pool.query<{ id: string; permissions: any }>(
     `SELECT id, permissions FROM public.package_group_coordinators
      WHERE package_group_id = $1 AND coordinator_org_id = $2
@@ -60,7 +60,7 @@ export async function assertFinanceDelegation(
   );
   const delegation = result.rows[0] ?? null;
 
-  if (!delegation) return true; // Owner Tenant → 기존 체크로 위임
+  if (!delegation) return true; // Owner Tenant → defer to existing check
 
   const perms = delegation.permissions as {
     view: boolean; edit: boolean; soft_delete: boolean; manage_finance: boolean;

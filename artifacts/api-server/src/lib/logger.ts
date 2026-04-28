@@ -1,8 +1,8 @@
 import pino from "pino";
 
 /**
- * Edubee 구조화 로거 (pino)
- * Sprint 3-04: APP 11 준수 — 여권번호/비밀번호 자동 마스킹
+ * Edubee structured logger (pino)
+ * Sprint 3-04: APP 11 compliance — automatic masking of passport numbers / passwords
  */
 export const logger = pino({
   level: process.env.LOG_LEVEL || "info",

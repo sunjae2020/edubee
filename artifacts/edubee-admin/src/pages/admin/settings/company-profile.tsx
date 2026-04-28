@@ -14,7 +14,7 @@ const TIMEZONES = [
 const CURRENCIES = ["AUD", "USD", "GBP", "EUR", "KRW", "JPY", "SGD", "THB", "PHP"];
 const LANGUAGES  = [
   { code: "en", label: "English" },
-  { code: "ko", label: "한국어" },
+  { code: "ko", label: "Korean" },
   { code: "ja", label: "日本語" },
   { code: "th", label: "ภาษาไทย" },
 ];

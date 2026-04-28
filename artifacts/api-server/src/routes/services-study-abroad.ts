@@ -126,7 +126,7 @@ router.get(
         eq(studyAbroadMgt.programContext, "study_abroad"),
       ];
 
-      // CC: 위임된 PG 소속 contract에 연결된 레코드만
+      // CC: only records linked to contracts in a delegated PG
       if (req.user?.role === "camp_coordinator") {
         const ccIds = await getCCDelegatedContractIds(req.user.organisationId ?? "");
         if (ccIds.length === 0) return res.json({ data: [], meta: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } });

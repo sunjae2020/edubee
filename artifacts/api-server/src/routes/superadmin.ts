@@ -162,14 +162,14 @@ router.post("/superadmin/tenants", ...guard, async (req, res) => {
       })
       .returning();
 
-    // ── 테넌트 PostgreSQL Schema 자동 프로비저닝 ────────────────────────────
-    // 신규 테넌트는 자신만의 격리된 schema에서 시작 (빈 상태로 초기화)
+    // ── Automatic PostgreSQL Schema provisioning for new tenant ────────────────────────────
+    // New tenants start in their own isolated schema (initialised empty)
     if (created.subdomain) {
       try {
         await provisionTenantSchema(created.subdomain);
         console.log(`[Schema] Provisioned schema "${created.subdomain}" for new tenant`);
       } catch (provisionErr) {
-        // Non-fatal: public schema fallback으로 동작 가능
+        // Non-fatal: can operate with public schema fallback
         console.warn(`[Schema WARN] Could not provision schema for "${created.subdomain}":`, provisionErr);
       }
     }
@@ -301,7 +301,7 @@ router.put("/superadmin/tenants/:id", ...guard, async (req, res) => {
         ...(maxUsers     !== undefined && { maxUsers }),
         ...(maxStudents  !== undefined && { maxStudents }),
         ...(trialEndsAt  !== undefined && { trialEndsAt: trialEndsAt ? new Date(trialEndsAt) : null }),
-        // planType 변경 시 features도 자동 갱신 (명시적 features가 없는 경우에만)
+        // When planType changes, also auto-update features (only when no explicit features provided)
         ...(planType !== undefined && features === undefined && {
           features: getDefaultFeatures(planType),
         }),
@@ -488,10 +488,10 @@ router.put("/superadmin/stripe-settings", ...guard, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Tenant Schema 관리 (프로비저닝 & 백업)
+// Tenant Schema management (provisioning & backup)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/superadmin/tenant-schemas — 존재하는 테넌트 schema 목록
+// GET /api/superadmin/tenant-schemas — list existing tenant schemas
 router.get("/superadmin/tenant-schemas", ...guard, async (_req, res) => {
   try {
     const schemas = await listTenantSchemas();
@@ -502,7 +502,7 @@ router.get("/superadmin/tenant-schemas", ...guard, async (_req, res) => {
   }
 });
 
-// POST /api/superadmin/tenants/:slug/provision — 테넌트 schema 프로비저닝
+// POST /api/superadmin/tenants/:slug/provision — provision tenant schema
 router.post("/superadmin/tenants/:slug/provision", ...guard, async (req, res) => {
   const { slug } = req.params as Record<string, string>;
   if (!slug || !/^[a-z0-9_-]+$/.test(slug)) {
@@ -525,7 +525,7 @@ router.post("/superadmin/tenants/:slug/provision", ...guard, async (req, res) =>
   }
 });
 
-// POST /api/superadmin/tenants/:slug/migrate — public → tenant schema 데이터 이전
+// POST /api/superadmin/tenants/:slug/migrate — migrate data from public → tenant schema
 router.post("/superadmin/tenants/:slug/migrate", ...guard, async (req, res) => {
   const { slug } = req.params as Record<string, string>;
   const { orgId } = req.body as { orgId?: string };
@@ -557,7 +557,7 @@ router.post("/superadmin/tenants/:slug/migrate", ...guard, async (req, res) => {
   }
 });
 
-// POST /api/superadmin/tenants/:slug/reset — 테넌트 운영 데이터 전체 삭제 후 마스터 데이터 재시드
+// POST /api/superadmin/tenants/:slug/reset — Delete all tenant operational data and re-seed master data
 router.post("/superadmin/tenants/:slug/reset", ...guard, async (req, res) => {
   const { slug } = req.params as Record<string, string>;
   if (!slug || !/^[a-z0-9_-]+$/.test(slug)) {
@@ -570,7 +570,7 @@ router.post("/superadmin/tenants/:slug/reset", ...guard, async (req, res) => {
       return res.status(404).json({ error: `Schema "${slug}" does not exist. Provision it first.` });
     }
 
-    // 1. 해당 schema의 모든 테이블 목록 조회
+    // 1. Get list of all tables in the schema
     const client = await (await import("@workspace/db")).pool.connect();
     let tablesTruncated: string[] = [];
     try {
@@ -581,7 +581,7 @@ router.post("/superadmin/tenants/:slug/reset", ...guard, async (req, res) => {
       const tables = tablesResult.rows.map(r => r.tablename);
 
       if (tables.length > 0) {
-        // TRUNCATE … RESTART IDENTITY CASCADE — 모든 데이터 삭제 + 시퀀스 초기화
+        // TRUNCATE … RESTART IDENTITY CASCADE — delete all data and reset sequences
         const qualified = tables.map(t => `"${slug}"."${t}"`).join(", ");
         await client.query(`TRUNCATE ${qualified} RESTART IDENTITY CASCADE`);
         tablesTruncated = tables;
@@ -590,7 +590,7 @@ router.post("/superadmin/tenants/:slug/reset", ...guard, async (req, res) => {
       client.release();
     }
 
-    // 2. 마스터 데이터(세금 코드, CoA, 결제 수단 등) 재시드
+    // 2. Re-seed master data (tax codes, CoA, payment methods, etc.)
     const [org] = await db
       .select({ id: organisations.id })
       .from(organisations)
@@ -614,8 +614,8 @@ router.post("/superadmin/tenants/:slug/reset", ...guard, async (req, res) => {
   }
 });
 
-// GET /api/superadmin/tenants/:slug/backup — pg_dump → SQL 파일 다운로드
-// 해당 테넌트 schema 전체를 SQL 파일로 스트리밍 다운로드
+// GET /api/superadmin/tenants/:slug/backup — pg_dump → SQL file download
+// Streaming download of the entire tenant schema as a SQL file
 router.get("/superadmin/tenants/:slug/backup", ...guard, async (req, res) => {
   const { slug } = req.params as Record<string, string>;
 
@@ -640,7 +640,7 @@ router.get("/superadmin/tenants/:slug/backup", ...guard, async (req, res) => {
     res.setHeader("Content-Type", "application/sql");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 
-    // DATABASE_URL을 파싱하여 pg_dump 환경변수로 전달 (패스워드를 커맨드라인에 노출하지 않음)
+    // Parse DATABASE_URL and pass as pg_dump environment variables (avoids exposing password on command line)
     const parsedUrl = new URL(dbUrl);
     const pgEnv = {
       ...process.env,
@@ -651,15 +651,15 @@ router.get("/superadmin/tenants/:slug/backup", ...guard, async (req, res) => {
       PGDATABASE: parsedUrl.pathname.replace(/^\//, ""),
     };
 
-    // pg_dump: --schema=slug 로 해당 테넌트 schema만 덤프
-    // --no-owner: 소유자 정보 제외 (이식성)
-    // --no-privileges: 권한 정보 제외
+    // pg_dump: --schema=slug to dump only this tenant's schema
+    // --no-owner: omit ownership information (portability)
+    // --no-privileges: omit privilege information
     const cmd = `pg_dump --schema="${slug}" --no-owner --no-privileges`;
 
     const { stdout, stderr } = await execAsync(cmd, {
       env: pgEnv,
       maxBuffer: 500 * 1024 * 1024, // 500MB
-      timeout: 120_000,              // 2분
+      timeout: 120_000,              // 2 minutes
     });
 
     if (stderr && !stderr.includes("WARNING")) {

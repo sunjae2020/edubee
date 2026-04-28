@@ -98,7 +98,7 @@ export default function UserDetail() {
   const canEdit = ADMIN_ROLES.includes(currentUser?.role ?? "");
   const userTeamName = teamList.find(t => t.id === userRec?.teamId)?.name ?? null;
 
-  // KPI 탭 접근 권한: 본인 + 팀장 + 어드민
+  // KPI tab access: self + team leader + admin
   const canViewKpi =
     ADMIN_ROLES.includes(currentUser?.role ?? "") ||
     currentUser?.role === "team_manager" ||

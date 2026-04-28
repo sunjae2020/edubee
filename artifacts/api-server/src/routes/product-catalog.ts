@@ -397,7 +397,7 @@ router.delete("/commissions/:id", authenticate, requireRole(...ADMIN_ROLES), asy
   }
 });
 
-// ─── DELETE /api/product-groups/bulk  (super_admin 임시/영구 삭제) ────────────
+// ─── DELETE /api/product-groups/bulk  (super_admin soft/permanent delete) ─────
 router.delete("/product-groups/bulk", authenticate, async (req, res) => {
   if (!["super_admin","admin"].includes((req.user as any)?.role)) return res.status(403).json({ error: "Forbidden" });
   try {
@@ -415,7 +415,7 @@ router.delete("/product-groups/bulk", authenticate, async (req, res) => {
   }
 });
 
-// ─── DELETE /api/product-types/bulk  (super_admin 임시/영구 삭제) ────────────
+// ─── DELETE /api/product-types/bulk  (super_admin soft/permanent delete) ─────
 router.delete("/product-types/bulk", authenticate, async (req, res) => {
   if (!["super_admin","admin"].includes((req.user as any)?.role)) return res.status(403).json({ error: "Forbidden" });
   try {
@@ -433,7 +433,7 @@ router.delete("/product-types/bulk", authenticate, async (req, res) => {
   }
 });
 
-// ─── DELETE /api/promotions/bulk  (super_admin 임시/영구 삭제) ───────────────
+// ─── DELETE /api/promotions/bulk  (super_admin soft/permanent delete) ────────
 router.delete("/promotions/bulk", authenticate, async (req, res) => {
   if (!["super_admin","admin"].includes((req.user as any)?.role)) return res.status(403).json({ error: "Forbidden" });
   try {
@@ -451,7 +451,7 @@ router.delete("/promotions/bulk", authenticate, async (req, res) => {
   }
 });
 
-// ─── DELETE /api/commissions/bulk  (super_admin 임시/영구 삭제) ──────────────
+// ─── DELETE /api/commissions/bulk  (super_admin soft/permanent delete) ───────
 router.delete("/commissions/bulk", authenticate, async (req, res) => {
   if (!["super_admin","admin"].includes((req.user as any)?.role)) return res.status(403).json({ error: "Forbidden" });
   try {

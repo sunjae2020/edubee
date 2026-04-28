@@ -67,7 +67,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* ── Edubee Portal — Design Tokens (어드민과 동일한 시스템) ─── */
+/* ── Edubee Portal — Design Tokens (same system as admin) ─── */
 
 :root {
   /* Orange brand */

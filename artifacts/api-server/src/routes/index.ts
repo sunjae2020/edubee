@@ -78,6 +78,7 @@ import studyAbroadConsultationsRouter from "./study-abroad-consultations.js";
 import generalConsultationsRouter from "./general-consultations.js";
 import publicConsultationsRouter from "./public-consultations.js";
 import airtableRouter from "./airtable.js";
+import googleDriveRouter from "./google-drive.js";
 import { tenantResolver } from "../middleware/tenantResolver.js";
 import { runWithTenantSchema, tenantSchemaExists, pool } from "@workspace/db";
 import type { Request, Response, NextFunction } from "express";
@@ -90,13 +91,13 @@ router.use(storageRouter);
 router.use(publicConsultationsRouter);
 // ── Tenant resolver: reads X-Organisation-Id header → req.tenantId / req.tenant ──
 router.use(tenantResolver);
-// ── Tenant Schema 미들웨어 ────────────────────────────────────────────────────
-// tenantResolver 이후 실행. 테넌트의 PostgreSQL schema가 존재하면
-// AsyncLocalStorage context에서 요청을 실행 → 모든 db 쿼리가 tenant schema 사용.
+// ── Tenant Schema middleware ────────────────────────────────────────────────────
+// Runs after tenantResolver. If the tenant's PostgreSQL schema exists,
+// the request is executed in an AsyncLocalStorage context → all db queries use the tenant schema.
 //
-// camp_coordinator 예외: CC 사용자는 위임된 PG의 OWNER 스키마에서 데이터를 읽어야 함.
-// • 직접 로그인(CC JWT): owner 스키마로 전환
-// • View-As(admin → CC): View-As 대상 CC의 owner 스키마로 전환
+// camp_coordinator exception: CC users must read data from the OWNER schema of the delegated PG.
+// • Direct login (CC JWT): switch to owner schema
+// • View-As (admin → CC): switch to owner schema of the View-As target CC
 router.use(async (req: Request, res: Response, next: NextFunction) => {
   const subdomain = (req as any).tenant?.subdomain as string | undefined;
   if (!subdomain) return next();
@@ -229,5 +230,6 @@ router.use(schoolingConsultationsRouter);
 router.use(studyAbroadConsultationsRouter);
 router.use(generalConsultationsRouter);
 router.use(airtableRouter);
+router.use(googleDriveRouter);
 
 export default router;

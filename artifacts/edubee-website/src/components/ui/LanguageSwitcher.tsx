@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 const LANGS = [
   { code: 'en', label: 'English',      flag: '🇦🇺' },
-  { code: 'ko', label: '한국어',        flag: '🇰🇷' },
+  { code: 'ko', label: 'Korean',        flag: '🇰🇷' },
   { code: 'ja', label: '日本語',        flag: '🇯🇵' },
   { code: 'zh', label: '简体中文',      flag: '🇨🇳' },
   { code: 'th', label: 'ภาษาไทย',      flag: '🇹🇭' },

@@ -12,7 +12,7 @@ export const blogPost = defineType({
       validation: R => R.required(),
       fields: [
         { name: 'en', type: 'string', title: 'English' },
-        { name: 'ko', type: 'string', title: '한국어' },
+        { name: 'ko', type: 'string', title: 'Korean' },
         { name: 'ja', type: 'string', title: '日本語' },
         { name: 'zh', type: 'string', title: '中文' },
         { name: 'th', type: 'string', title: 'ภาษาไทย' },
@@ -32,7 +32,7 @@ export const blogPost = defineType({
       type: 'object',
       fields: [
         { name: 'en', type: 'text', title: 'English', rows: 3 },
-        { name: 'ko', type: 'text', title: '한국어', rows: 3 },
+        { name: 'ko', type: 'text', title: 'Korean', rows: 3 },
         { name: 'ja', type: 'text', title: '日本語', rows: 3 },
         { name: 'zh', type: 'text', title: '中文', rows: 3 },
         { name: 'th', type: 'text', title: 'ภาษาไทย', rows: 3 },
@@ -45,7 +45,7 @@ export const blogPost = defineType({
       type: 'object',
       fields: [
         { name: 'en', type: 'array', title: 'English', of: [{ type: 'block' }] },
-        { name: 'ko', type: 'array', title: '한국어', of: [{ type: 'block' }] },
+        { name: 'ko', type: 'array', title: 'Korean', of: [{ type: 'block' }] },
         { name: 'ja', type: 'array', title: '日本語', of: [{ type: 'block' }] },
         { name: 'zh', type: 'array', title: '中文', of: [{ type: 'block' }] },
         { name: 'th', type: 'array', title: 'ภาษาไทย', of: [{ type: 'block' }] },

@@ -73,7 +73,7 @@ const COUNTRIES = [
 
 const LANG_TABS = [
   { key: "en", label: "🇦🇺 English", nameProp: "nameEn" as const, descProp: "descriptionEn" as const, required: true },
-  { key: "ko", label: "🇰🇷 한국어", nameProp: "nameKo" as const, descProp: "descriptionKo" as const, required: false },
+  { key: "ko", label: "🇰🇷 Korean", nameProp: "nameKo" as const, descProp: "descriptionKo" as const, required: false },
   { key: "ja", label: "🇯🇵 日本語", nameProp: "nameJa" as const, descProp: "descriptionJa" as const, required: false },
   { key: "th", label: "🇹🇭 ภาษาไทย", nameProp: "nameTh" as const, descProp: "descriptionTh" as const, required: false },
 ];

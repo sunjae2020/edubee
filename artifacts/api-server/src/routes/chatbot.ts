@@ -125,16 +125,16 @@ router.post(
   requireRole(...ADMIN_ROLES),
   upload.single("file"),
   async (req, res) => {
-    if (!req.file) return res.status(400).json({ error: "파일이 없습니다." });
+    if (!req.file) return res.status(400).json({ error: "No file provided." });
 
     const ext = req.file.originalname.split(".").pop()?.toLowerCase();
     if (!["txt", "md"].includes(ext ?? "")) {
-      return res.status(400).json({ error: ".txt 또는 .md 파일만 지원됩니다." });
+      return res.status(400).json({ error: "Only .txt or .md files are supported." });
     }
 
     try {
       const content = req.file.buffer.toString("utf-8").trim();
-      if (!content) return res.status(400).json({ error: "파일 내용이 비어 있습니다." });
+      if (!content) return res.status(400).json({ error: "File content is empty." });
 
       const title: string = (req.body.title as string) || req.file.originalname;
       const rawScope = req.body.scope as string;
@@ -159,7 +159,7 @@ router.post(
       });
     } catch (e: any) {
       console.error("[chatbot/upload]", e);
-      return res.status(500).json({ error: "파일 처리 실패", detail: e?.message });
+      return res.status(500).json({ error: "File processing failed", detail: e?.message });
     }
   }
 );

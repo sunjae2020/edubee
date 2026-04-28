@@ -103,6 +103,8 @@ export const accounts = pgTable("accounts", {
   privacyConsent:             boolean("privacy_consent").notNull().default(false),
   marketingConsent:           boolean("marketing_consent").notNull().default(false),
   organisationId:             uuid("organisation_id").references(() => organisations.id),
+  googleDriveFolderId:        varchar("google_drive_folder_id", { length: 255 }),
+  googleDriveFolderUrl:       varchar("google_drive_folder_url", { length: 500 }),
 });
 
 export const lead_activities = pgTable("lead_activities", {

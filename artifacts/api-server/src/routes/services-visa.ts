@@ -64,7 +64,7 @@ router.get(
 
       const conds: SQL[] = [];
 
-      // CC: 위임된 PG 소속 contract에 연결된 레코드만
+      // CC: restrict to records linked to contracts in delegated PGs
       if (req.user?.role === "camp_coordinator") {
         const ccIds = await getCCDelegatedContractIds(req.user.organisationId ?? "");
         if (ccIds.length === 0) return res.json({ data: [], meta: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } });
@@ -102,7 +102,7 @@ router.get(
         .limit(limitNum)
         .offset(offset);
 
-      // 목록에서 비자번호 마스킹 (앞 2자리 + **** + 뒤 2자리)
+      // Mask visa numbers in list results (first 2 + **** + last 2)
       const maskedRows = rows.map((r) => ({
         ...r,
         visaNumber: r.visaNumber

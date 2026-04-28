@@ -22,12 +22,12 @@ export default function StaffKpiPage({ staffId: propStaffId }: Props = {}) {
   const canApprove = ['admin', 'super_admin'].includes(currentUser?.role ?? '');
   const canViewTeam = canApprove || (currentUser?.role as string) === 'team_manager';
 
-  // prop으로 받은 staffId 우선, 없으면 URL 파라미터 사용 (독립 탭 모드)
+  // Prop staffId takes priority; fall back to URL parameter (standalone tab mode)
   const urlParams = new URLSearchParams(window.location.search);
   const urlStaffId = propStaffId ?? urlParams.get('staffId') ?? '';
-  // 독립 새 탭 모드: prop 없이 URL에 staffId가 있을 때만 back 버튼 표시
+  // Standalone new-tab mode: show back button only when staffId comes from URL, not a prop
   const isStandaloneTab = !propStaffId && !!urlParams.get('staffId');
-  // User Detail 탭에 내장된 모드
+  // Embedded inside User Detail tab
   const isEmbedded = !!propStaffId;
 
   const now = new Date();
@@ -75,7 +75,7 @@ export default function StaffKpiPage({ staffId: propStaffId }: Props = {}) {
 
   const isLockedToStaff = !!urlStaffId && !canApprove;
 
-  // ── 공통 콘텐츠 ──────────────────────────────────────────────
+  // ── Shared content ───────────────────────────────────────────
   const content = (
     <>
       <KpiFilterBar filter={filter} onChange={setFilter} onRefresh={handleRefresh} loading={loading} />
@@ -135,12 +135,12 @@ export default function StaffKpiPage({ staffId: propStaffId }: Props = {}) {
     </>
   );
 
-  // ── 내장 모드: 헤더/드롭다운 없이 다른 탭과 동일한 스타일 ──
+  // ── Embedded mode: no header/dropdown, same style as other tabs ──
   if (isEmbedded) {
     return <div className="space-y-4">{content}</div>;
   }
 
-  // ── 독립 페이지 모드: 기존 헤더 + 드롭다운 유지 ──────────────
+  // ── Standalone page mode: original header + dropdown ─────────
   return (
     <div className="p-6 space-y-5 max-w-5xl mx-auto">
       <div className="flex items-start justify-between gap-4">

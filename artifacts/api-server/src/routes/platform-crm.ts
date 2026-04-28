@@ -219,7 +219,7 @@ router.delete("/platform-crm/activities/:id", ...guard, async (req, res) => {
   }
 });
 
-// GET /api/platform-crm/stats — 대시보드 요약
+// GET /api/platform-crm/stats — Dashboard summary
 router.get("/platform-crm/stats", ...guard, async (_req, res) => {
   try {
     const all = await db.select().from(platformProspects);

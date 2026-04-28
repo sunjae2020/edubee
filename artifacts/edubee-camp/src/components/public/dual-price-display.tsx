@@ -29,7 +29,7 @@ export function DualPriceDisplay({ localAmount, localCurrency, countryCode, size
       </div>
       {referenceText && (
         <div className="text-[11px] text-[#A8A29E] italic mt-0.5">
-          {referenceText} <span className="not-italic">참고용</span>
+          {referenceText} <span className="not-italic">for reference</span>
         </div>
       )}
     </div>

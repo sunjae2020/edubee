@@ -15,12 +15,12 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
     const isEA = false; // education_agent role removed
     const isPartner = role.startsWith("partner_");
 
-    // 임프로소네이션 시 테넌트 필터 적용
+    // Apply tenant filter during impersonation
     const tenantId = req.tenant?.id ?? null;
 
     // --- SA / AD: full platform stats ---
     if (isSAorAD) {
-      // applications/users 테이블에 organisation_id 없음 → 임프로소네이션 시 0 처리
+      // applications/users tables have no organisation_id → return 0 during impersonation
       const [totalApps] = tenantId ? [{ count: 0 }] : await db.select({ count: count() }).from(applications);
       const [pendingApps] = tenantId ? [{ count: 0 }] : await db.select({ count: count() }).from(applications).where(eq(applications.status, "submitted"));
       const [contractedApps] = tenantId ? [{ count: 0 }] : await db.select({ count: count() }).from(applications).where(eq(applications.status, "contracted"));
@@ -58,7 +58,7 @@ router.get("/dashboard/stats", authenticate, async (req, res) => {
         SELECT status, COUNT(*)::int as count FROM applications GROUP BY status ORDER BY count DESC
       `)).rows;
 
-      // KPI 요약 집계 — 이번 달 기준 (contracts 기준으로 테넌트 필터 적용)
+      // KPI summary aggregation — based on current month (tenant filter applied via contracts)
       const now = new Date();
       const periodStart = new Date(now.getFullYear(), now.getMonth(), 1)
         .toISOString().split("T")[0];

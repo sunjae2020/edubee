@@ -8,7 +8,7 @@ import { z } from "zod";
 const router = Router();
 
 // ── GET /api/privacy-policy ─────────────────────────────────────────────────
-// 공개 엔드포인트 — 로그인 불필요
+// Public endpoint — no login required
 router.get("/privacy-policy", (_req, res) => {
   res.json({
     version: "1.1",
@@ -74,7 +74,7 @@ router.get("/privacy-policy", (_req, res) => {
 });
 
 // ── POST /api/privacy-consent ────────────────────────────────────────────────
-// 개인정보 동의 기록 (인증 필요)
+// Record privacy consent (authentication required)
 const ConsentSchema = z.object({
   entityType: z.enum(["contact", "lead"]),
   entityId: z.string().uuid(),

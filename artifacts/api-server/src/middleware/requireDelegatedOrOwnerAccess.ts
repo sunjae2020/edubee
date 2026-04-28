@@ -3,7 +3,7 @@ import { staticDb, db } from "@workspace/db";
 import { packageGroupCoordinators, packageGroups, campPackages, campApplications, tenantAuditLogs } from "@workspace/db/schema";
 import { eq, and, isNull, or, inArray } from "drizzle-orm";
 
-const REVOKED_GRACE_MS = 30 * 24 * 60 * 60 * 1000; // 30일
+const REVOKED_GRACE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 async function logForbiddenAttempt(params: {
   organisationId: string;
@@ -30,7 +30,7 @@ async function logForbiddenAttempt(params: {
   }
 }
 
-// 위임 접근이 적용되는 리소스 종류
+// Resource types subject to delegation access control
 export type DelegatedResource =
   | "camp_package_group"
   | "camp_package"
@@ -40,32 +40,32 @@ export type DelegatedResource =
   | "settlement_mgt"
   | string;
 
-// 수행하려는 액션 종류
+// Action types that can be performed
 export type DelegatedAction = "view" | "edit" | "soft_delete" | "finalise";
 
 interface DelegatedAccessOptions {
   resource: DelegatedResource;
   action: DelegatedAction;
-  // 요청에서 package_group_id 를 추출하는 함수 (기본값: req.params.id)
+  // Function to extract package_group_id from the request (default: req.params.id)
   resolvePackageGroupId?: (req: Request) => Promise<string | null>;
 }
 
 /**
- * Camp Coordinator Cross-Tenant Delegation 접근 제어 미들웨어
+ * Camp Coordinator Cross-Tenant Delegation access control middleware
  *
- * 검증 순서 (_rules/CAMP_COORDINATOR_DELEGATION.md §6.2):
- *   1. req.user.organisationId 확인
- *   2. 리소스 → package_group_id 추출
- *   3. Owner Tenant 이면 기존 requireRole 체계로 위임 (next)
- *   4. Coordinator 위임 레코드 조회
- *   5. 없으면 403
- *   6. permissions JSONB 로 action 검사
- *   7. 통과 시 X-Delegated-Access: true 헤더 부여
+ * Validation order (_rules/CAMP_COORDINATOR_DELEGATION.md §6.2):
+ *   1. Check req.user.organisationId
+ *   2. Extract package_group_id from resource
+ *   3. If Owner Tenant, delegate to existing requireRole system (next)
+ *   4. Look up Coordinator delegation record
+ *   5. If not found, return 403
+ *   6. Check action against permissions JSONB
+ *   7. On pass, set X-Delegated-Access: true header
  */
 export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // ── 1. 사용자 인증 확인 ────────────────────────────────────────────────
+      // ── 1. Verify user authentication ────────────────────────────────────────────
       const user = req.user;
       if (!user) {
         res.status(401).json({ success: false, code: "UNAUTHORIZED", message: "Authentication required" });
@@ -74,7 +74,7 @@ export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
 
       const userOrgId = user.organisationId;
       if (!userOrgId) {
-        // super_admin 은 organisation 소속 없이 전체 접근 허용
+        // super_admin has full access without an organisation
         if (user.role?.toLowerCase() === "super_admin") {
           return next();
         }
@@ -82,7 +82,7 @@ export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
         return;
       }
 
-      // ── 2. package_group_id 추출 ───────────────────────────────────────────
+      // ── 2. Extract package_group_id ───────────────────────────────────────────
       let packageGroupId: string | null = null;
 
       if (opts.resolvePackageGroupId) {
@@ -92,11 +92,11 @@ export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
       }
 
       if (!packageGroupId) {
-        // package_group_id 를 특정할 수 없으면 Owner 접근으로 간주 → next
+        // Cannot determine package_group_id — treat as Owner access → next
         return next();
       }
 
-      // ── 3. Owner Tenant 확인 ──────────────────────────────────────────────
+      // ── 3. Check Owner Tenant ──────────────────────────────────────────────
       const [group] = await staticDb
         .select({ organisationId: packageGroups.organisationId })
         .from(packageGroups)
@@ -109,11 +109,11 @@ export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
       }
 
       if (group.organisationId === userOrgId) {
-        // Owner Tenant → 기존 role 기반 체계로 위임
+        // Owner Tenant → delegate to existing role-based system
         return next();
       }
 
-      // ── 4. Coordinator 위임 레코드 조회 (Active + Revoked 유예 포함) ─────────
+      // ── 4. Look up Coordinator delegation record (Active + Revoked within grace period) ─────────
       const [delegation] = await staticDb
         .select()
         .from(packageGroupCoordinators)
@@ -126,7 +126,7 @@ export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
         )
         .limit(1);
 
-      // ── 5. 위임 없음 → 403 ────────────────────────────────────────────────
+      // ── 5. No delegation found → 403 ────────────────────────────────────────────────
       if (!delegation) {
         await logForbiddenAttempt({
           organisationId: userOrgId,
@@ -142,7 +142,7 @@ export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
         return;
       }
 
-      // ── 5b. Revoked 유예 기간 체크 ────────────────────────────────────────
+      // ── 5b. Check Revoked grace period ────────────────────────────────────────
       if (delegation.status === "Revoked") {
         const revokedAt = delegation.revokedAt ? new Date(delegation.revokedAt).getTime() : 0;
         const isInGrace = Date.now() - revokedAt < REVOKED_GRACE_MS;
@@ -163,7 +163,7 @@ export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
           return;
         }
 
-        // 유예 기간 내 → View 전용 강제
+        // Within grace period → enforce view-only access
         if (opts.action !== "view") {
           await logForbiddenAttempt({
             organisationId: userOrgId,
@@ -181,7 +181,7 @@ export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
         }
       }
 
-      // ── 6. permissions JSONB 검사 ──────────────────────────────────────────
+      // ── 6. Check permissions JSONB ──────────────────────────────────────────
       const perms = delegation.permissions as {
         view: boolean;
         edit: boolean;
@@ -189,7 +189,7 @@ export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
         manage_finance: boolean;
       };
 
-      // finalise 는 항상 Owner 전용
+      // finalise is always Owner-only
       if (opts.action === "finalise") {
         await logForbiddenAttempt({
           organisationId: userOrgId,
@@ -206,7 +206,7 @@ export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
         return;
       }
 
-      // Finance 리소스 edit/soft_delete → manage_finance 플래그 확인
+      // Finance resource edit/soft_delete → check manage_finance flag
       const financeResources = ["invoice", "settlement_mgt"];
       if (
         financeResources.includes(opts.resource) &&
@@ -228,12 +228,12 @@ export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
         return;
       }
 
-      // 해당 action 권한 확인
+      // Verify permission for the requested action
       const actionMap: Record<DelegatedAction, keyof typeof perms> = {
         view: "view",
         edit: "edit",
         soft_delete: "soft_delete",
-        finalise: "view", // 위에서 이미 차단됨
+        finalise: "view", // already blocked above
       };
 
       if (!perms[actionMap[opts.action]]) {
@@ -252,11 +252,11 @@ export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
         return;
       }
 
-      // ── 7. 통과 — Delegated Access 헤더 부여 ──────────────────────────────
+      // ── 7. Passed — set Delegated Access header ──────────────────────────────
       res.setHeader("X-Delegated-Access", "true");
       res.setHeader("X-Delegated-Owner-Org", group.organisationId ?? "");
 
-      // req 에 위임 컨텍스트 전달 (라우트에서 감사 로그 기록에 활용)
+      // Pass delegation context on req (used by routes for audit logging)
       (req as any).delegationContext = {
         isDelegated: true,
         delegationId: delegation.id,
@@ -274,7 +274,7 @@ export function requireDelegatedOrOwnerAccess(opts: DelegatedAccessOptions) {
   };
 }
 
-// ── 기본 package_group_id 추출 로직 ──────────────────────────────────────────
+// ── Default package_group_id extraction logic ──────────────────────────────────────────
 async function resolvePackageGroupIdDefault(
   req: Request,
   resource: DelegatedResource
@@ -308,7 +308,7 @@ async function resolvePackageGroupIdDefault(
       }
 
       default:
-        // contract, invoice 등은 호출 측에서 resolvePackageGroupId 함수로 직접 제공
+        // contract, invoice etc. must provide a resolvePackageGroupId function from the caller
         return null;
     }
   } catch {
@@ -316,7 +316,7 @@ async function resolvePackageGroupIdDefault(
   }
 }
 
-// req 에 붙는 위임 컨텍스트 타입 선언 (라우트에서 import 하여 사용)
+// Delegation context type attached to req (imported and used in routes)
 export interface DelegationContext {
   isDelegated: boolean;
   delegationId: string;

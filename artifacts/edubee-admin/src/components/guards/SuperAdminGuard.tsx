@@ -3,20 +3,20 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 
 /**
- * Edubee 플랫폼 어드민 전용 가드.
+ * Guard for the Edubee platform admin area only.
  *
- * 허용 조건: role === "super_admin" + 테넌트 서브도메인이 아닌 경우
+ * Allowed: role === "super_admin" + not on a tenant subdomain
  *
- * 차단 조건:
- *   - 테넌트 서브도메인(tsh.edubee.co 등) → /admin/dashboard 로 이동
- *   - 일반 admin/coordinator/consultant → /admin/dashboard 로 이동
- *   - 비로그인 → /login 으로 이동
+ * Blocked:
+ *   - Tenant subdomain (tsh.edubee.co etc.) → redirect to /admin/dashboard
+ *   - Regular admin/coordinator/consultant → redirect to /admin/dashboard
+ *   - Not logged in → redirect to /login
  */
 export default function SuperAdminGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
 
-  // 테넌트 서브도메인에서는 슈퍼어드민 접근 차단
+  // Block super admin access on tenant subdomains
   const NON_TENANT_SUBS_GUARD = new Set(["www", "app", "admin", "api", "mail"]);
   const guardHostParts = window.location.hostname.split(".");
   const guardSub = guardHostParts.length >= 3 ? guardHostParts[0].toLowerCase() : null;

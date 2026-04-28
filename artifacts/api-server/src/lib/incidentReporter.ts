@@ -17,9 +17,9 @@ export interface IncidentPayload {
 }
 
 /**
- * NDB (Notifiable Data Breaches) Scheme 기반 보안 사고 기록 및 알림.
- * severity가 'high' 또는 'critical'이면 관리자에게 즉시 이메일 발송.
- * 30일 이내 OAIC 통보 의무 (critical 사고는 72시간 권고).
+ * Records and notifies security incidents based on the NDB (Notifiable Data Breaches) Scheme.
+ * Immediately sends an alert email to admins when severity is 'high' or 'critical'.
+ * OAIC notification required within 30 days (72-hour recommendation for critical incidents).
  */
 export async function reportSecurityIncident(payload: IncidentPayload): Promise<string | null> {
   const {
@@ -30,7 +30,7 @@ export async function reportSecurityIncident(payload: IncidentPayload): Promise<
     notes,
   } = payload;
 
-  // 구조화 로그 — passport_number 등은 pino redact로 자동 마스킹
+  // Structured log — passport_number etc. are automatically masked via pino redact
   logger.error(
     { type, severity, affectedDataTypes, estimatedAffectedCount },
     `[SECURITY INCIDENT] ${description}`,
@@ -55,7 +55,7 @@ export async function reportSecurityIncident(payload: IncidentPayload): Promise<
     logger.error({ err: e }, "[incidentReporter] DB insert failed");
   }
 
-  // ── 즉시 이메일 알림 (high / critical) ──────────────────────────────────
+  // ── Immediate email alert (high / critical) ──────────────────────────────────
   if (severity === "high" || severity === "critical") {
     try {
       const apiKey = process.env.RESEND_API_KEY;

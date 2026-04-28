@@ -40,7 +40,7 @@ const OWNER_ROLES = ["super_admin", "admin"];
 
 
 // ── GET /package-groups/:id/coordinators ──────────────────────────────────
-// Owner 가 특정 Package Group의 위임 내역을 조회
+// Owner retrieves the delegation list for a specific Package Group
 router.get(
   "/package-groups/:id/coordinators",
   authenticate,
@@ -80,7 +80,7 @@ router.get(
 );
 
 // ── POST /package-groups/:id/coordinators ─────────────────────────────────
-// Owner 가 Coordinator Tenant 지정 (status = 'Pending')
+// Owner designates a Coordinator Tenant (status = 'Pending')
 router.post(
   "/package-groups/:id/coordinators",
   authenticate,
@@ -98,7 +98,7 @@ router.post(
         return res.status(400).json({ success: false, message: "coordinatorOrgId and permissions are required" });
       }
 
-      // Package Group 소유 org 확인
+      // Verify the owning org of the Package Group
       const [group] = await db
         .select({ organisationId: packageGroups.organisationId })
         .from(packageGroups)
@@ -118,7 +118,7 @@ router.post(
         return res.status(400).json({ success: false, message: "Owner and coordinator cannot be the same organisation" });
       }
 
-      // 같은 테넌트가 이미 Pending/Active로 등록돼 있는지 확인
+      // Check whether the same tenant is already registered as Pending/Active
       const [existing] = await staticDb
         .select({ id: packageGroupCoordinators.id, status: packageGroupCoordinators.status })
         .from(packageGroupCoordinators)
@@ -170,7 +170,7 @@ router.post(
 );
 
 // ── PATCH /package-groups/:id/coordinators/:coordinatorId ────────────────
-// Owner 가 권한/메모 수정
+// Owner updates permissions / notes
 router.patch(
   "/package-groups/:id/coordinators/:coordinatorId",
   authenticate,
@@ -206,7 +206,7 @@ router.patch(
 );
 
 // ── DELETE /package-groups/:id/coordinators/:coordinatorId ───────────────
-// Owner 가 잘못 지정된 위임 레코드를 완전 삭제 (Pending/Revoked 상태만 허용)
+// Owner permanently deletes an incorrectly assigned delegation record (Pending/Revoked status only)
 router.delete(
   "/package-groups/:id/coordinators/:coordinatorId",
   authenticate,
@@ -240,7 +240,7 @@ router.delete(
 );
 
 // ── PUT /package-groups/:id/coordinators/:coordinatorId/accept ────────────
-// Coordinator 측이 위임을 수락 (status: Pending → Active)
+// Coordinator accepts the delegation (status: Pending → Active)
 router.put(
   "/package-groups/:id/coordinators/:coordinatorId/accept",
   authenticate,
@@ -284,7 +284,7 @@ router.put(
 );
 
 // ── PUT /package-groups/:id/coordinators/:coordinatorId/revoke ────────────
-// Owner 가 위임 철회 (status: Active → Revoked, 30일 유예)
+// Owner revokes the delegation (status: Active → Revoked, 30-day grace period)
 router.put(
   "/package-groups/:id/coordinators/:coordinatorId/revoke",
   authenticate,
@@ -332,7 +332,7 @@ router.put(
 );
 
 // ── GET /organisations/search ─────────────────────────────────────────────
-// Coordinator 지정 시 org 검색 (현재 테넌트 제외)
+// Search orgs when designating a Coordinator (excludes current tenant)
 router.get(
   "/organisations/search",
   authenticate,
@@ -372,7 +372,7 @@ router.get(
 );
 
 // ── GET /my-delegated-packages ────────────────────────────────────────────
-// Coordinator 가 자신에게 위임된 패키지 그룹 목록 조회
+// Coordinator retrieves the list of package groups delegated to them
 router.get(
   "/my-delegated-packages",
   authenticate,

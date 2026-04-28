@@ -10,7 +10,7 @@ import { z } from "zod";
 
 const router = Router();
 
-// ── 인증: staff 또는 portal 토큰 모두 허용 ──────────────────────────────────
+// ── Authentication: accepts both staff and portal tokens ──────────────────────────────────
 function authAny(req: any, res: any, next: any) {
   authenticate(req, res, (staffErr?: any) => {
     if (!staffErr && req.user) return next();
@@ -21,7 +21,7 @@ function authAny(req: any, res: any, next: any) {
   });
 }
 
-// ── GET /api/my-data — APP 12: 자기 개인정보 열람 ───────────────────────────
+// ── GET /api/my-data — APP 12: access own personal data ───────────────────────────
 router.get("/my-data", authAny, async (req, res) => {
   try {
     const user = req.user as any;
@@ -70,7 +70,7 @@ router.get("/my-data", authAny, async (req, res) => {
   }
 });
 
-// ── POST /api/my-data/correction-request — APP 13: 데이터 수정 요청 ─────────
+// ── POST /api/my-data/correction-request — APP 13: data correction request ─────────
 const CorrectionSchema = z.object({
   fieldName: z.string().min(1),
   currentValue: z.string().optional(),
@@ -88,7 +88,7 @@ router.post("/my-data/correction-request", authAny, async (req, res) => {
     const user = req.user as any;
     const requestId = `COR-${Date.now()}`;
 
-    // 실제 운영에서는 correction_requests 테이블에 저장 + 이메일 발송
+    // In production, save to correction_requests table + send email notification
     logger.info(
       { requestId, requester: user.email, fieldName, reason },
       "[DATA CORRECTION REQUEST] received",
@@ -106,7 +106,7 @@ router.post("/my-data/correction-request", authAny, async (req, res) => {
   }
 });
 
-// ── POST /api/my-data/withdraw-consent — APP 3/5: 동의 철회 ──────────────────
+// ── POST /api/my-data/withdraw-consent — APP 3/5: withdraw consent ──────────────────
 const WithdrawConsentSchema = z.object({
   consentType: z.enum(["marketing", "privacy", "all"]),
   reason: z.string().optional(),
@@ -188,7 +188,7 @@ router.post("/my-data/withdraw-consent", authAny, async (req, res) => {
   }
 });
 
-// ── GET /api/my-data/export — 전체 데이터 다운로드 (Data Portability) ────────
+// ── GET /api/my-data/export — full data download (Data Portability) ────────
 router.get("/my-data/export", authAny, async (req, res) => {
   try {
     const user = req.user as any;

@@ -265,7 +265,7 @@ function StudentCard({ index, student, spots, onChange, onRemove, canRemove }: {
           <input className={inp} value={student.lastName} onChange={set("lastName")} placeholder="Family name" />
         </div>
         <Field label="Full Name (Native Language)" half>
-          <input className={inp} value={student.fullNameNative} onChange={set("fullNameNative")} placeholder="e.g. 홍길동" />
+          <input className={inp} value={student.fullNameNative} onChange={set("fullNameNative")} placeholder="e.g. Hong Gildong" />
         </Field>
         <div>
           <Label required>Date of Birth</Label>

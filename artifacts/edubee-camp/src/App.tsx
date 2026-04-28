@@ -639,8 +639,8 @@ function Router() {
   );
 }
 
-// camp.edubee.co 는 멀티 테넌트와 무관 — 임포소네이션 없음
-// 구형 공유 키만 정리
+// camp.edubee.co is not multi-tenant — no impersonation
+// Clean up legacy shared keys only
 function ImpersonationInit() {
   useEffect(() => {
     sessionStorage.removeItem("edubee_impersonate_org_id");

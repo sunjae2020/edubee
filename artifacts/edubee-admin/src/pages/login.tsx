@@ -38,10 +38,10 @@ export default function Login() {
     defaultValues: { email: "", password: "" },
   });
 
-  // 로그인 상태이지만 ?org= 미리보기 파라미터가 없으면 대시보드로 이동
+  // If already authenticated and not in preview mode, redirect to dashboard
   if (isAuthenticated && !isPreviewMode) {
-    // 플랫폼 어드민: role=super_admin + 조직 없음 → /superadmin
-    // 테넌트 슈퍼 어드민 (ts, myagency 등): role=super_admin + 조직 있음 → /admin/dashboard
+    // Platform admin: role=super_admin + no organisation → /superadmin
+    // Tenant super admin (ts, myagency, etc.): role=super_admin + organisation present → /admin/dashboard
     const isPlatformAdmin = (user as any)?.role === "super_admin" && !(user as any)?.organisationId;
     return <Redirect to={isPlatformAdmin ? "/superadmin" : "/admin/dashboard"} />;
   }
@@ -67,13 +67,13 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full flex flex-col" style={{ background: "var(--e-bg-page)" }}>
-      {/* 개발 모드 미리보기 배너 */}
+      {/* Preview mode banner */}
       {isPreviewMode && (
         <div className="w-full flex items-center justify-between px-4 py-2 text-xs font-medium"
           style={{ background: "#1C1917", color: "#FCD34D" }}>
           <div className="flex items-center gap-2">
             <MonitorCheck className="w-3.5 h-3.5" />
-            <span>미리보기 모드: <strong>{previewOrg}</strong> 테넌트 로그인 화면</span>
+            <span>Preview mode: <strong>{previewOrg}</strong> tenant login screen</span>
           </div>
           <div className="flex items-center gap-3">
             {isAuthenticated && (
@@ -81,11 +81,11 @@ export default function Login() {
                 onClick={() => setLocation((user as any)?.role === "super_admin" ? "/superadmin" : "/admin/dashboard")}
                 className="underline underline-offset-2 opacity-80 hover:opacity-100"
               >
-                대시보드로 이동 →
+                Go to dashboard →
               </button>
             )}
             <a href="/admin/login" className="underline underline-offset-2 opacity-80 hover:opacity-100">
-              미리보기 종료
+              Exit preview
             </a>
           </div>
         </div>

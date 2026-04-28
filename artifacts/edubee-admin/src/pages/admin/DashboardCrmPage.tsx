@@ -18,14 +18,14 @@ import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-// 실제 계산된 CSS 변수 값 읽기 (Recharts 등 SVG 차트용)
+// Read the computed CSS variable value (for SVG charts like Recharts)
 function getCssVar(name: string, fallback: string): string {
   if (typeof window === "undefined") return fallback;
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 }
 
 // ─── Design Tokens ───────────────────────────────────────────────────────────
-// 모든 값을 CSS 변수로 — 라이트/다크 모드 및 테넌트 브랜딩 자동 반영
+// All values as CSS variables — automatically reflects light/dark mode and tenant branding
 const T = {
   orange:      "var(--e-orange, #F5821F)",
   orangeDark:  "var(--e-orange-dk, #D96A0A)",
@@ -266,7 +266,7 @@ interface FinanceData {
   upcomingPayments: Array<{ id: string; description: string; dueDate: string; amount: number; urgency: "high" | "medium" | "low" }>;
 }
 
-// CHART_COLORS는 DashboardCrmPage() 컴포넌트 내에서 테마 기반으로 생성됨
+// CHART_COLORS is generated inside the DashboardCrmPage() component based on the current theme
 
 // ─── Date Range ──────────────────────────────────────────────────────────────
 type PresetKey = "this_week"|"last_week"|"this_month"|"last_month"|"this_quarter"|"last_quarter"|"this_year"|"last_year"|"custom";

@@ -8,7 +8,7 @@ const router = Router();
 
 router.use(authenticate);
 
-// GET /api/menu-allocation — 카테고리 + 아이템 전체 조회
+// GET /api/menu-allocation — Retrieve all categories and items
 router.get("/menu-allocation", async (_req, res) => {
   try {
     const catRows = await db.execute(sql`
@@ -37,7 +37,7 @@ router.get("/menu-allocation", async (_req, res) => {
   }
 });
 
-// PATCH /api/menu-allocation/order — 순서 일괄 저장
+// PATCH /api/menu-allocation/order — Bulk save order
 router.patch("/menu-allocation/order", requireRole("super_admin", "admin"), async (req, res) => {
   const { categories, items } = req.body as {
     categories: { id: string; sort_order: number }[];
@@ -72,7 +72,7 @@ router.patch("/menu-allocation/order", requireRole("super_admin", "admin"), asyn
   }
 });
 
-// PATCH /api/menu-allocation/category/:id — 카테고리 이름 변경
+// PATCH /api/menu-allocation/category/:id — Rename category
 router.patch("/menu-allocation/category/:id", requireRole("super_admin", "admin"), async (req, res) => {
   const { id } = req.params as Record<string, string>;
   const { name } = req.body as { name: string };
@@ -100,7 +100,7 @@ router.patch("/menu-allocation/category/:id", requireRole("super_admin", "admin"
   }
 });
 
-// PATCH /api/menu-allocation/item/:id — 아이템 이름 변경 / visibility 토글
+// PATCH /api/menu-allocation/item/:id — Rename item / toggle visibility
 router.patch("/menu-allocation/item/:id", requireRole("super_admin", "admin"), async (req, res) => {
   const { id } = req.params as Record<string, string>;
   const { name, is_visible } = req.body as { name?: string; is_visible?: boolean };
@@ -145,7 +145,7 @@ router.patch("/menu-allocation/item/:id", requireRole("super_admin", "admin"), a
   }
 });
 
-// POST /api/menu-allocation/category — 카테고리 신규 추가
+// POST /api/menu-allocation/category — Add new category
 router.post("/menu-allocation/category", requireRole("super_admin", "admin"), async (req, res) => {
   const { name } = req.body as { name: string };
 
@@ -172,7 +172,7 @@ router.post("/menu-allocation/category", requireRole("super_admin", "admin"), as
   }
 });
 
-// DELETE /api/menu-allocation/category/:id — 카테고리 소프트 삭제
+// DELETE /api/menu-allocation/category/:id — Soft delete category
 router.delete("/menu-allocation/category/:id", requireRole("super_admin", "admin"), async (req, res) => {
   const { id } = req.params as Record<string, string>;
 

@@ -11,7 +11,7 @@ export const notice = defineType({
       type: 'object',
       fields: [
         { name: 'en', type: 'string', title: 'English' },
-        { name: 'ko', type: 'string', title: '한국어' },
+        { name: 'ko', type: 'string', title: 'Korean' },
         { name: 'ja', type: 'string', title: '日本語' },
         { name: 'zh', type: 'string', title: '中文' },
         { name: 'th', type: 'string', title: 'ภาษาไทย' },
@@ -31,7 +31,7 @@ export const notice = defineType({
       type: 'object',
       fields: [
         { name: 'en', type: 'array', title: 'English', of: [{ type: 'block' }] },
-        { name: 'ko', type: 'array', title: '한국어', of: [{ type: 'block' }] },
+        { name: 'ko', type: 'array', title: 'Korean', of: [{ type: 'block' }] },
         { name: 'ja', type: 'array', title: '日本語', of: [{ type: 'block' }] },
         { name: 'zh', type: 'array', title: '中文', of: [{ type: 'block' }] },
         { name: 'th', type: 'array', title: 'ภาษาไทย', of: [{ type: 'block' }] },

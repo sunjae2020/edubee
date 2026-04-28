@@ -16,7 +16,7 @@ const NAV = [
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
-  { code: 'ko', label: '한국어' },
+  { code: 'ko', label: 'Korean' },
   { code: 'ja', label: '日本語' },
   { code: 'zh', label: '中文' },
   { code: 'th', label: 'ภาษาไทย' },

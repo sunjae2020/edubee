@@ -93,7 +93,7 @@ export default function DbSync() {
 
   const formatDate = (iso?: string | null) => {
     if (!iso) return "-";
-    try { return new Date(iso).toLocaleString("ko-KR"); } catch { return iso ?? "-"; }
+    try { return new Date(iso).toLocaleString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return iso ?? "-"; }
   };
 
   return (
@@ -101,20 +101,20 @@ export default function DbSync() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Database className="size-6" />
-          데이터베이스 동기화
+          Database Sync
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          개발 DB 데이터를 스냅샷으로 저장하고, 프로덕션에 적용합니다.
+          Save a snapshot of the development DB and apply it to production.
         </p>
       </div>
 
-      {/* 현재 스냅샷 상태 */}
+      {/* Current snapshot status */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <FileText className="size-4" />
-              현재 스냅샷 (dev_seed.sql)
+              Current Snapshot (dev_seed.sql)
             </CardTitle>
             <Button variant="ghost" size="sm" onClick={fetchStatus} disabled={loadingStatus}>
               <RefreshCw className={`size-3.5 ${loadingStatus ? "animate-spin" : ""}`} />
@@ -123,59 +123,59 @@ export default function DbSync() {
         </CardHeader>
         <CardContent>
           {loadingStatus ? (
-            <p className="text-sm text-muted-foreground">불러오는 중...</p>
+            <p className="text-sm text-muted-foreground">Loading...</p>
           ) : status?.exists ? (
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <p className="text-muted-foreground">파일 크기</p>
+                <p className="text-muted-foreground">File Size</p>
                 <p className="font-medium">{status.sizeKb?.toLocaleString()} KB</p>
               </div>
               <div>
-                <p className="text-muted-foreground">총 줄 수</p>
-                <p className="font-medium">{status.lineCount?.toLocaleString()}줄</p>
+                <p className="text-muted-foreground">Total Lines</p>
+                <p className="font-medium">{status.lineCount?.toLocaleString()} lines</p>
               </div>
               <div>
-                <p className="text-muted-foreground">생성 시각</p>
+                <p className="text-muted-foreground">Created At</p>
                 <p className="font-medium">{formatDate(status.generatedAt)}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">파일 수정일</p>
+                <p className="text-muted-foreground">File Modified</p>
                 <p className="font-medium">{formatDate(status.modifiedAt)}</p>
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">스냅샷 파일이 없습니다. 먼저 내보내기를 실행하세요.</p>
+            <p className="text-sm text-muted-foreground">No snapshot file found. Run an export first.</p>
           )}
         </CardContent>
       </Card>
 
       <Separator />
 
-      {/* Step 1: 내보내기 */}
+      {/* Step 1: Export */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Download className="size-4" />
-            Step 1 — 개발 DB 스냅샷 생성
+            Step 1 — Create Dev DB Snapshot
           </CardTitle>
           <CardDescription>
-            현재 데이터베이스 전체를 <code className="text-xs bg-muted px-1 rounded">dev_seed.sql</code> 파일로 내보냅니다.
-            이 파일은 배포 시 프로덕션에 자동 적용됩니다.
+            Exports the entire current database to a <code className="text-xs bg-muted px-1 rounded">dev_seed.sql</code> file.
+            This file is automatically applied to production on deployment.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Alert>
             <AlertTriangle className="size-4" />
             <AlertDescription className="text-xs">
-              내보내기는 현재 데이터베이스 전체를 덤프합니다.
-              DB 크기에 따라 30초~2분이 소요될 수 있습니다.
+              The export dumps the entire current database.
+              This may take 30 seconds to 2 minutes depending on DB size.
             </AlertDescription>
           </Alert>
 
           <Button onClick={handleExport} disabled={exportLoading} className="gap-2">
             {exportLoading
-              ? <><RefreshCw className="size-4 animate-spin" /> 내보내는 중...</>
-              : <><Download className="size-4" /> DB 스냅샷 생성</>
+              ? <><RefreshCw className="size-4 animate-spin" /> Exporting...</>
+              : <><Download className="size-4" /> Create DB Snapshot</>
             }
           </Button>
 
@@ -183,8 +183,8 @@ export default function DbSync() {
             <div className={`rounded-md border p-3 text-sm space-y-1 ${exportResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
               <div className="flex items-center gap-2 font-medium">
                 {exportResult.success
-                  ? <><CheckCircle2 className="size-4 text-green-600" /> 스냅샷 생성 완료</>
-                  : <><XCircle className="size-4 text-red-600" /> 생성 실패</>
+                  ? <><CheckCircle2 className="size-4 text-green-600" /> Snapshot created successfully</>
+                  : <><XCircle className="size-4 text-red-600" /> Creation failed</>
                 }
                 {exportResult.elapsed != null && (
                   <Badge variant="outline" className="ml-auto gap-1 text-xs">
@@ -193,14 +193,14 @@ export default function DbSync() {
                 )}
               </div>
               {exportResult.fileSize && (
-                <p className="text-muted-foreground text-xs">파일 크기: {exportResult.fileSize}</p>
+                <p className="text-muted-foreground text-xs">File size: {exportResult.fileSize}</p>
               )}
               {exportResult.error && (
                 <p className="text-red-700 text-xs font-mono">{exportResult.error}</p>
               )}
               {exportResult.success && (
                 <p className="text-green-700 text-xs">
-                  배포(Publish)하면 프로덕션에 자동 적용됩니다. 또는 Step 2로 즉시 반영하세요.
+                  Deploy (Publish) to apply automatically to production, or proceed to Step 2 to apply immediately.
                 </p>
               )}
             </div>
@@ -208,29 +208,29 @@ export default function DbSync() {
         </CardContent>
       </Card>
 
-      {/* Step 2: 프로덕션 즉시 임포트 */}
+      {/* Step 2: Immediate production import */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Upload className="size-4" />
-            Step 2 — 현재 DB에 즉시 임포트
+            Step 2 — Import Snapshot to Current DB
           </CardTitle>
           <CardDescription>
-            저장된 스냅샷을 현재 데이터베이스에 즉시 적용합니다.
-            프로덕션 환경에서 실행 시 프로덕션 DB에 반영됩니다.
+            Immediately applies the saved snapshot to the current database.
+            When run in production, it will be applied to the production DB.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Alert variant="destructive">
             <AlertTriangle className="size-4" />
             <AlertDescription className="text-xs">
-              <strong>주의:</strong> 기존 데이터가 모두 삭제되고 스냅샷 데이터로 교체됩니다.
-              이 작업은 되돌릴 수 없습니다.
+              <strong>Warning:</strong> All existing data will be deleted and replaced with the snapshot data.
+              This action cannot be undone.
             </AlertDescription>
           </Alert>
 
           {!status?.exists && (
-            <p className="text-sm text-muted-foreground">스냅샷이 없습니다. 먼저 Step 1을 실행하세요.</p>
+            <p className="text-sm text-muted-foreground">No snapshot available. Run Step 1 first.</p>
           )}
 
           <div className="flex gap-2 flex-wrap">
@@ -241,14 +241,14 @@ export default function DbSync() {
               className="gap-2"
             >
               {importLoading
-                ? <><RefreshCw className="size-4 animate-spin" /> 임포트 중...</>
+                ? <><RefreshCw className="size-4 animate-spin" /> Importing...</>
                 : importConfirm
-                  ? <><AlertTriangle className="size-4" /> 정말 실행하시겠습니까?</>
-                  : <><Upload className="size-4" /> 현재 DB에 스냅샷 임포트</>
+                  ? <><AlertTriangle className="size-4" /> Are you sure?</>
+                  : <><Upload className="size-4" /> Import Snapshot to Current DB</>
               }
             </Button>
             {importConfirm && (
-              <Button variant="outline" onClick={() => setImportConfirm(false)}>취소</Button>
+              <Button variant="outline" onClick={() => setImportConfirm(false)}>Cancel</Button>
             )}
           </div>
 
@@ -256,8 +256,8 @@ export default function DbSync() {
             <div className={`rounded-md border p-3 text-sm space-y-1 ${importResult.success ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
               <div className="flex items-center gap-2 font-medium">
                 {importResult.success
-                  ? <><CheckCircle2 className="size-4 text-green-600" /> 임포트 성공</>
-                  : <><XCircle className="size-4 text-red-600" /> 임포트 실패</>
+                  ? <><CheckCircle2 className="size-4 text-green-600" /> Import successful</>
+                  : <><XCircle className="size-4 text-red-600" /> Import failed</>
                 }
                 {importResult.elapsed != null && (
                   <Badge variant="outline" className="ml-auto gap-1 text-xs">
@@ -278,14 +278,14 @@ export default function DbSync() {
         </CardContent>
       </Card>
 
-      {/* 안내 */}
+      {/* Guide */}
       <Card className="bg-muted/40">
         <CardContent className="pt-4 text-xs text-muted-foreground space-y-1">
-          <p className="font-medium text-foreground text-sm">권장 워크플로</p>
+          <p className="font-medium text-foreground text-sm">Recommended Workflow</p>
           <ol className="list-decimal list-inside space-y-1 mt-2">
-            <li>개발 환경에서 <strong>Step 1: 스냅샷 생성</strong> 실행</li>
-            <li>Publish(배포) → 프로덕션 서버가 시작 시 자동 임포트</li>
-            <li>즉시 적용이 필요한 경우 프로덕션 어드민에서 <strong>Step 2: 즉시 임포트</strong> 실행</li>
+            <li>Run <strong>Step 1: Create Snapshot</strong> in the development environment</li>
+            <li>Publish (deploy) → the production server auto-imports on startup</li>
+            <li>For immediate application, run <strong>Step 2: Import Snapshot</strong> from the production admin</li>
           </ol>
         </CardContent>
       </Card>

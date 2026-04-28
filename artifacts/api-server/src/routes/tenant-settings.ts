@@ -24,8 +24,8 @@ async function getOrg() {
   return rows[0] ?? null;
 }
 
-// req.tenant(X-Organisation-Id 헤더 또는 서브도메인으로 이미 해석됨)를 우선,
-// 없으면 MVP 폴백(첫 번째 Active 조직)
+// Prefer req.tenant (already resolved from X-Organisation-Id header or subdomain);
+// falls back to MVP fallback (first Active organisation) if not set
 async function getOrgForReq(req: ExpressRequest) {
   return req.tenant ?? await getOrg();
 }
@@ -258,7 +258,7 @@ router.post("/domain/check", ...settingsAccess, async (req, res) => {
       return res.json({
         available: false,
         reason: "reserved",
-        message: "시스템에서 사용 중인 예약어입니다.",
+        message: "This word is reserved by the system.",
       });
     }
 
@@ -431,11 +431,11 @@ router.delete("/invitations/:id", ...settingsAccess, async (req, res) => {
 
 // ═══════════════════════════════════════════════════════════════
 // BRANDING UPLOAD — Fix 14~15
-// Base64 → DB 직접 저장 (Replit PostgreSQL Helium / GCS 차단)
+// Base64 → stored directly in DB (Replit PostgreSQL Helium / GCS blocked)
 // ═══════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────
-// Fix 14 — POST /branding/logo : 로고 업로드
+// Fix 14 — POST /branding/logo : logo upload
 // Body: { logoBase64: "data:image/png;base64,..." }
 // ─────────────────────────────────────────────────────────────
 router.post("/branding/logo", ...settingsAccess, async (req, res) => {
@@ -445,13 +445,13 @@ router.post("/branding/logo", ...settingsAccess, async (req, res) => {
     if (!org) return res.status(404).json({ message: "Organisation not found" });
 
     if (!logoBase64) {
-      return res.status(400).json({ message: "로고 이미지 데이터가 없습니다." });
+      return res.status(400).json({ message: "No logo image data provided." });
     }
 
     const base64Regex = /^data:image\/(png|jpeg|jpg|svg\+xml|webp);base64,/;
     if (!base64Regex.test(logoBase64)) {
       return res.status(400).json({
-        message: "PNG, JPG, SVG, WEBP 형식의 이미지만 업로드 가능합니다.",
+        message: "Only PNG, JPG, SVG, or WEBP image formats are allowed.",
       });
     }
 
@@ -461,7 +461,7 @@ router.post("/branding/logo", ...settingsAccess, async (req, res) => {
 
     if (estimatedBytes > MAX_BYTES) {
       return res.status(400).json({
-        message: "로고 파일은 2MB 이하여야 합니다.",
+        message: "Logo file must be 2MB or smaller.",
         estimatedSize: `${(estimatedBytes / 1024).toFixed(0)}KB`,
       });
     }
@@ -471,15 +471,15 @@ router.post("/branding/logo", ...settingsAccess, async (req, res) => {
       .set({ logoUrl: logoBase64, modifiedOn: new Date() })
       .where(eq(organisations.id, org.id));
 
-    return res.json({ success: true, logoUrl: logoBase64, message: "로고가 저장됐습니다." });
+    return res.json({ success: true, logoUrl: logoBase64, message: "Logo saved successfully." });
   } catch (err) {
     console.error("[POST /branding/logo]", err);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+    return res.status(500).json({ message: "An internal server error occurred." });
   }
 });
 
 // ─────────────────────────────────────────────────────────────
-// POST /branding/logo-dark : 다크모드 로고 업로드
+// POST /branding/logo-dark : dark mode logo upload
 // Body: { logoDarkBase64: "data:image/png;base64,..." }
 // ─────────────────────────────────────────────────────────────
 router.post("/branding/logo-dark", ...settingsAccess, async (req, res) => {
@@ -489,13 +489,13 @@ router.post("/branding/logo-dark", ...settingsAccess, async (req, res) => {
     if (!org) return res.status(404).json({ message: "Organisation not found" });
 
     if (!logoDarkBase64) {
-      return res.status(400).json({ message: "다크 로고 이미지 데이터가 없습니다." });
+      return res.status(400).json({ message: "No dark logo image data provided." });
     }
 
     const base64Regex = /^data:image\/(png|jpeg|jpg|svg\+xml|webp);base64,/;
     if (!base64Regex.test(logoDarkBase64)) {
       return res.status(400).json({
-        message: "PNG, JPG, SVG, WEBP 형식의 이미지만 업로드 가능합니다.",
+        message: "Only PNG, JPG, SVG, or WEBP image formats are allowed.",
       });
     }
 
@@ -505,7 +505,7 @@ router.post("/branding/logo-dark", ...settingsAccess, async (req, res) => {
 
     if (estimatedBytes > MAX_BYTES) {
       return res.status(400).json({
-        message: "로고 파일은 2MB 이하여야 합니다.",
+        message: "Logo file must be 2MB or smaller.",
         estimatedSize: `${(estimatedBytes / 1024).toFixed(0)}KB`,
       });
     }
@@ -515,15 +515,15 @@ router.post("/branding/logo-dark", ...settingsAccess, async (req, res) => {
       .set({ logoDarkUrl: logoDarkBase64, modifiedOn: new Date() } as any)
       .where(eq(organisations.id, org.id));
 
-    return res.json({ success: true, logoDarkUrl: logoDarkBase64, message: "다크 로고가 저장됐습니다." });
+    return res.json({ success: true, logoDarkUrl: logoDarkBase64, message: "Dark logo saved successfully." });
   } catch (err) {
     console.error("[POST /branding/logo-dark]", err);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+    return res.status(500).json({ message: "An internal server error occurred." });
   }
 });
 
 // ─────────────────────────────────────────────────────────────
-// POST /branding/favicon-dark : 다크모드 파비콘 업로드
+// POST /branding/favicon-dark : dark mode favicon upload
 // Body: { faviconDarkBase64: "data:image/png;base64,..." }
 // ─────────────────────────────────────────────────────────────
 router.post("/branding/favicon-dark", ...settingsAccess, async (req, res) => {
@@ -533,18 +533,18 @@ router.post("/branding/favicon-dark", ...settingsAccess, async (req, res) => {
     if (!org) return res.status(404).json({ message: "Organisation not found" });
 
     if (!faviconDarkBase64) {
-      return res.status(400).json({ message: "다크 파비콘 이미지 데이터가 없습니다." });
+      return res.status(400).json({ message: "No dark favicon image data provided." });
     }
 
     const base64Regex = /^data:image\/(x-icon|vnd\.microsoft\.icon|png);base64,/;
     if (!base64Regex.test(faviconDarkBase64)) {
-      return res.status(400).json({ message: "ICO 또는 PNG 형식의 파비콘만 업로드 가능합니다." });
+      return res.status(400).json({ message: "Only ICO or PNG format favicons are allowed." });
     }
 
     const base64Data     = faviconDarkBase64.split(",")[1] ?? "";
     const estimatedBytes = Math.ceil((base64Data.length * 3) / 4);
     if (estimatedBytes > 500 * 1024) {
-      return res.status(400).json({ message: "파비콘 파일은 500KB 이하여야 합니다." });
+      return res.status(400).json({ message: "Favicon file must be 500KB or smaller." });
     }
 
     await db
@@ -552,15 +552,15 @@ router.post("/branding/favicon-dark", ...settingsAccess, async (req, res) => {
       .set({ faviconDarkUrl: faviconDarkBase64, modifiedOn: new Date() } as any)
       .where(eq(organisations.id, org.id));
 
-    return res.json({ success: true, faviconDarkUrl: faviconDarkBase64, message: "다크 파비콘이 저장됐습니다." });
+    return res.json({ success: true, faviconDarkUrl: faviconDarkBase64, message: "Dark favicon saved successfully." });
   } catch (err) {
     console.error("[POST /branding/favicon-dark]", err);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+    return res.status(500).json({ message: "An internal server error occurred." });
   }
 });
 
 // ─────────────────────────────────────────────────────────────
-// Fix 15 — POST /branding/favicon : 파비콘 업로드
+// Fix 15 — POST /branding/favicon : favicon upload
 // Body: { faviconBase64: "data:image/png;base64,..." }
 // ─────────────────────────────────────────────────────────────
 router.post("/branding/favicon", ...settingsAccess, async (req, res) => {
@@ -570,13 +570,13 @@ router.post("/branding/favicon", ...settingsAccess, async (req, res) => {
     if (!org) return res.status(404).json({ message: "Organisation not found" });
 
     if (!faviconBase64) {
-      return res.status(400).json({ message: "파비콘 이미지 데이터가 없습니다." });
+      return res.status(400).json({ message: "No favicon image data provided." });
     }
 
     const base64Regex = /^data:image\/(x-icon|vnd\.microsoft\.icon|png);base64,/;
     if (!base64Regex.test(faviconBase64)) {
       return res.status(400).json({
-        message: "ICO 또는 PNG 형식의 파비콘만 업로드 가능합니다.",
+        message: "Only ICO or PNG format favicons are allowed.",
       });
     }
 
@@ -586,7 +586,7 @@ router.post("/branding/favicon", ...settingsAccess, async (req, res) => {
 
     if (estimatedBytes > MAX_BYTES) {
       return res.status(400).json({
-        message: "파비콘 파일은 500KB 이하여야 합니다.",
+        message: "Favicon file must be 500KB or smaller.",
         estimatedSize: `${(estimatedBytes / 1024).toFixed(0)}KB`,
       });
     }
@@ -596,10 +596,10 @@ router.post("/branding/favicon", ...settingsAccess, async (req, res) => {
       .set({ faviconUrl: faviconBase64, modifiedOn: new Date() })
       .where(eq(organisations.id, org.id));
 
-    return res.json({ success: true, faviconUrl: faviconBase64, message: "파비콘이 저장됐습니다." });
+    return res.json({ success: true, faviconUrl: faviconBase64, message: "Favicon saved successfully." });
   } catch (err) {
     console.error("[POST /branding/favicon]", err);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+    return res.status(500).json({ message: "An internal server error occurred." });
   }
 });
 
@@ -608,7 +608,7 @@ router.post("/branding/favicon", ...settingsAccess, async (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────
-// Fix 8 — PUT /domain/subdomain : 서브도메인 저장
+// Fix 8 — PUT /domain/subdomain : save subdomain
 // ─────────────────────────────────────────────────────────────
 router.put("/domain/subdomain", ...settingsAccess, async (req, res) => {
   try {
@@ -617,12 +617,12 @@ router.put("/domain/subdomain", ...settingsAccess, async (req, res) => {
     if (!org) return res.status(404).json({ message: "Organisation not found" });
 
     if (!subdomain) {
-      return res.status(400).json({ message: "서브도메인을 입력해 주세요." });
+      return res.status(400).json({ message: "Please enter a subdomain." });
     }
 
     if (!/^[a-z0-9-]{3,50}$/.test(subdomain)) {
       return res.status(400).json({
-        message: "서브도메인은 소문자, 숫자, 하이픈만 사용 가능하며 3~50자여야 합니다.",
+        message: "Subdomain may only contain lowercase letters, numbers, and hyphens, and must be 3–50 characters.",
       });
     }
 
@@ -630,7 +630,7 @@ router.put("/domain/subdomain", ...settingsAccess, async (req, res) => {
       return res.status(400).json({
         available: false,
         reason: "reserved",
-        message: "시스템에서 사용 중인 예약어입니다.",
+        message: "This word is reserved by the system.",
       });
     }
 
@@ -641,7 +641,7 @@ router.put("/domain/subdomain", ...settingsAccess, async (req, res) => {
       .limit(1);
 
     if (duplicate.length > 0) {
-      return res.status(409).json({ available: false, message: "이미 사용 중인 서브도메인입니다." });
+      return res.status(409).json({ available: false, message: "This subdomain is already in use." });
     }
 
     await db
@@ -652,32 +652,32 @@ router.put("/domain/subdomain", ...settingsAccess, async (req, res) => {
     return res.json({ success: true, subdomain, fullDomain: `${subdomain}.edubee.co` });
   } catch (err) {
     console.error("[PUT /domain/subdomain]", err);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+    return res.status(500).json({ message: "An internal server error occurred." });
   }
 });
 
 // ─────────────────────────────────────────────────────────────
-// Fix 9 — PUT /domain/custom : 커스텀 도메인 등록
+// Fix 9 — PUT /domain/custom : register custom domain
 // ─────────────────────────────────────────────────────────────
 router.put("/domain/custom", ...settingsAccess, async (req, res) => {
   try {
     const { customDomain } = req.body;
     const org = await getOrgForReq(req);
-    if (!org) return res.status(404).json({ message: "테넌트를 찾을 수 없습니다." });
+    if (!org) return res.status(404).json({ message: "Tenant not found." });
 
     if (!customDomain) {
-      return res.status(400).json({ message: "도메인을 입력해 주세요." });
+      return res.status(400).json({ message: "Please enter a domain." });
     }
 
     if (org.planType === "starter" || org.planType === "solo") {
       return res.status(403).json({
-        message: "커스텀 도메인은 Growth 플랜 이상에서 사용 가능합니다.",
+        message: "Custom domains are available on the Growth plan or higher.",
         currentPlan: org.planType,
       });
     }
 
     if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(customDomain)) {
-      return res.status(400).json({ message: "유효하지 않은 도메인 형식입니다." });
+      return res.status(400).json({ message: "Invalid domain format." });
     }
 
     const txtToken  = `edubee-verify-${Math.random().toString(36).slice(2, 12)}`;
@@ -725,16 +725,16 @@ router.put("/domain/custom", ...settingsAccess, async (req, res) => {
       customDomain,
       dnsTarget,
       txtVerificationToken: txtToken,
-      message: "커스텀 도메인이 등록됐습니다. DNS 레코드 설정 후 인증을 진행해 주세요.",
+      message: "Custom domain registered. Please configure your DNS records and then proceed with verification.",
     });
   } catch (err) {
     console.error("[PUT /domain/custom]", err);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+    return res.status(500).json({ message: "An internal server error occurred." });
   }
 });
 
 // ─────────────────────────────────────────────────────────────
-// Fix 10 — GET /domain/dns-instructions : DNS 레코드 설정 안내
+// Fix 10 — GET /domain/dns-instructions : DNS record setup instructions
 // ─────────────────────────────────────────────────────────────
 router.get("/domain/dns-instructions", ...settingsAccess, async (req, res) => {
   try {
@@ -753,12 +753,12 @@ router.get("/domain/dns-instructions", ...settingsAccess, async (req, res) => {
       .limit(1);
 
     if (!cfg) {
-      return res.status(404).json({ message: "등록된 커스텀 도메인이 없습니다." });
+      return res.status(404).json({ message: "No custom domain registered." });
     }
 
     return res.json({
       subdomain: {
-        description: "서브도메인은 Edubee가 자동으로 관리합니다. 별도 DNS 설정이 필요하지 않습니다.",
+        description: "The subdomain is automatically managed by Edubee. No additional DNS configuration required.",
         currentUrl:  org.subdomain ? `${org.subdomain}.edubee.co` : null,
       },
       customDomain: {
@@ -783,17 +783,17 @@ router.get("/domain/dns-instructions", ...settingsAccess, async (req, res) => {
           crazyDomains: "https://www.crazydomains.com.au/help/cname-records/",
           melbourneIT:  "https://help.melbourneit.com.au",
         },
-        propagationNote: "DNS 변경 사항이 전 세계에 전파되는 데 최대 48시간이 소요될 수 있습니다.",
+        propagationNote: "DNS changes may take up to 48 hours to propagate worldwide.",
       },
     });
   } catch (err) {
     console.error("[GET /domain/dns-instructions]", err);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+    return res.status(500).json({ message: "An internal server error occurred." });
   }
 });
 
 // ─────────────────────────────────────────────────────────────
-// Fix 11 — POST /domain/custom/verify : DNS 인증 실행
+// Fix 11 — POST /domain/custom/verify : run DNS verification
 // ─────────────────────────────────────────────────────────────
 router.post("/domain/custom/verify", ...settingsAccess, async (req, res) => {
   try {
@@ -812,7 +812,7 @@ router.post("/domain/custom/verify", ...settingsAccess, async (req, res) => {
       .limit(1);
 
     if (!cfg || !cfg.customDomain) {
-      return res.status(404).json({ message: "등록된 커스텀 도메인이 없습니다." });
+      return res.status(404).json({ message: "No custom domain registered." });
     }
 
     const now = new Date();
@@ -848,7 +848,7 @@ router.post("/domain/custom/verify", ...settingsAccess, async (req, res) => {
         lastCheckedAt: now,
         errorMessage:  verified
           ? null
-          : `TXT: ${txtVerified ? "확인됨" : "미확인"}  CNAME: ${cnameVerified ? "확인됨" : "미확인"}`,
+          : `TXT: ${txtVerified ? "verified" : "unverified"}  CNAME: ${cnameVerified ? "verified" : "unverified"}`,
         modifiedOn: now,
       })
       .where(eq(domainConfigs.id, cfg.id));
@@ -868,17 +868,17 @@ router.post("/domain/custom/verify", ...settingsAccess, async (req, res) => {
       checkAttempts:      newAttempts,
       checkedAt:          now,
       message: verified
-        ? "도메인 인증이 완료됐습니다. SSL 인증서 발급을 진행합니다."
-        : "DNS 레코드를 확인할 수 없습니다. 설정 후 최대 48시간이 소요될 수 있습니다.",
+        ? "Domain verification complete. SSL certificate issuance is in progress."
+        : "DNS records could not be verified. Changes may take up to 48 hours to propagate.",
     });
   } catch (err) {
     console.error("[POST /domain/custom/verify]", err);
-    return res.status(500).json({ message: "DNS 조회 중 오류가 발생했습니다." });
+    return res.status(500).json({ message: "An error occurred while looking up DNS records." });
   }
 });
 
 // ─────────────────────────────────────────────────────────────
-// Fix 12 — GET /domain/custom/status : 인증·SSL 상태 폴링
+// Fix 12 — GET /domain/custom/status : poll verification / SSL status
 // ─────────────────────────────────────────────────────────────
 router.get("/domain/custom/status", ...settingsAccess, async (req, res) => {
   try {
@@ -897,7 +897,7 @@ router.get("/domain/custom/status", ...settingsAccess, async (req, res) => {
       .limit(1);
 
     if (!cfg) {
-      return res.status(404).json({ message: "등록된 커스텀 도메인이 없습니다." });
+      return res.status(404).json({ message: "No custom domain registered." });
     }
 
     return res.json({
@@ -913,12 +913,12 @@ router.get("/domain/custom/status", ...settingsAccess, async (req, res) => {
     });
   } catch (err) {
     console.error("[GET /domain/custom/status]", err);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+    return res.status(500).json({ message: "An internal server error occurred." });
   }
 });
 
 // ─────────────────────────────────────────────────────────────
-// Fix 13 — DELETE /domain/custom : 커스텀 도메인 제거
+// Fix 13 — DELETE /domain/custom : remove custom domain
 // ─────────────────────────────────────────────────────────────
 router.delete("/domain/custom", ...settingsAccess, async (req, res) => {
   try {
@@ -941,23 +941,23 @@ router.delete("/domain/custom", ...settingsAccess, async (req, res) => {
       })
       .where(eq(organisations.id, org.id));
 
-    return res.json({ success: true, message: "커스텀 도메인이 제거됐습니다." });
+    return res.json({ success: true, message: "Custom domain removed." });
   } catch (err) {
     console.error("[DELETE /domain/custom]", err);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+    return res.status(500).json({ message: "An internal server error occurred." });
   }
 });
 
 // ─────────────────────────────────────────────────────────────
-// GET /theme — 테넌트 테마 설정 반환 (공개 엔드포인트, 인증 불필요)
-// 우선순위: tenantResolver(헤더/서브도메인) → ?subdomain= 쿼리 파라미터 (dev 미리보기용)
-// 앱 초기화 시 첫 번째 API 호출로 사용
+// GET /theme — returns tenant theme settings (public endpoint, no auth required)
+// Priority: tenantResolver (header/subdomain) → ?subdomain= query param (dev preview)
+// Used as the first API call during app initialisation
 // ─────────────────────────────────────────────────────────────
 router.get("/theme", async (req, res) => {
   try {
     let org = req.tenant;
 
-    // ?subdomain= 쿼리 파라미터 지원 (개발 모드 미리보기용)
+    // Support ?subdomain= query param (dev mode preview)
     if (!org && req.query.subdomain as string) {
       const sub = String(req.query.subdomain as string).trim().toLowerCase();
       const [found] = await db
@@ -988,9 +988,9 @@ router.get("/theme", async (req, res) => {
       features:        (() => {
         const planFeatures = getDefaultFeatures(org.planType ?? "starter");
         const orgFeatures  = (org.features ?? {}) as Record<string, boolean>;
-        // org 커스텀 설정 기반으로 시작
+        // Start from org custom settings
         const merged: Record<string, boolean> = { ...orgFeatures };
-        // 플랜이 true로 정한 기능은 org 설정으로 비활성화 불가 (플랜 다운그레이드 방지)
+        // Features set to true by the plan cannot be disabled by org settings (prevents plan downgrade bypass)
         for (const [key, val] of Object.entries(planFeatures)) {
           if (val === true) merged[key] = true;
           else if (merged[key] === undefined) merged[key] = false;

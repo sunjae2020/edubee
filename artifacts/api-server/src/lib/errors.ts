@@ -1,5 +1,5 @@
-// ── Edubee 표준 에러 클래스 ──────────────────────────────────────────────────
-// Sprint 3-02: 80+ 라우트 에러 응답 표준화
+// ── Edubee standard error classes ──────────────────────────────────────────────────
+// Sprint 3-02: Standardised error responses across 80+ routes
 
 export class AppError extends Error {
   constructor(

@@ -6,7 +6,7 @@ import axios from "axios";
 import {
   ArrowLeft, Save, Building2, Users, FileText, Briefcase,
   Plus, Loader2, ChevronRight, ExternalLink, Package, DollarSign, Shield,
-  UserPlus, X, Layers, Copy, Check, Camera,
+  UserPlus, X, Layers, Copy, Check, Camera, HardDrive, FolderOpen, RefreshCw, Trash2, Link,
 } from "lucide-react";
 import { AccountServiceProfilesTab } from "./AccountServiceProfilesTab";
 import { PortalAccessPanel } from "@/components/crm/PortalAccessPanel";
@@ -181,7 +181,7 @@ function CreateTenantDialog({ account, onClose }: CreateTenantDialogProps) {
           {/* Info box */}
           <div className="rounded-lg px-4 py-3 text-xs text-[#92400E] leading-relaxed"
             style={{ background: "#FEF0E3", border: "1px solid #FDE68A" }}>
-            <strong>테넌트 생성 시 자동으로:</strong> PostgreSQL 스키마 프로비저닝 + 기본 설정 데이터 세팅 + Owner Email로 환영 이메일 발송
+            <strong>When creating a tenant, the following happen automatically:</strong> PostgreSQL schema provisioning + default configuration data setup + welcome email sent to Owner Email
           </div>
         </div>
 
@@ -255,6 +255,8 @@ interface Account {
   status: string;
   createdOn?: string | null;
   modifiedOn?: string | null;
+  googleDriveFolderId?: string | null;
+  googleDriveFolderUrl?: string | null;
   primaryContact?: {
     id: string; firstName: string; lastName: string;
     originalName?: string | null;
@@ -568,7 +570,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                   <Input
                     value={cform.originalName}
                     onChange={e => setCform(f => ({ ...f, originalName: e.target.value }))}
-                    placeholder="e.g. 김민준"
+                    placeholder="e.g. Min-jun Kim"
                     className="h-8 text-sm border-[#E8E6E2] focus:border-(--e-orange)"
                   />
                 </div>
@@ -802,6 +804,106 @@ function LedgerTab({ accountId }: { accountId: string }) {
 }
 
 const INPUT_CLS = "h-10 text-sm border-[#E8E6E2] focus:border-(--e-orange) focus:ring-0";
+
+// ── Google Drive Folder Widget ─────────────────────────────────────────────
+
+function GoogleDriveFolderWidget({ accountId, account, onUpdate }: {
+  accountId: string;
+  account: Account | null;
+  onUpdate: () => void;
+}) {
+  const { toast } = useToast();
+  const [manualUrl, setManualUrl] = useState("");
+  const [manualId, setManualId] = useState("");
+  const [showManual, setShowManual] = useState(false);
+
+  const hasDrive = !!(account?.googleDriveFolderUrl || account?.googleDriveFolderId);
+
+  const createMutation = useMutation({
+    mutationFn: () => axios.post(`${BASE}/api/google-drive/accounts/${accountId}/folder`).then(r => r.data),
+    onSuccess: (data) => {
+      toast({ title: "Google Drive folder created", description: data.folderName });
+      onUpdate();
+    },
+    onError: (e: any) => toast({ title: "Failed to create folder", description: e?.response?.data?.error ?? "An error occurred.", variant: "destructive" }),
+  });
+
+  const linkMutation = useMutation({
+    mutationFn: () => axios.put(`${BASE}/api/google-drive/accounts/${accountId}/folder`, { folderId: manualId, folderUrl: manualUrl }),
+    onSuccess: () => { toast({ title: "Google Drive folder linked" }); setShowManual(false); onUpdate(); },
+    onError: () => toast({ title: "Failed to link folder", variant: "destructive" }),
+  });
+
+  const unlinkMutation = useMutation({
+    mutationFn: () => axios.delete(`${BASE}/api/google-drive/accounts/${accountId}/folder`),
+    onSuccess: () => { toast({ title: "Google Drive folder unlinked" }); onUpdate(); },
+    onError: () => toast({ title: "Failed to unlink folder", variant: "destructive" }),
+  });
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <HardDrive className="w-4 h-4 text-blue-500 shrink-0" />
+        <span className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Google Drive</span>
+      </div>
+
+      {hasDrive ? (
+        <div className="flex items-center gap-2 p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+          <FolderOpen className="w-4 h-4 text-blue-500 shrink-0" />
+          <a
+            href={account?.googleDriveFolderUrl ?? `https://drive.google.com/drive/folders/${account?.googleDriveFolderId}`}
+            target="_blank" rel="noopener noreferrer"
+            className="flex-1 text-sm text-blue-700 hover:underline truncate font-medium"
+          >
+            Open folder <ExternalLink className="w-3 h-3 inline ml-1" />
+          </a>
+          <button onClick={() => unlinkMutation.mutate()} disabled={unlinkMutation.isPending}
+            className="text-xs text-red-400 hover:text-red-600 flex items-center gap-1 shrink-0">
+            {unlinkMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm" variant="outline"
+            className="h-8 text-xs border-blue-200 text-blue-700 hover:bg-blue-50 gap-1.5"
+            onClick={() => createMutation.mutate()}
+            disabled={createMutation.isPending}
+          >
+            {createMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <HardDrive className="w-3 h-3" />}
+            Auto-create folder
+          </Button>
+          <button onClick={() => setShowManual(v => !v)}
+            className="text-xs text-[#A8A29E] hover:text-[#57534E] flex items-center gap-1">
+            <Link className="w-3 h-3" /> Manual link
+          </button>
+        </div>
+      )}
+
+      {showManual && (
+        <div className="space-y-2 p-3 bg-[#F9F8F6] border border-[#E8E6E2] rounded-lg">
+          <input
+            className="w-full h-8 px-2.5 text-xs border border-[#E8E6E2] rounded-lg"
+            placeholder="Google Drive Folder URL (https://drive.google.com/drive/folders/…)"
+            value={manualUrl}
+            onChange={e => {
+              setManualUrl(e.target.value);
+              const match = e.target.value.match(/folders\/([a-zA-Z0-9_-]+)/);
+              if (match) setManualId(match[1]);
+            }}
+          />
+          <div className="flex gap-2">
+            <Button size="sm" className="h-7 text-xs bg-(--e-orange) hover:bg-(--e-orange-hover) text-white"
+              onClick={() => linkMutation.mutate()} disabled={linkMutation.isPending || !manualUrl}>
+              {linkMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
+            </Button>
+            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowManual(false)}>Cancel</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AccountDetailPage() {
   const [matchNew] = useRoute("/admin/crm/accounts/new");
@@ -1316,6 +1418,11 @@ export default function AccountDetailPage() {
                     <Input value={form.websiteUrl2 ?? ""} onChange={e => set("websiteUrl2", e.target.value)} placeholder="https://…" className={INPUT_CLS} />
                   </Field>
                 </Section>
+
+                {/* Google Drive Folder */}
+                <div className="border-t border-[#E8E6E2] pt-4">
+                  <GoogleDriveFolderWidget accountId={id!} account={account} onUpdate={() => qc.invalidateQueries({ queryKey: ["account", id] })} />
+                </div>
               </div>
 
               {/* Organisation — conditional by type */}

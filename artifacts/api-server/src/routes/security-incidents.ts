@@ -20,7 +20,7 @@ const IncidentSchema = z.object({
   notes: z.string().optional(),
 });
 
-// GET /api/security-incidents — 목록 (super_admin / admin만)
+// GET /api/security-incidents — list (super_admin / admin only)
 router.get("/security-incidents", authenticate, requireRole(...SUPER_ADMIN_ROLES), async (req, res) => {
   try {
     const rows = await db
@@ -35,7 +35,7 @@ router.get("/security-incidents", authenticate, requireRole(...SUPER_ADMIN_ROLES
   }
 });
 
-// POST /api/security-incidents — 사고 기록 + 알림 발송
+// POST /api/security-incidents — record incident + send alert
 router.post("/security-incidents", authenticate, requireRole(...SUPER_ADMIN_ROLES), async (req, res) => {
   try {
     const parsed = IncidentSchema.safeParse(req.body);
@@ -65,7 +65,7 @@ router.post("/security-incidents", authenticate, requireRole(...SUPER_ADMIN_ROLE
   }
 });
 
-// PATCH /api/security-incidents/:id — OAIC 신고 완료 표시
+// PATCH /api/security-incidents/:id — mark OAIC notification as complete
 router.patch("/security-incidents/:id", authenticate, requireRole(...SUPER_ADMIN_ROLES), async (req, res) => {
   try {
     const { reportedToOaic, oaicReportNumber, notificationSentToAffected, resolvedAt, notes } = req.body;

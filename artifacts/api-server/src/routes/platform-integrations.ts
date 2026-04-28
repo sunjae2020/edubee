@@ -11,7 +11,7 @@ const router = Router();
 const guard  = [authenticate, superAdminOnly];
 
 // ─── GET /api/superadmin/integrations/status ─────────────────────────────────
-// 플랫폼 레벨 외부 서비스 연결 상태 반환
+// Returns platform-level external service connection status
 router.get("/integrations/status", ...guard, async (_req, res) => {
   try {
     const resendKey     = process.env.RESEND_API_KEY ?? "";
@@ -178,7 +178,7 @@ router.post("/integrations/test/storage", ...guard, async (_req, res) => {
 });
 
 // ─── GET /api/settings/integrations ─────────────────────────────────────────
-// 테넌트 레벨 인테그레이션 설정 반환
+// Returns tenant-level integration settings
 router.get("/tenant-integrations", authenticate, async (req, res) => {
   try {
     const org = req.tenant;

@@ -11,6 +11,7 @@ import {
   AlertTriangle, XCircle, X, Eye, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatDateTime } from "@/lib/date-format";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -615,7 +616,7 @@ function HistoryTab() {
                 <>
                   <tr key={row.id} className="border-t hover:bg-(--e-orange-lt)">
                     <td className="px-3 py-2.5 text-xs whitespace-nowrap">
-                      {row.createdAt ? new Date(row.createdAt).toLocaleString() : "—"}
+                      {formatDateTime(row.createdAt)}
                     </td>
                     <td className="px-3 py-2.5 font-mono text-xs">{row.tableName}</td>
                     <td className="px-3 py-2.5 text-xs max-w-[140px] truncate">{row.filename ?? "—"}</td>

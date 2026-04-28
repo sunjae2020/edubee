@@ -14,14 +14,14 @@ import { logAudit, auditParamsFromReq } from "../lib/auditLogger.js";
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
 
-// CC 위임 검증 헬퍼: contract → camp_application → packageGroupId → delegation 확인
+// CC delegation validation helper: contract → camp_application → packageGroupId → delegation check
 async function assertCCDelegatedForContract(orgId: string, contractId: string): Promise<string | null> {
   const [contract] = await db
     .select({ campApplicationId: contracts.campApplicationId, applicationId: contracts.applicationId })
     .from(contracts).where(eq(contracts.id, contractId)).limit(1);
   if (!contract) return "Contract not found";
 
-  // camp_application_id 경로 우선
+  // Prefer camp_application_id path
   if (contract.campApplicationId) {
     const [ca] = await db.select({ packageGroupId: campApplications.packageGroupId })
       .from(campApplications).where(eq(campApplications.id, contract.campApplicationId)).limit(1);
@@ -35,7 +35,7 @@ async function assertCCDelegatedForContract(orgId: string, contractId: string): 
     return (check.rowCount ?? 0) > 0 ? null : "Forbidden: not delegated to this package group";
   }
 
-  // application_id 경로 fallback
+  // Fallback to application_id path
   if (!contract.applicationId) return null;
   const [app] = await db.select({ packageGroupId: applications.packageGroupId })
     .from(applications).where(eq(applications.id, contract.applicationId)).limit(1);
@@ -76,7 +76,7 @@ router.get("/contracts", authenticate, async (req, res) => {
       if (!delegatedIds || delegatedIds.length === 0) {
         return res.json({ data: [], meta: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } });
       }
-      // camp_application_id → camp_applications.package_group_id 경로로 필터
+      // Filter via camp_application_id → camp_applications.package_group_id path
       conditions.push(
         exists(
           db.select({ _: campApplications.id })
@@ -128,7 +128,7 @@ router.get("/contracts", authenticate, async (req, res) => {
       [orgId]
     );
     const delegatedIds = delegResult.rows.map(r => r.package_group_id).filter(Boolean) as string[];
-    // 현재 테넌트 스키마 컨텍스트(owner의 schema)에서 직접 실행 — MASTER_TENANT 하드코딩 제거
+    // Execute directly in the current tenant schema context (owner's schema) — removes MASTER_TENANT hardcoding
     await handler(delegatedIds);
   } else {
     await handler();
@@ -137,7 +137,7 @@ router.get("/contracts", authenticate, async (req, res) => {
 
 router.post("/contracts", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    // CC: applicationId의 packageGroupId가 위임된 것인지 확인
+    // CC: verify the packageGroupId of applicationId is delegated
     if (req.user!.role === "camp_coordinator") {
       const orgId = req.user!.organisationId;
       if (!orgId) return res.status(403).json({ error: "Forbidden" });
@@ -186,7 +186,7 @@ router.get("/contracts/:id", authenticate, async (req, res) => {
 
 router.put("/contracts/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    // CC: 위임된 PG 소속 계약만 수정 가능
+    // CC: only contracts belonging to a delegated PG may be modified
     if (req.user!.role === "camp_coordinator") {
       const orgId = req.user!.organisationId;
       if (!orgId) return res.status(403).json({ error: "Forbidden" });

@@ -30,8 +30,8 @@ function ImpersonationBanner() {
   const orgName   = sessionStorage.getItem("admin_impersonate_org_name") ?? "Unknown Tenant";
   const returnPath = sessionStorage.getItem("edubee_impersonate_return") ?? "/superadmin/tenants";
 
-  // 마운트 시 테마 재로드 트리거
-  // navigate() 이후에 이 컴포넌트가 마운트되므로, 이 시점에 sessionStorage 값이 확정됨
+  // Trigger theme reload on mount
+  // This component mounts after navigate(), so sessionStorage values are settled by this point
   useEffect(() => {
     if (orgId) {
       window.dispatchEvent(new Event("edubee:impersonation-changed"));
@@ -48,7 +48,7 @@ function ImpersonationBanner() {
           sessionStorage.removeItem("admin_impersonate_org_name");
           sessionStorage.removeItem("edubee_impersonate_return");
           qc.clear();
-          // 임프로소네이션 종료 후 기본 테넌트 테마로 복원
+          // Restore default tenant theme after ending impersonation
           window.dispatchEvent(new Event("edubee:impersonation-changed"));
           navigate(returnPath);
         }}
@@ -61,13 +61,13 @@ function ImpersonationBanner() {
 }
 
 // ── DelegatedAccessBanner ────────────────────────────────────────────────
-// camp_coordinator 가 위임받은 Package Group 페이지를 볼 때 표시
+// Shown when a camp_coordinator is viewing a delegated Package Group page
 function DelegatedAccessBanner() {
   const { user }     = useAuth();
   const [location]   = useLocation();
   const isCC         = user?.role === "camp_coordinator";
 
-  // delegated-packages 페이지 또는 ?delegated=1 쿼리가 붙은 package group 상세 페이지
+  // delegated-packages page or a package group detail page with the ?delegated=1 query param
   const isDelegatedPath = location.startsWith("/admin/delegated-packages");
   const isDelegatedDetail =
     location.startsWith("/admin/package-groups/") &&

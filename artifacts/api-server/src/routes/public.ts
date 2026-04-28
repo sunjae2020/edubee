@@ -501,11 +501,11 @@ router.post("/public/chatbot/message", async (req, res) => {
     const systemPrompt = getSystemPrompt("public");
     const relevantChunks = await retrieveContext(question, 4, "public");
     const contextText = relevantChunks
-      .map((c, i) => `[관련 문서 ${i + 1} — ${c.docTitle} (관련도 ${(c.score * 100).toFixed(0)}%)]\n${c.text}`)
+      .map((c, i) => `[Related Document ${i + 1} — ${c.docTitle} (relevance ${(c.score * 100).toFixed(0)}%)]\n${c.text}`)
       .join("\n\n");
 
     const augmentedMessage = relevantChunks.length > 0
-      ? `[검색된 관련 내용]\n${contextText}\n\n[사용자 질문]\n${question}`
+      ? `[Retrieved Relevant Content]\n${contextText}\n\n[User Question]\n${question}`
       : question;
 
     if (!pubSessions.has(sessionId)) pubSessions.set(sessionId, []);
@@ -556,8 +556,8 @@ router.post("/public/chatbot/message", async (req, res) => {
     const raw = String(e?.message ?? "");
     const is429 = e?.status === 429 || raw.includes("429") || raw.includes("RESOURCE_EXHAUSTED");
     const userMsg = is429
-      ? "AI 응답 할당량이 초과되었습니다. 잠시 후 다시 시도해 주세요."
-      : "AI 응답 생성에 실패했습니다.";
+      ? "AI response quota exceeded. Please try again in a moment."
+      : "Failed to generate AI response.";
     if (is429) console.warn("[public/chatbot/message] Gemini 429 quota exceeded");
     else console.error("[public/chatbot/message]", e);
     if (!res.headersSent) {

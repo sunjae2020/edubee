@@ -3,9 +3,9 @@ import App from "./App";
 import "./index.css";
 import { ThemeProvider } from "./hooks/use-theme";
 
-// 테넌트 서브도메인(*.edubee.co)으로 접속 시 /admin/ 으로 자동 리다이렉트
-// 시스템 서브도메인(www, demo, camp 등)은 제외
-// Replit 개발/배포 도메인(*.replit.app, *.replit.dev 등)은 절대 리다이렉트 하지 않음
+// Auto-redirect to /admin/ when accessing via tenant subdomain (*.edubee.co)
+// Exclude system subdomains (www, demo, camp, etc.)
+// Never redirect on Replit dev/deploy domains (*.replit.app, *.replit.dev, etc.)
 const SYSTEM_SUBDOMAINS = new Set([
   "www", "api", "admin", "superadmin", "app",
   "demo", "camp", "mail", "cdn", "static", "dev", "staging",
@@ -19,7 +19,7 @@ const NON_TENANT_SUFFIXES = [".replit.app", ".replit.dev", ".riker.replit.dev", 
   if (!host.endsWith(`.${BASE_DOMAIN}`)) return;
   const sub = host.slice(0, host.length - BASE_DOMAIN.length - 1);
   if (!sub || sub.includes(".") || SYSTEM_SUBDOMAINS.has(sub)) return;
-  // 이미 /admin/ 경로면 리다이렉트 불필요
+  // Already on /admin/ path — no redirect needed
   if (window.location.pathname.startsWith("/admin")) return;
   window.location.replace(window.location.origin + "/admin/");
 })();

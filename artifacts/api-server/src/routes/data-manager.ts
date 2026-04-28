@@ -282,15 +282,15 @@ const EXPORT_CONFIGS: Record<string, ExportConfig> = {
 const TEMPLATES: Record<string, { columns: string[]; example: string[] }> = {
   users: {
     columns: ["email", "role", "staff_role", "full_name", "first_name", "last_name", "english_name", "original_name", "phone", "whatsapp", "line_id", "timezone", "preferred_lang", "company_name", "business_reg_no", "country_of_ops", "status"],
-    example: ["#EXAMPLE", "staff@edubee.co", "consultant", "", "Jane", "Smith", "Jane Smith", "제인 스미스", "+61412345678", "+61412345678", "jane_line", "Australia/Sydney", "en", "Edubee", "", "AU", "active"],
+    example: ["#EXAMPLE", "staff@edubee.co", "consultant", "", "Jane", "Smith", "Jane Smith", "Jane Smith (Korean)", "+61412345678", "+61412345678", "jane_line", "Australia/Sydney", "en", "Edubee", "", "AU", "active"],
   },
   accounts: {
     columns: ["name", "account_type", "account_category", "phone_number", "email", "website", "address", "country", "state", "city", "postal_code", "abn", "description", "status", "first_name", "last_name", "english_name", "original_name"],
-    example: ["#EXAMPLE", "Sydney English School", "school", "individual", "+61292345678", "admin@ses.edu.au", "https://ses.edu.au", "123 Oxford St", "AU", "NSW", "Sydney", "2000", "123456789", "English language school", "active", "John", "Lee", "John Lee", "이준호"],
+    example: ["#EXAMPLE", "Sydney English School", "school", "individual", "+61292345678", "admin@ses.edu.au", "https://ses.edu.au", "123 Oxford St", "AU", "NSW", "Sydney", "2000", "123456789", "English language school", "active", "John", "Lee", "John Lee", "Jun-ho Lee (Korean)"],
   },
   contacts: {
     columns: ["first_name", "last_name", "full_name", "english_name", "original_name", "title", "dob", "gender", "nationality", "email", "mobile", "office_number", "sns_type", "sns_id", "description", "status"],
-    example: ["#EXAMPLE", "Ji-ho", "Kim", "Ji-ho Kim", "Ji-ho Kim", "김지호", "Mr", "1995-03-15", "male", "KR", "jiho@example.com", "+821012345678", "", "kakao", "jihokakao", "Regular student client", "active"],
+    example: ["#EXAMPLE", "Ji-ho", "Kim", "Ji-ho Kim", "Ji-ho Kim", "Ji-ho Kim (Korean)", "Mr", "1995-03-15", "male", "KR", "jiho@example.com", "+821012345678", "", "kakao", "jihokakao", "Regular student client", "active"],
   },
   leads: {
     columns: ["full_name", "email", "phone", "nationality", "source", "status", "notes", "agent_id"],
@@ -302,7 +302,7 @@ const TEMPLATES: Record<string, { columns: string[]; example: string[] }> = {
   },
   camp_applications: {
     columns: ["application_ref", "package_group_id", "package_id", "applicant_name", "applicant_first_name", "applicant_last_name", "applicant_english_name", "applicant_original_name", "applicant_email", "applicant_phone", "applicant_nationality", "applicant_dob", "adult_count", "student_count", "preferred_start_date", "special_requirements", "dietary_requirements", "medical_conditions", "emergency_contact_name", "emergency_contact_phone", "agent_account_id", "application_status", "status"],
-    example: ["#EXAMPLE", "CAMP-2025-001", "uuid-of-package-group", "uuid-of-package", "Soo-jin Lee", "Soo-jin", "Lee", "Soo-jin Lee", "이수진", "soojin@example.com", "+821011112222", "KR", "2010-05-20", "1", "1", "2025-07-01", "", "No peanuts", "None", "Parent Kim", "+821033334444", "", "pending", "active"],
+    example: ["#EXAMPLE", "CAMP-2025-001", "uuid-of-package-group", "uuid-of-package", "Soo-jin Lee", "Soo-jin", "Lee", "Soo-jin Lee", "Soo-jin Lee (Korean)", "soojin@example.com", "+821011112222", "KR", "2010-05-20", "1", "1", "2025-07-01", "", "No peanuts", "None", "Parent Kim", "+821033334444", "", "pending", "active"],
   },
   contracts: {
     columns: ["contract_number", "application_id", "camp_provider_id", "total_amount", "currency", "status", "start_date", "end_date"],
@@ -326,7 +326,7 @@ const TEMPLATES: Record<string, { columns: string[]; example: string[] }> = {
   },
   package_groups: {
     columns: ["name_en", "name_ko", "name_ja", "name_th", "location", "country_code", "status", "camp_provider_id"],
-    example: ["#EXAMPLE", "Sydney English Academy", "시드니 영어 아카데미", "シドニー英語アカデミー", "", "Sydney CBD", "AU", "active", ""],
+    example: ["#EXAMPLE", "Sydney English Academy", "Sydney English Academy (Korean)", "シドニー英語アカデミー", "", "Sydney CBD", "AU", "active", ""],
   },
   packages: {
     columns: ["package_group_id", "name", "duration_days", "max_participants", "price_aud", "price_usd", "price_krw", "price_jpy", "price_thb", "price_php", "price_sgd", "price_gbp", "status"],

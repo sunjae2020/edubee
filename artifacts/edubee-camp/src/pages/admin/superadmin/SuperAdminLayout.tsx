@@ -17,10 +17,10 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   const { user }   = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  /* 라우트 변경 시 모바일 메뉴 닫기 */
+  /* Close mobile menu on route change */
   useEffect(() => { setMobileOpen(false); }, [location]);
 
-  /* 모바일 오픈 시 body 스크롤 잠금 */
+  /* Lock body scroll when mobile menu is open */
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -78,7 +78,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="flex flex-col h-screen bg-[#FAFAF9]">
-      {/* ⚠️ Super Admin 경고 배너 */}
+      {/* ⚠️ Super Admin warning banner */}
       <div style={{
         background: "#DC2626",
         color: "#FFFFFF",
@@ -92,7 +92,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
         alignItems: "center",
         justifyContent: "space-between",
       }}>
-        {/* 모바일 햄버거 버튼 */}
+        {/* Mobile hamburger button */}
         <button
           className="md:hidden p-1 rounded text-white/80 hover:text-white transition-colors"
           onClick={() => setMobileOpen(true)}
@@ -101,17 +101,17 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           <Menu size={18} />
         </button>
         <span className="flex-1 text-center">⚠️ &nbsp;SUPER ADMIN MODE — Accessing all tenant data</span>
-        {/* 모바일에서 여백 균형용 빈 공간 */}
+        {/* Empty spacer for mobile layout balance */}
         <span className="md:hidden w-7" />
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* 데스크탑 사이드바 (md 이상에서만 표시) */}
+        {/* Desktop sidebar (visible on md and above) */}
         <aside className="hidden md:flex w-56 flex-col border-r border-[#E8E6E2] bg-[#1C1917] shrink-0">
           <SidebarContent />
         </aside>
 
-        {/* 모바일 오버레이 백드롭 */}
+        {/* Mobile overlay backdrop */}
         {mobileOpen && (
           <div
             className="fixed inset-0 z-40 bg-black/50 md:hidden"
@@ -119,7 +119,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           />
         )}
 
-        {/* 모바일 드로어 사이드바 */}
+        {/* Mobile drawer sidebar */}
         <aside
           className={`
             fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-[#1C1917] md:hidden
@@ -127,7 +127,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
           `}
         >
-          {/* 닫기 버튼 */}
+          {/* Close button */}
           <div className="flex items-center justify-end px-3 pt-3 pb-1">
             <button
               onClick={() => setMobileOpen(false)}

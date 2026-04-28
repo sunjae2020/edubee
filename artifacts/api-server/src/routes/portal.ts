@@ -1658,8 +1658,8 @@ router.get("/portal/student/camp-photos", authenticatePortal, requireStudentRole
   }
 });
 
-// ── GET /api/portal/public/tenants — 공개 테넌트 목록 (인증 불필요) ─────────
-// 포털 로그인 화면 개발/테스트 환경에서 테넌트 선택에 사용.
+// ── GET /api/portal/public/tenants — Public tenant list (no auth required) ──
+// Used for tenant selection in portal login screen during development/testing.
 router.get("/portal/public/tenants", async (_req, res) => {
   try {
     const rows = await staticDb

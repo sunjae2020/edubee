@@ -1,12 +1,12 @@
 /**
- * 예약어 서브도메인 차단 목록
+ * Reserved subdomain block list
  * POST /api/settings/domain/check
  * PUT  /api/settings/domain/subdomain
- * 두 엔드포인트에서 공통 사용
+ * Shared by both endpoints
  */
 
 export const RESERVED_SUBDOMAINS: readonly string[] = [
-  // ── 시스템 핵심 ──────────────────────
+  // ── System core ──────────────────────
   "admin",
   "superadmin",
   "api",
@@ -21,7 +21,7 @@ export const RESERVED_SUBDOMAINS: readonly string[] = [
   "ns2",
   "dns",
 
-  // ── 인프라 ───────────────────────────
+  // ── Infrastructure ────────────────────
   "static",
   "cdn",
   "assets",
@@ -31,7 +31,7 @@ export const RESERVED_SUBDOMAINS: readonly string[] = [
   "files",
   "images",
 
-  // ── 개발 환경 ─────────────────────────
+  // ── Development environments ──────────
   "dev",
   "development",
   "staging",
@@ -43,7 +43,7 @@ export const RESERVED_SUBDOMAINS: readonly string[] = [
   "preview",
   "local",
 
-  // ── 서비스 예약어 ─────────────────────
+  // ── Service reserved words ────────────
   "support",
   "help",
   "docs",
@@ -61,16 +61,16 @@ export const RESERVED_SUBDOMAINS: readonly string[] = [
   "status",
   "monitor",
 
-  // ── 브랜드 예약어 ─────────────────────
+  // ── Brand reserved words ──────────────
   "edubee",
   "crm",
   "platform",
 ] as const;
 
 /**
- * 서브도메인이 예약어인지 확인
- * @param subdomain - 확인할 서브도메인 (대소문자 무관)
- * @returns true면 예약어 (사용 불가)
+ * Check if a subdomain is reserved
+ * @param subdomain - Subdomain to check (case-insensitive)
+ * @returns true if reserved (not available)
  */
 export function isReservedSubdomain(subdomain: string): boolean {
   return (RESERVED_SUBDOMAINS as readonly string[]).includes(
@@ -79,7 +79,7 @@ export function isReservedSubdomain(subdomain: string): boolean {
 }
 
 /**
- * 예약어 목록 반환 (클라이언트 안내용)
+ * Returns the reserved word list (for client-side guidance)
  */
 export function getReservedList(): readonly string[] {
   return RESERVED_SUBDOMAINS;

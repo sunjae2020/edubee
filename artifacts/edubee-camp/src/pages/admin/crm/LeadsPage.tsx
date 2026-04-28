@@ -453,7 +453,7 @@ export default function CrmLeadsPage() {
               <SelectField value={form.status} onChange={v => setForm(f => ({ ...f, status: v }))} options={KANBAN_COLS.map(c => c.key)} placeholder="Status" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-stone-600">Assigned Staff (담당 직원)</Label>
+              <Label className="text-xs font-medium text-stone-600">Assigned Staff</Label>
               <Select value={form.assignedStaffId || "__none__"} onValueChange={v => setForm(f => ({ ...f, assignedStaffId: v === "__none__" ? "" : v }))}>
                 <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select staff…" /></SelectTrigger>
                 <SelectContent>

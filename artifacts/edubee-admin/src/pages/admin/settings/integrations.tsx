@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import {
   Mail, Zap, MessageSquare, Chrome, Building2,
   CheckCircle2, XCircle, ChevronDown, ChevronUp,
   Loader2, Save, Cable, Database, Plus, Trash2,
-  Edit2, RefreshCw, Eye, EyeOff,
+  Edit2, RefreshCw, Eye, EyeOff, HardDrive, ExternalLink, FolderOpen,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -527,6 +528,143 @@ function AirtableSection() {
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
+// ── Google Drive Section ────────────────────────────────────────────────────
+
+function GoogleDriveSection() {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [location] = useLocation();
+  const [rootFolderInput, setRootFolderInput] = useState("");
+  const [editingRoot, setEditingRoot] = useState(false);
+
+  const { data: gdStatus, isLoading } = useQuery<{ connected: boolean; rootFolderId?: string | null }>({
+    queryKey: ["google-drive-status"],
+    queryFn: () => axios.get(`${BASE}/api/google-drive/status`).then(r => r.data),
+  });
+
+  // Handle OAuth redirect result
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("google");
+    if (result === "connected") {
+      toast({ title: "Google Drive connected successfully" });
+      qc.invalidateQueries({ queryKey: ["google-drive-status"] });
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (result === "error") {
+      toast({ title: "Google Drive connection failed", description: params.get("msg") ?? "", variant: "destructive" });
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [location]);
+
+  const connectMutation = useMutation({
+    mutationFn: () => axios.get(`${BASE}/api/google-drive/auth-url`).then(r => r.data.url as string),
+    onSuccess: (url) => { window.location.href = url; },
+    onError: (e: any) => toast({ title: "Error", description: e?.response?.data?.error ?? "Failed", variant: "destructive" }),
+  });
+
+  const disconnectMutation = useMutation({
+    mutationFn: () => axios.post(`${BASE}/api/google-drive/disconnect`),
+    onSuccess: () => { toast({ title: "Google Drive disconnected" }); qc.invalidateQueries({ queryKey: ["google-drive-status"] }); },
+    onError: () => toast({ title: "Error disconnecting", variant: "destructive" }),
+  });
+
+  const saveRootMutation = useMutation({
+    mutationFn: () => axios.put(`${BASE}/api/google-drive/root-folder`, { rootFolderId: rootFolderInput }),
+    onSuccess: () => { toast({ title: "Root folder saved" }); qc.invalidateQueries({ queryKey: ["google-drive-status"] }); setEditingRoot(false); },
+    onError: () => toast({ title: "Error saving root folder", variant: "destructive" }),
+  });
+
+  if (isLoading) return <div className="flex justify-center py-6"><Loader2 size={20} className="animate-spin text-[#A8A29E]" /></div>;
+
+  return (
+    <IntegrationCard
+      icon={HardDrive}
+      iconBg="bg-[#EFF6FF]"
+      iconColor="text-blue-600"
+      name="Google Drive"
+      description="Auto-create student folders in Google Drive linked to Account records"
+      badge={<StatusBadge connected={gdStatus?.connected} />}
+    >
+      <div className="space-y-4">
+        {gdStatus?.connected ? (
+          <>
+            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+              <CheckCircle2 size={14} className="shrink-0" />
+              <span>Google Drive connected. Folders can be auto-created per Account.</span>
+            </div>
+
+            {/* Root folder config */}
+            <div className="space-y-1.5">
+              <label className={label}>Root Folder ID <span className="text-[#A8A29E] font-normal normal-case">(location for new folder creation)</span></label>
+              {editingRoot ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    className={inp}
+                    value={rootFolderInput}
+                    onChange={e => setRootFolderInput(e.target.value)}
+                    placeholder="Google Drive Folder ID (last part of the URL)"
+                  />
+                  <button
+                    onClick={() => saveRootMutation.mutate()}
+                    disabled={saveRootMutation.isPending}
+                    className="h-9 px-3 rounded-lg bg-(--e-orange) text-white text-sm hover:bg-(--e-orange-hover) flex items-center gap-1.5"
+                  >
+                    {saveRootMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save
+                  </button>
+                  <button onClick={() => setEditingRoot(false)} className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E]">Cancel</button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-9 px-3 flex items-center border border-[#E8E6E2] rounded-lg bg-[#F4F3F1] text-sm text-[#57534E] font-mono truncate">
+                    {gdStatus?.rootFolderId ?? <span className="text-[#A8A29E]">Not set — folders created in My Drive root</span>}
+                  </div>
+                  <button onClick={() => { setRootFolderInput(gdStatus?.rootFolderId ?? ""); setEditingRoot(true); }}
+                    className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-[#F4F3F1]">
+                    <Edit2 size={13} /> Edit
+                  </button>
+                </div>
+              )}
+              <p className="text-xs text-[#A8A29E]">
+                Paste the ID that comes after folders/ in the Google Drive URL.
+                Example: <code className="font-mono">https://drive.google.com/drive/folders/<strong>1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs</strong></code>
+              </p>
+            </div>
+
+            <button
+              onClick={() => disconnectMutation.mutate()}
+              disabled={disconnectMutation.isPending}
+              className="flex items-center gap-1.5 text-sm text-red-500 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition"
+            >
+              {disconnectMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+              Disconnect Google Drive
+            </button>
+          </>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-[#57534E]">
+              Connecting your Google account allows you to auto-create student folders from the Account page.
+            </p>
+            <div className="bg-[#FFF7ED] border border-[#FDDCB5] rounded-lg p-3 text-xs text-[#92400E] space-y-1">
+              <p className="font-semibold">Pre-configuration required:</p>
+              <p>1. Google Cloud Console → Create an OAuth 2.0 Client ID</p>
+              <p>2. Redirect URI: <code className="font-mono">https://api.edubee.co/api/google-drive/callback</code></p>
+              <p>3. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to Railway Variables</p>
+            </div>
+            <button
+              onClick={() => connectMutation.mutate()}
+              disabled={connectMutation.isPending}
+              className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 transition"
+            >
+              {connectMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <HardDrive size={14} />}
+              Connect Google Drive
+            </button>
+          </div>
+        )}
+      </div>
+    </IntegrationCard>
+  );
+}
+
 export default function TenantIntegrations() {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -691,6 +829,12 @@ export default function TenantIntegrations() {
         <AirtableSection />
       </section>
 
+      {/* ── Google Drive ────────────────────────────────────────────────────── */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-bold text-[#A8A29E] uppercase tracking-widest">File Storage</h2>
+        <GoogleDriveSection />
+      </section>
+
       {/* ── Coming Soon ─────────────────────────────────────────────────────── */}
       <section className="space-y-3">
         <h2 className="text-xs font-bold text-[#A8A29E] uppercase tracking-widest">Coming Soon</h2>
@@ -701,14 +845,6 @@ export default function TenantIntegrations() {
             iconColor="text-green-600"
             name="Slack"
             description="Get real-time notifications in your Slack workspace"
-            badge={<StatusBadge comingSoon />}
-          />
-          <IntegrationCard
-            icon={Chrome}
-            iconBg="bg-[#EFF6FF]"
-            iconColor="text-blue-600"
-            name="Google Workspace"
-            description="Sync contacts and calendar events with Google"
             badge={<StatusBadge comingSoon />}
           />
           <IntegrationCard

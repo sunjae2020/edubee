@@ -80,7 +80,7 @@ router.put("/leads/:id", authenticate, async (req, res) => {
   }
 });
 
-// ─── DELETE /api/leads/bulk  (super_admin 임시/영구 삭제) ────────────────────
+// ─── DELETE /api/leads/bulk  (super_admin soft/permanent delete) ─────────────
 router.delete("/leads/bulk", authenticate, async (req, res) => {
   if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
   try {
@@ -507,7 +507,7 @@ router.patch("/applications/:id/toggle-active", authenticate, requireRole("super
   }
 });
 
-// ─── DELETE /api/applications/bulk  (super_admin 임시/영구 삭제) ─────────────
+// ─── DELETE /api/applications/bulk  (super_admin soft/permanent delete) ──────
 router.delete("/applications/bulk", authenticate, requireRole("super_admin"), async (req, res) => {
   try {
     const { ids, soft } = req.body;
@@ -528,7 +528,7 @@ router.delete("/applications/bulk", authenticate, requireRole("super_admin"), as
 
 router.delete("/applications/:id", authenticate, requireRole("super_admin", "admin", "camp_coordinator"), async (req, res) => {
   try {
-    // CC: 위임된 PG 소속 application만 취소 가능 (Soft Delete 전용)
+    // CC: only applications belonging to a delegated PG may be cancelled (soft delete only)
     if (req.user!.role === "camp_coordinator") {
       const orgId = req.user!.organisationId;
       if (!orgId) return res.status(403).json({ error: "Forbidden" });

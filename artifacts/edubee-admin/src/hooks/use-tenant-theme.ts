@@ -33,7 +33,7 @@ export const DEFAULT_THEME: TenantTheme = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 서브도메인 감지
+// Subdomain detection
 // ts.edubee.co → "ts", edubee.co / localhost → null
 // ─────────────────────────────────────────────────────────────────────────────
 const NON_TENANT_SUBDOMAINS = new Set(["www", "app", "admin", "api", "mail"]);
@@ -51,15 +51,15 @@ function getSubdomain(): string | null {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// localStorage 캐시 (서브도메인 기준 분리)
-// 키 예시: edubee_theme_ts, edubee_theme_myagency, edubee_theme_default
+// localStorage cache (keyed by subdomain)
+// Key examples: edubee_theme_ts, edubee_theme_myagency, edubee_theme_default
 // ─────────────────────────────────────────────────────────────────────────────
 function themeCacheKey(sub: string | null, previewOrg: string | null): string {
-  // 서브도메인 기준으로 캐시 키 분리 — 테넌트 간 캐시 오염 방지
+  // Cache key is separated by subdomain — prevents cross-tenant cache pollution
   return `edubee_theme_v2_${previewOrg ?? sub ?? "default"}`;
 }
 
-/** 이전 버전(v1) 캐시 전체 삭제 — 키 충돌 방지 */
+/** Delete all legacy (v1) cache entries — prevents key conflicts */
 function clearLegacyCache(): void {
   try {
     const toRemove: string[] = [];
@@ -85,27 +85,27 @@ function readCache(key: string): TenantTheme | null {
 function writeCache(key: string, theme: TenantTheme): void {
   try {
     localStorage.setItem(key, JSON.stringify(theme));
-  } catch {/* 스토리지 가득 찬 경우 무시 */}
+  } catch {/* ignore if storage is full */}
 }
 
 /**
- * 테넌트 테마를 로드하고 CSS 변수로 document에 주입.
+ * Load the tenant theme and inject it as CSS variables into the document.
  *
- * ── 동작 순서 ──
- * ① 캐시(localStorage)에서 즉시 테마 적용 → FOUC(깜빡임) 제거
- * ② API 호출:
- *    - 서브도메인 있음(ts.edubee.co) → 공개 페이지 포함 항상 API 호출
- *    - 서브도메인 없음 + 공개 페이지 → API 생략, Edubee 기본 테마 사용
- * ③ API 응답이 캐시와 다르면 DOM 업데이트 + 캐시 갱신
+ * ── Execution order ──
+ * ① Apply theme from cache (localStorage) immediately → prevents FOUC (flash of unstyled content)
+ * ② API call:
+ *    - Subdomain present (ts.edubee.co) → always call API, even on public pages
+ *    - No subdomain + public page → skip API, force default Edubee theme
+ * ③ If the API response differs from cache → update DOM + refresh cache
  *
- * App.tsx 내부 Router 컴포넌트에서 1회 호출.
+ * Called once inside the Router component in App.tsx.
  */
 export function useTenantTheme() {
   const [theme, setTheme] = useState<TenantTheme>(DEFAULT_THEME);
   const [isLoading, setIsLoading] = useState(true);
   const inflight = { current: false };
 
-  // 구버전 캐시 키(edubee_theme_*) 제거 — 앱 마운트 시 1회
+  // Remove legacy cache keys (edubee_theme_*) — once on app mount
   clearLegacyCache();
 
   const loadTheme = useCallback(async () => {
@@ -118,9 +118,9 @@ export function useTenantTheme() {
       const subdomain   = getSubdomain();
       const cacheKey    = themeCacheKey(subdomain, previewOrg);
 
-      // ① 공개 페이지 판별 — 캐시 읽기보다 먼저 처리
-      //    - 서브도메인 있으면 공개 페이지도 테넌트 브랜딩 표시 (ts.edubee.co/login)
-      //    - 서브도메인 없고 공개 페이지면 API 생략, 기본 테마 강제 적용
+      // ① Determine if this is a public page — handled before cache read
+      //    - Subdomain present: show tenant branding even on public pages (ts.edubee.co/login)
+      //    - No subdomain + public page: skip API, force default theme
       const publicPaths = ["/register", "/login", "/forgot-password", "/reset-password", "/accept-invite"];
       const isPublicPage = publicPaths.some(p => window.location.pathname.endsWith(p));
 
@@ -132,8 +132,8 @@ export function useTenantTheme() {
         return;
       }
 
-      // ② 캐시 즉시 적용 → 깜빡임 방지 (테넌트 컨텍스트 있을 때만)
-      // 캐시의 subdomain이 현재 subdomain과 다르면 오염된 캐시 → 삭제 후 기본 테마 적용
+      // ② Apply cache immediately → prevents flash (only when tenant context exists)
+      // If cached subdomain differs from current subdomain, the cache is stale → delete and apply default
       const cached = readCache(cacheKey);
       const cachedSubdomainMatches =
         cached?.subdomain === (previewOrg ?? subdomain ?? null) ||
@@ -142,16 +142,16 @@ export function useTenantTheme() {
         setTheme(cached);
         applyThemeToDom(cached);
       } else {
-        if (cached) localStorage.removeItem(cacheKey); // 잘못된 캐시 즉시 제거
+        if (cached) localStorage.removeItem(cacheKey); // Remove stale cache immediately
         applyThemeToDom(DEFAULT_THEME);
       }
 
-      // ③ API 호출
-      //    - 서브도메인 접속: Cloudflare Worker가 X-Tenant-Subdomain 헤더를 주입하므로
-      //      추가 파라미터 없이도 서버가 올바른 테넌트 테마를 반환
-      //    - ?org= 미리보기 모드: subdomain 쿼리 파라미터로 테마 조회
-      //    - fetch 사용: axios 인터셉터가 X-Organisation-Id를 자동 추가하면
-      //      tenantResolver가 서브도메인보다 헤더를 우선하여 다른 테넌트 테마를 반환하는 버그 발생
+      // ③ API call
+      //    - Subdomain access: Cloudflare Worker injects the X-Tenant-Subdomain header,
+      //      so the server returns the correct tenant theme without extra parameters
+      //    - ?org= preview mode: look up theme via the subdomain query parameter
+      //    - Using fetch: if the axios interceptor auto-adds X-Organisation-Id,
+      //      tenantResolver would prioritise the header over the subdomain, returning the wrong tenant theme
       const themeUrl = previewOrg
         ? `/api/settings/theme?subdomain=${encodeURIComponent(previewOrg)}`
         : `/api/settings/theme`;
@@ -160,7 +160,7 @@ export function useTenantTheme() {
       if (!resp.ok) throw new Error(`theme fetch failed: ${resp.status}`);
       const data: TenantTheme = await resp.json();
 
-      // 변경 있을 때만 DOM 업데이트 (불필요한 reflow 방지)
+      // Only update DOM when there are changes (prevents unnecessary reflow)
       const hasChanged = JSON.stringify(data) !== JSON.stringify(cached);
       if (hasChanged) {
         setTheme(data);
@@ -168,8 +168,8 @@ export function useTenantTheme() {
         writeCache(cacheKey, data);
       }
     } catch (err) {
-      console.warn("[useTenantTheme] 기본 테마 사용:", err);
-      // 캐시 없고 API 실패 → DEFAULT_THEME fallback
+      console.warn("[useTenantTheme] Using default theme:", err);
+      // No cache and API failed → DEFAULT_THEME fallback
       const subdomain  = getSubdomain();
       const previewOrg = new URLSearchParams(window.location.search).get("org");
       if (!readCache(themeCacheKey(subdomain, previewOrg))) {
@@ -185,18 +185,18 @@ export function useTenantTheme() {
   useEffect(() => {
     loadTheme();
 
-    // 임프로소네이션 변경 시 테마 재로드
+    // Reload theme on impersonation change
     window.addEventListener("edubee:impersonation-changed", loadTheme);
-    // 플랜 변경 시 테마 재로드
+    // Reload theme on plan change
     window.addEventListener("edubee:plan-changed", loadTheme);
-    // 로그아웃 시 테마 재로드 (SPA 내 라우트 변경 처리)
+    // Reload theme on logout (handles SPA route changes)
     window.addEventListener("edubee:logout", loadTheme);
 
-    // SPA 라우트 변경 감지 (뒤로/앞으로 이동 포함)
+    // Detect SPA route changes (including back/forward navigation)
     const handlePopState = () => loadTheme();
     window.addEventListener("popstate", handlePopState);
 
-    // 탭 포커스 복귀 시 테마 재로드 (inflight 플래그로 중복 차단)
+    // Reload theme when tab regains focus (inflight flag prevents duplicates)
     const handleVisibility = () => {
       if (document.visibilityState === "visible") loadTheme();
     };
@@ -214,7 +214,7 @@ export function useTenantTheme() {
   return { theme, isLoading };
 }
 
-// ── 테넌트 테마 Context ────────────────────────────────────────────────────
+// ── Tenant theme Context ───────────────────────────────────────────────────
 
 export const TenantThemeContext = createContext<TenantTheme>(DEFAULT_THEME);
 
@@ -223,20 +223,20 @@ export function useTenantThemeCtx(): TenantTheme {
 }
 
 /**
- * 테마를 CSS 변수로 document.documentElement에 주입.
- * branding.tsx 저장 후 즉시 반영을 위해 export.
+ * Inject the theme as CSS variables into document.documentElement.
+ * Exported so branding.tsx can apply changes immediately on save.
  */
 export function applyThemeToDom(theme: TenantTheme): void {
   const root = document.documentElement;
 
-  // ── 색상 변수 ──────────────────────────────────────
+  // ── Color variables ────────────────────────────────
   root.style.setProperty("--color-primary",       theme.primaryColor);
   root.style.setProperty("--color-primary-dark",  darken(theme.primaryColor, 15));
   root.style.setProperty("--color-primary-light", lighten(theme.primaryColor, 90));
   root.style.setProperty("--color-secondary",     theme.secondaryColor);
   root.style.setProperty("--color-accent",        theme.accentColor);
 
-  // ── e-orange 계열 (사이드바/UI 전반에서 사용) ──────
+  // ── e-orange family (used across sidebar and UI) ──────
   const p   = theme.primaryColor;
   const dk  = darken(p, 15);
   const dk2 = darken(p, 28);
@@ -274,7 +274,7 @@ export function applyThemeToDom(theme: TenantTheme): void {
   root.style.setProperty("--e-orange-a20", `${r2},0.20)`);
   root.style.setProperty("--e-orange-a40", `${r2},0.40)`);
 
-  // ── 파비콘 동적 교체 ──────────────────────────────
+  // ── Dynamic favicon swap ──────────────────────────
   if (theme.faviconUrl) {
     const link =
       (document.querySelector("link[rel~='icon']") as HTMLLinkElement) ??
@@ -287,12 +287,12 @@ export function applyThemeToDom(theme: TenantTheme): void {
     link.href = theme.faviconUrl;
   }
 
-  // ── 페이지 타이틀 업데이트 ───────────────────────
+  // ── Page title update ────────────────────────────
   if (theme.companyName) {
     document.title = `${theme.companyName} — CRM`;
   }
 
-  // ── 커스텀 CSS 주입 ──────────────────────────────
+  // ── Custom CSS injection ─────────────────────────
   if (theme.customCss) {
     const existing = document.getElementById("tenant-custom-css");
     if (existing) {
@@ -306,7 +306,7 @@ export function applyThemeToDom(theme: TenantTheme): void {
   }
 }
 
-// ── 색상 유틸 ─────────────────────────────────────────────────────────────
+// ── Color utilities ───────────────────────────────────────────────────────
 
 function hexToRgb(hex: string): [number, number, number] | null {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);

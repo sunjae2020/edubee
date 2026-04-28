@@ -10,8 +10,8 @@ import webhookRoutes from "./routes/webhook.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { logger } from "./lib/logger.js";
 
-// ── Sentry 에러 모니터링 (S4-01) ─────────────────────────────────────────────
-// SENTRY_DSN 미설정 시 로컬 로깅만 동작 (DSN 없으면 Sentry로 전송 안 됨)
+// ── Sentry error monitoring (S4-01) ─────────────────────────────────────────────
+// When SENTRY_DSN is not set, only local logging is active (no events sent to Sentry)
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV || "development",
@@ -19,7 +19,7 @@ Sentry.init({
   tracesSampleRate: 0.1,
   enabled: !!process.env.SENTRY_DSN,
   beforeSend(event) {
-    // 민감 정보 필터링 — APP 11 준수
+    // Sensitive data filtering — APP 11 compliance
     if (event.request?.data) {
       const data = event.request.data as Record<string, unknown>;
       ["passport_number", "visa_number", "password", "medical_conditions", "token"].forEach((key) => {
@@ -35,7 +35,7 @@ const app: Express = express();
 // Cloudflare → GCP LB → Railway 3-hop chain: trust 3 proxies
 app.set("trust proxy", 3);
 
-// ── Helmet 보안 헤더 ─────────────────────────────────────────────────────────
+// ── Helmet security headers ─────────────────────────────────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -49,7 +49,7 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// ── CORS 도메인 제한 ─────────────────────────────────────────────────────────
+// ── CORS domain restriction ─────────────────────────────────────────────────────────
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
   : ["http://localhost:5173", "http://localhost:3000", "http://localhost:4173"];
@@ -72,7 +72,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization", "X-Organisation-Id", "x-view-as-user-id"],
 }));
 
-// ── 전체 API Rate Limit (15분 내 500회) ────────────────────────────────────
+// ── Global API Rate Limit (500 requests per 15 minutes) ────────────────────────────────────
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
@@ -82,7 +82,7 @@ const generalLimiter = rateLimit({
   skip: (req) => req.path === "/health",
 });
 
-// ── 구조화 HTTP 요청 로깅 (pino — S3-04) ───────────────────────────────────
+// ── Structured HTTP request logging (pino — S3-04) ───────────────────────────────────
 app.use((req: any, _res: any, next: any) => {
   logger.info({ method: req.method, url: req.url, ip: req.ip }, "Request received");
   next();
@@ -96,7 +96,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.use("/api", generalLimiter, router);
 
-// ── 프로덕션 정적 파일 서빙 ────────────────────────────────────────────────
+// ── Production static file serving ────────────────────────────────────────────────
 if (process.env.NODE_ENV === "production") {
   const frontends: Array<{ prefix: string; dir: string }> = [
     { prefix: "/admin",  dir: path.join(__dirname, "../../edubee-admin/dist/public")  },
@@ -119,7 +119,7 @@ if (process.env.NODE_ENV === "production") {
   }
 }
 
-// ── 글로벌 에러 핸들러 — 반드시 마지막에 등록 (S3-02) ─────────────────────
+// ── Global error handler — must be registered last (S3-02) ─────────────────────
 app.use(errorHandler);
 
 // Crash guard — keeps server alive on uncaught errors

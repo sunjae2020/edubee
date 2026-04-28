@@ -33,8 +33,8 @@ const ReportNavIcon = ({ size, style }: { size?: number; style?: React.CSSProper
 type NavItem  = { icon: LucideIcon; label: string; href: string };
 type NavGroup = { key: string; label: string; catIcon: LucideIcon; items: NavItem[]; href?: string };
 
-// ── Camp Coordinator — 캠프 전용 네비게이션 ────────────────────────────────
-// CC는 일반 CRM/상담/서비스와 완전히 분리된 캠프 전용 메뉴만 노출
+// ── Camp Coordinator — camp-only navigation ──────────────────────────────────
+// CC sees only the camp-specific menu, fully separated from general CRM/consultations/services
 
 function buildCCNav(): NavGroup[] {
   return [
@@ -394,7 +394,7 @@ function CollapsedGroupFlyout({
 
   const show = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    // position: fixed 로 열기 위해 실제 뷰포트 Y 좌표를 계산
+    // Calculate actual viewport Y coordinate to open with position: fixed
     if (wrapRef.current) {
       const rect = wrapRef.current.getBoundingClientRect();
       setFlyoutTop(rect.top);
@@ -424,7 +424,7 @@ function CollapsedGroupFlyout({
         })}
       </div>
 
-      {/* Flyout panel — position: fixed 로 overflow 제약 탈출 */}
+      {/* Flyout panel — position: fixed to escape overflow constraints */}
       {open && (
         <div
           className="z-50 min-w-[190px] rounded-xl py-2"
@@ -552,7 +552,7 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
   const allGroups  = buildNav(effectiveRole);
   const nav        = allGroups.filter(g => {
     if (isSA) return true;
-    // CC: camp group은 항상 표시 (camp_module 게이팅 제외 — 캠프 전용 롤)
+    // CC: always show camp group (exempt from camp_module gating — camp-dedicated role)
     if (isCC) return true;
     if (g.key === "camp"    && !campFeature.enabled)    return false;
     if (g.key === "finance" && !accountingFeat.enabled) return false;
@@ -729,7 +729,7 @@ export function AppSidebar({ collapsed, onToggle, onNavClick }: Props) {
         )}
       </nav>
 
-      {/* Platform Admin link — super_admin 역할이면 항상 표시 */}
+      {/* Platform Admin link — always visible for super_admin role */}
       {isSA && (
         <div className="px-3 pb-1 shrink-0">
           <Link href="/superadmin">

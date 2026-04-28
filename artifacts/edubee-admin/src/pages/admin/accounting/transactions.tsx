@@ -12,7 +12,7 @@ import { ListToolbar } from "@/components/ui/list-toolbar";
 import { TableFooter } from "@/components/ui/table-footer";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowDownLeft, ArrowUpRight, ChevronRight, Plus, Loader2, Search, X, User, Building2, Mail, Phone, Globe, CheckCircle2 } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, Plus, Loader2, Search, X, User, Building2, Mail, Phone, Globe, CheckCircle2, BookOpen } from "lucide-react";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -29,8 +29,15 @@ interface Transaction {
   currency?: string | null; description?: string | null; transactionDate?: string | null;
   bankReference?: string | null; accountId?: string | null; contactId?: string | null;
   paymentInfoId?: string | null; costCenterCode?: string | null; status?: string | null;
-  createdAt?: string | null;
+  createdAt?: string | null; journalEntryId?: string | null;
 }
+
+const STATUS_TABS = [
+  { key: "all",     label: "All" },
+  { key: "pending", label: "Pending Review" },
+  { key: "posted",  label: "Posted" },
+  { key: "Active",  label: "Active" },
+] as const;
 
 interface LookupItem { id: string; name: string }
 
@@ -325,6 +332,7 @@ export default function Transactions() {
   const [search, setSearch]         = useState("");
   const { sortBy, sortDir, onSort } = useSortState();
   const [activeStatus, setActiveStatus] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage]             = useState(1);
   const [pageSize, setPageSize]     = useState(PAGE_SIZE);
   const [createOpen, setCreateOpen] = useState(false);
@@ -334,13 +342,27 @@ export default function Transactions() {
   const sf = (k: keyof FormState) => (v: string) => setForm(f => ({ ...f, [k]: v }));
 
   const { data: resp, isLoading } = useQuery({
-    queryKey: ["transactions", { search, status: activeStatus, page, pageSize }],
+    queryKey: ["transactions", { search, status: activeStatus, statusFilter, page, pageSize }],
     queryFn: () => {
       const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search) params.set("search", search);
       if (activeStatus !== "all") params.set("transactionType", activeStatus);
+      if (statusFilter !== "all") params.set("status", statusFilter);
       return axios.get(`${BASE}/api/transactions?${params}`).then(r => r.data);
     },
+  });
+
+  const postTx = useMutation({
+    mutationFn: (id: string) => axios.post(`${BASE}/api/transactions/${id}/post`).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      toast({ title: "Journal entry created successfully" });
+    },
+    onError: (err: any) => toast({
+      variant: "destructive",
+      title: "Failed to post",
+      description: err?.response?.data?.error ?? "An error occurred",
+    }),
   });
   const rows: Transaction[] = resp?.data ?? [];
   const sorted = useSorted(rows, sortBy, sortDir);
@@ -417,6 +439,26 @@ export default function Transactions() {
         </Button>
       </div>
 
+      {/* Status filter pills */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {STATUS_TABS.map(s => (
+          <button
+            key={s.key}
+            onClick={() => { setStatusFilter(s.key); setPage(1); }}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+              statusFilter === s.key
+                ? "border-(--e-orange) bg-(--e-orange-lt) text-(--e-orange)"
+                : "border-stone-200 text-stone-500 hover:border-stone-400"
+            }`}
+          >
+            {s.key === "pending" && <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5 align-middle" />}
+            {s.key === "posted"  && <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 mr-1.5 align-middle" />}
+            {s.label}
+          </button>
+        ))}
+        <span className="text-xs text-stone-400 ml-1">Finance bookkeeping status</span>
+      </div>
+
       {/* Table */}
       <div className="bg-card rounded-xl border border-border overflow-x-auto">
         <table className="w-full min-w-[800px] text-sm">
@@ -466,11 +508,32 @@ export default function Transactions() {
                 </td>
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.bankReference ?? "—"}</td>
                 <td className="px-4 py-3">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    r.status === "Active" ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#F4F3F1] text-[#57534E]"
-                  }`}>{r.status ?? "Active"}</span>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
+                    r.status === "pending" ? "bg-amber-50 text-amber-600 border-amber-200" :
+                    r.status === "posted"  ? "bg-blue-50 text-blue-600 border-blue-200" :
+                    r.status === "Active"  ? "bg-[#DCFCE7] text-[#16A34A] border-transparent" :
+                                             "bg-[#F4F3F1] text-[#57534E] border-transparent"
+                  }`}>{r.status ?? "pending"}</span>
                 </td>
-                <td className="px-4 py-3"><ChevronRight className="w-4 h-4 text-muted-foreground" /></td>
+                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                  {r.status === "pending" ? (
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-7 px-2 text-xs border-amber-300 text-amber-700 hover:bg-amber-50 gap-1"
+                      onClick={() => postTx.mutate(r.id)}
+                      disabled={postTx.isPending}
+                      title="Post to Journal"
+                    >
+                      {postTx.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <><BookOpen className="w-3 h-3" /> Post</>}
+                    </Button>
+                  ) : r.status === "posted" ? (
+                    <span className="flex items-center gap-1 text-xs text-blue-500">
+                      <BookOpen className="w-3.5 h-3.5" /> Posted
+                    </span>
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

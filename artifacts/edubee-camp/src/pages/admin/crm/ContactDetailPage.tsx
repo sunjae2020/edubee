@@ -667,7 +667,7 @@ export default function ContactDetailPage() {
           </FieldGroup>
           <FieldGroup label="Original Name (Native)">
             <Input value={form.originalName} onChange={e => set("originalName", e.target.value)}
-              placeholder="e.g. 김민준" className={INPUT_CLS} />
+              placeholder="e.g. Kim Minjun" className={INPUT_CLS} />
           </FieldGroup>
         </FormRow>
       </div>

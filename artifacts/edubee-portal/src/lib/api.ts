@@ -12,13 +12,13 @@ function getToken(): string | null {
  *      "edubee.co"           → null  (root domain: no restriction)
  */
 function getTenantSlug(): string | null {
-  // 1순위: 서브도메인 자동 감지 (운영)
+  // Priority 1: auto-detect subdomain (production)
   const hostname = window.location.hostname;
   const match = hostname.match(/^([^.]+)\.edubee\.co$/);
   if (match && !["www", "app", "portal"].includes(match[1])) {
     return match[1];
   }
-  // 2순위: 개발 환경에서 로그인 시 저장한 테넌트 슬러그
+  // Priority 2: tenant slug saved at login in dev environment
   return localStorage.getItem("portal_tenant_slug");
 }
 

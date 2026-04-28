@@ -38,14 +38,14 @@ axios.interceptors.request.use((config) => {
   const viewAsId = getViewAsUserId();
   const viewAsRole = getViewAsRole();
 
-  // ── 테넌트 org ID 결정 ──────────────────────────────────────────
-  // 서브도메인(tsh.edubee.co)이 있는 경우:
-  //   서버 tenantResolver가 서브도메인을 1순위로 처리하므로
-  //   X-Organisation-Id를 보내지 않습니다.
-  //   (잘못된 org ID 전송 → 다른 테넌트 데이터 노출 방지)
+  // ── Determine tenant org ID ──────────────────────────────────────
+  // When on a subdomain (tsh.edubee.co):
+  //   The server tenantResolver handles the subdomain with top priority,
+  //   so we do NOT send X-Organisation-Id.
+  //   (Sending a wrong org ID could expose another tenant's data.)
   //
-  // 서브도메인 없는 경우(app.edubee.co 등):
-  //   impersonation override 또는 JWT의 organisationId 전송
+  // When no subdomain (app.edubee.co etc.):
+  //   Send the impersonation override or the JWT's organisationId
   const NON_TENANT_SUBS = new Set(["www", "app", "admin", "api", "mail"]);
   const hostParts = window.location.hostname.split(".");
   const _isLocalhost = hostParts[hostParts.length - 1] === "localhost";
@@ -55,12 +55,12 @@ axios.interceptors.request.use((config) => {
 
   let orgId: string | null = null;
   if (!isOnTenantSubdomain) {
-    // 비테넌트 도메인: impersonation 또는 JWT org 사용
+    // Non-tenant domain: use impersonation override or JWT org
     const impersonateOrgId = sessionStorage.getItem("admin_impersonate_org_id");
     const personalOrgId = token ? (parseJwt(token)?.organisationId ?? null) : null;
     orgId = impersonateOrgId || personalOrgId;
   }
-  // 테넌트 서브도메인에서는 impersonation만 허용 (같은 테넌트 내 View-As)
+  // On tenant subdomains, only allow impersonation (View-As within the same tenant)
   if (isOnTenantSubdomain) {
     const impersonateOrgId = sessionStorage.getItem("admin_impersonate_org_id");
     if (impersonateOrgId) orgId = impersonateOrgId;
@@ -169,7 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(res.accessToken);
     await refetch();
 
-    // 테넌트 서브도메인에서는 super_admin이라도 /superadmin 으로 이동하지 않음
+    // On a tenant subdomain, do not redirect to /superadmin even for super_admin
     const NON_TENANT_SUBS_LOGIN = new Set(["www", "app", "admin", "api", "mail"]);
     const loginHostParts = window.location.hostname.split(".");
     const _loginIsLocalhost = loginHostParts[loginHostParts.length - 1] === "localhost";
@@ -189,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try { if (token) await logoutMutation.mutateAsync(); } finally {
       localStorage.removeItem("edubee_token");
       setToken(null);
-      // 테마 캐시 초기화 → 로그인 화면에서 Edubee CRM 기본 테마 표시
+      // Clear theme cache → show the default Edubee CRM theme on the login screen
       try {
         Object.keys(localStorage)
           .filter(k => k.startsWith("edubee_theme_"))

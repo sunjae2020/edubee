@@ -388,7 +388,7 @@ export default function TasksPage() {
                     checked={allChecked}
                     onChange={toggleAll}
                     className="rounded accent-orange-500 cursor-pointer"
-                    title="전체 선택"
+                    title="Select all"
                   />
                 </th>
                 <SortableTh col="taskNumber" sortBy={sortBy} sortDir={sortDir} onSort={onSort} className="px-4 py-2.5 text-left text-xs font-semibold text-[#78716C] whitespace-nowrap">Task #</SortableTh>

@@ -39,7 +39,7 @@ const server = app.listen(port, async () => {
   startKpiScheduler();
   startDelegationExpiryScheduler();
   startAirtableScheduler();
-  // 모든 테넌트 schema를 public 기준으로 자동 동기화 (배포 시 스키마 변경 자동 반영)
+  // Auto-sync all tenant schemas against public schema (automatically applies schema changes on deploy)
   syncAllTenantSchemas().catch(err =>
     console.error("[SchemaSync] Fatal error:", err)
   );

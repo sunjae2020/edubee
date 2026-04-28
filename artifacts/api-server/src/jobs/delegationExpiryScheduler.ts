@@ -29,7 +29,7 @@ async function expireRevokedDelegations() {
 
   console.log(`[DelegationExpiry] ${expired.length} delegation(s) moved Revoked → Expired`);
 
-  // 감사 로그 일괄 기록
+  // Batch audit log write
   await db.insert(tenantAuditLogs).values(
     expired.map(row => ({
       organisationId: row.ownerOrgId,
@@ -45,7 +45,7 @@ async function expireRevokedDelegations() {
 }
 
 export function startDelegationExpiryScheduler() {
-  // 매일 새벽 2시 실행 (UTC)
+  // Runs daily at 02:00 UTC
   cron.schedule("0 2 * * *", async () => {
     console.log("[DelegationExpiry] Scheduled run triggered");
     try {

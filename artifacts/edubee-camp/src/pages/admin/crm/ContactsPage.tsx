@@ -355,7 +355,7 @@ export default function ContactsPage() {
             </div>
 
             <FormField label="Original Name">
-              <Input value={form.originalName ?? ""} onChange={e => patch("originalName", e.target.value)} className="h-9 text-sm" placeholder="e.g. 김소희" />
+              <Input value={form.originalName ?? ""} onChange={e => patch("originalName", e.target.value)} className="h-9 text-sm" placeholder="e.g. Kim Sohee" />
             </FormField>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -10,7 +10,7 @@ import {
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-// ── Edubee 네임서버 (NS) ────────────────────────────────────────────────────
+// ── Edubee Nameservers (NS) ─────────────────────────────────────────────────
 const EDUBEE_NAMESERVERS = [
   "ns1.edubee.co",
   "ns2.edubee.co",
@@ -42,7 +42,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ── DNS 방법 탭 ────────────────────────────────────────────────────────────────
+// ── DNS Method Tab ─────────────────────────────────────────────────────────────
 type DnsMethod = "cname" | "nameserver";
 
 function MethodTab({
@@ -77,7 +77,7 @@ function MethodTab({
   );
 }
 
-// ── CNAME/TXT 설정 섹션 ────────────────────────────────────────────────────────
+// ── CNAME/TXT Setup Section ────────────────────────────────────────────────────
 function CnameTxtSection({
   cname, txt, guides, verifyDns, toast,
 }: {
@@ -86,17 +86,17 @@ function CnameTxtSection({
 }) {
   return (
     <div className="space-y-4">
-      {/* 단계 안내 */}
+      {/* Step guide */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
         <p className="text-sm font-semibold text-blue-800 flex items-center gap-2">
-          <Info size={14} /> CNAME/TXT 레코드 설정 방법
+          <Info size={14} /> How to configure CNAME/TXT records
         </p>
         <ol className="space-y-2 text-xs text-blue-700 list-none">
           {[
-            "도메인 등록 기관(GoDaddy, Namecheap, Cloudflare 등)에 로그인하세요.",
-            "DNS 관리 메뉴(또는 Zone Editor)를 여세요.",
-            "아래 CNAME 및 TXT 레코드를 각각 추가하세요.",
-            "저장 후 DNS 전파를 기다린 뒤 'Verify DNS' 버튼을 클릭하세요.",
+            "Log in to your domain registrar (GoDaddy, Namecheap, Cloudflare, etc.).",
+            "Open the DNS management menu (or Zone Editor).",
+            "Add each of the CNAME and TXT records below.",
+            "After saving, wait for DNS propagation and click the 'Verify DNS' button.",
           ].map((step, i) => (
             <li key={i} className="flex gap-2">
               <span className="w-4 h-4 rounded-full bg-blue-200 text-blue-700 flex items-center justify-center shrink-0 font-bold text-[10px]">{i + 1}</span>
@@ -106,12 +106,12 @@ function CnameTxtSection({
         </ol>
       </div>
 
-      {/* DNS 레코드 테이블 */}
+      {/* DNS records table */}
       {(cname || txt) ? (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">
-              추가할 DNS 레코드
+              DNS Records to Add
             </p>
             <button
               onClick={() => verifyDns.mutate()}
@@ -145,7 +145,7 @@ function CnameTxtSection({
                         <span className="font-mono text-sm text-[#1C1917]">{cname.host}</span>
                         <button onClick={() => copyToClipboard(cname.host, "Hostname", toast)} className="p-0.5 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#57534E]"><Copy size={12} /></button>
                       </div>
-                      <p className="text-[11px] text-[#A8A29E] mt-0.5">도메인 루트를 Edubee로 연결</p>
+                      <p className="text-[11px] text-[#A8A29E] mt-0.5">Connect domain root to Edubee</p>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1.5">
@@ -166,7 +166,7 @@ function CnameTxtSection({
                         <span className="font-mono text-sm text-[#1C1917]">{txt.host}</span>
                         <button onClick={() => copyToClipboard(txt.host, "TXT hostname", toast)} className="p-0.5 rounded hover:bg-[#F4F3F1] text-[#A8A29E] hover:text-[#57534E]"><Copy size={12} /></button>
                       </div>
-                      <p className="text-[11px] text-[#A8A29E] mt-0.5">도메인 소유권 인증</p>
+                      <p className="text-[11px] text-[#A8A29E] mt-0.5">Verify domain ownership</p>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1.5">
@@ -184,15 +184,15 @@ function CnameTxtSection({
           <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
             <AlertTriangle size={14} className="text-amber-600 mt-0.5 shrink-0" strokeWidth={1.5} />
             <p className="text-xs text-amber-700">
-              DNS 전파는 최대 <strong>48시간</strong>이 소요될 수 있습니다.
-              CNAME 및 TXT 레코드를 모두 추가한 후 <strong>Verify DNS</strong>를 클릭하세요.
+              DNS propagation may take up to <strong>48 hours</strong>.
+              After adding both CNAME and TXT records, click <strong>Verify DNS</strong>.
             </p>
           </div>
 
-          {/* 제공업체별 가이드 링크 */}
+          {/* Provider guide links */}
           {guides && (
             <div className="space-y-1.5">
-              <p className="text-xs font-medium text-[#57534E]">주요 DNS 제공업체 설정 가이드:</p>
+              <p className="text-xs font-medium text-[#57534E]">Setup guides for major DNS providers:</p>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(guides).map(([name, url]) => (
                   <a
@@ -212,41 +212,41 @@ function CnameTxtSection({
       ) : (
         <div className="flex items-start gap-2 p-3 rounded-lg bg-[#F4F3F1] text-sm text-[#57534E]">
           <Info size={14} className="mt-0.5 shrink-0" />
-          <p>커스텀 도메인을 먼저 등록하면 DNS 레코드가 표시됩니다.</p>
+          <p>Register a custom domain first to see DNS records here.</p>
         </div>
       )}
     </div>
   );
 }
 
-// ── 네임서버(NS) 설정 섹션 ──────────────────────────────────────────────────────
+// ── Nameserver (NS) Setup Section ──────────────────────────────────────────────
 function NameserverSection({ customDomain, toast }: { customDomain?: string; toast: any }) {
   const registrarSteps = [
-    { label: "도메인 등록 기관에 로그인", desc: "GoDaddy, Namecheap, Porkbun 등 도메인을 구매한 사이트에 로그인하세요." },
-    { label: "도메인 관리 → 네임서버 변경", desc: "도메인 관리 페이지에서 'Nameservers' 또는 'DNS Servers' 항목을 찾으세요." },
-    { label: "기존 네임서버 모두 삭제 후 아래 값 입력", desc: "Custom/다른 네임서버 옵션을 선택하고 아래 두 개를 차례로 입력하세요." },
-    { label: "저장 후 전파 대기", desc: "네임서버 변경은 최대 48시간이 소요됩니다. 완료 후 Edubee에 자동 연결됩니다." },
+    { label: "Log in to your domain registrar", desc: "Log in to the site where you purchased your domain (GoDaddy, Namecheap, Porkbun, etc.)." },
+    { label: "Domain Management → Change Nameservers", desc: "On the domain management page, find the 'Nameservers' or 'DNS Servers' option." },
+    { label: "Delete all existing nameservers and enter the values below", desc: "Select the Custom / other nameservers option and enter the two values below one by one." },
+    { label: "Save and wait for propagation", desc: "Nameserver changes may take up to 48 hours. Once complete, Edubee will be automatically connected." },
   ];
 
   return (
     <div className="space-y-4">
-      {/* 안내 배너 */}
+      {/* Info banner */}
       <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
         <p className="text-sm font-semibold text-purple-800 flex items-center gap-2">
-          <Server size={14} /> 네임서버(NS) 설정 방법
+          <Server size={14} /> How to configure Nameservers (NS)
         </p>
         <p className="text-xs text-purple-700 leading-relaxed">
-          도메인의 네임서버를 Edubee로 변경하면 DNS 레코드를 직접 추가할 필요 없이
-          자동으로 연결됩니다. CNAME/TXT 방식보다 간단하지만,
-          <strong> 기존 DNS 레코드(이메일 MX 등)는 초기화</strong>됩니다.
+          Changing your domain's nameservers to Edubee connects it automatically
+          without needing to add DNS records manually. It's simpler than the CNAME/TXT approach,
+          but <strong>existing DNS records (email MX, etc.) will be reset</strong>.
         </p>
       </div>
 
-      {/* 네임서버 레코드 카드 */}
+      {/* Nameserver record card */}
       <div className="rounded-xl border border-[#E8E6E2] overflow-hidden">
         <div className="bg-[#FAFAF9] px-4 py-2.5 border-b border-[#E8E6E2] flex items-center gap-2">
           <Network size={13} className="text-[#57534E]" />
-          <span className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Edubee 네임서버</span>
+          <span className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Edubee Nameservers</span>
         </div>
         <div className="bg-white divide-y divide-[#F4F3F1]">
           {EDUBEE_NAMESERVERS.map((ns, i) => (
@@ -269,10 +269,10 @@ function NameserverSection({ customDomain, toast }: { customDomain?: string; toa
         </div>
       </div>
 
-      {/* 단계별 가이드 */}
+      {/* Step-by-step guide */}
       <div className="rounded-xl border border-[#E8E6E2] overflow-hidden">
         <div className="bg-[#FAFAF9] px-4 py-2.5 border-b border-[#E8E6E2]">
-          <span className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">단계별 설정 가이드</span>
+          <span className="text-xs font-semibold text-[#57534E] uppercase tracking-wide">Step-by-Step Setup Guide</span>
         </div>
         <ol className="bg-white divide-y divide-[#F4F3F1]">
           {registrarSteps.map((step, i) => (
@@ -292,9 +292,9 @@ function NameserverSection({ customDomain, toast }: { customDomain?: string; toa
         </ol>
       </div>
 
-      {/* 주요 등록 기관 링크 */}
+      {/* Major registrar links */}
       <div className="space-y-2">
-        <p className="text-xs font-medium text-[#57534E]">등록 기관별 네임서버 변경 가이드:</p>
+        <p className="text-xs font-medium text-[#57534E]">Nameserver change guides by registrar:</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {[
             { name: "GoDaddy",   url: "https://au.godaddy.com/help/change-nameservers-for-my-domains-664" },
@@ -318,20 +318,20 @@ function NameserverSection({ customDomain, toast }: { customDomain?: string; toa
         </div>
       </div>
 
-      {/* 경고 */}
+      {/* Warning */}
       <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
         <AlertTriangle size={14} className="text-amber-600 mt-0.5 shrink-0" strokeWidth={1.5} />
         <div className="text-xs text-amber-700 space-y-1">
-          <p><strong>주의:</strong> 네임서버를 변경하면 기존 DNS 레코드(이메일 MX, SPF, 기타 CNAME 등)가 모두 초기화됩니다.</p>
-          <p>이메일 서비스를 사용 중이라면 <strong>CNAME/TXT 방식</strong>을 권장합니다.</p>
+          <p><strong>Warning:</strong> Changing nameservers will reset all existing DNS records (email MX, SPF, other CNAMEs, etc.).</p>
+          <p>If you use an email service, we recommend the <strong>CNAME/TXT approach</strong> instead.</p>
         </div>
       </div>
 
-      {/* 현재 도메인 표시 */}
+      {/* Current domain display */}
       {customDomain && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-[#F4F3F1] text-sm">
           <Globe size={14} className="text-[#A8A29E]" />
-          <span className="text-[#57534E]">설정 대상 도메인:</span>
+          <span className="text-[#57534E]">Target domain:</span>
           <span className="font-mono font-semibold text-[#1C1917]">{customDomain}</span>
         </div>
       )}
@@ -446,7 +446,7 @@ export default function DomainAccess() {
     <div className="max-w-3xl mx-auto space-y-6 py-6 px-4">
       <div>
         <h1 className="text-lg font-semibold text-[#1C1917]">Domain & Access</h1>
-        <p className="text-sm text-[#57534E] mt-0.5">서브도메인 및 커스텀 도메인 설정을 관리합니다</p>
+        <p className="text-sm text-[#57534E] mt-0.5">Manage subdomain and custom domain settings</p>
       </div>
 
       {/* ── Subdomain ─────────────────────────────────────────────────────── */}
@@ -461,13 +461,13 @@ export default function DomainAccess() {
 
         <div className="flex items-start gap-2 p-3 rounded-lg bg-[#F0FDF4] border border-[#A7F3D0] text-sm text-[#166534]">
           <Info size={14} className="mt-0.5 shrink-0" />
-          <p>서브도메인(예: <span className="font-mono font-semibold">abc.edubee.co</span>)은 Edubee가 자동으로 관리합니다. 별도의 DNS 설정이 필요 없습니다.</p>
+          <p>Subdomains (e.g. <span className="font-mono font-semibold">abc.edubee.co</span>) are managed automatically by Edubee. No separate DNS configuration is required.</p>
         </div>
 
         {domain?.subdomain && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-[#F4F3F1] text-sm">
             <Globe size={14} className="text-[#A8A29E]" />
-            <span className="text-[#57534E]">현재:</span>
+            <span className="text-[#57534E]">Current:</span>
             <span className="font-mono font-semibold text-[#1C1917]">{domain.subdomain}.edubee.co</span>
             <button
               onClick={() => copyToClipboard(`${domain.subdomain}.edubee.co`, "URL", toast)}
@@ -479,7 +479,7 @@ export default function DomainAccess() {
         )}
 
         <div className="space-y-2">
-          <label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">서브도메인 변경</label>
+          <label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">Change Subdomain</label>
           <div className="flex items-center gap-2">
             <input
               className={inp}
@@ -498,12 +498,12 @@ export default function DomainAccess() {
           </div>
           {availability === true && (
             <div className="flex items-center gap-1.5 text-green-600 text-sm">
-              <CheckCircle2 size={14} /> 사용 가능!
+              <CheckCircle2 size={14} /> Available!
             </div>
           )}
           {availability === false && (
             <div className="flex items-center gap-1.5 text-red-500 text-sm">
-              <XCircle size={14} /> 이미 사용 중입니다. 다른 이름을 시도하세요.
+              <XCircle size={14} /> Already in use. Please try a different name.
             </div>
           )}
         </div>
@@ -512,7 +512,7 @@ export default function DomainAccess() {
           <div className="space-y-3">
             <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
               <AlertTriangle size={14} className="text-amber-600 mt-0.5 shrink-0" strokeWidth={1.5} />
-              <p className="text-xs text-amber-700">서브도메인을 변경하면 기존 URL로 접속하던 링크가 모두 깨집니다.</p>
+              <p className="text-xs text-amber-700">Changing the subdomain will break all existing links that point to your current URL.</p>
             </div>
             <button
               onClick={saveDomain}
@@ -548,17 +548,17 @@ export default function DomainAccess() {
           <div className="flex items-center gap-3 p-4 rounded-lg bg-[#F4F3F1]">
             <Lock size={16} className="text-[#A8A29E] shrink-0" />
             <div>
-              <p className="text-sm font-medium text-[#1C1917]">커스텀 도메인은 Growth 플랜 이상에서 사용 가능합니다</p>
-              <p className="text-xs text-[#A8A29E] mt-0.5"><span className="font-mono">crm.myagency.com.au</span> 형식의 도메인을 사용하세요</p>
+              <p className="text-sm font-medium text-[#1C1917]">Custom domains are available on the Growth plan and above</p>
+              <p className="text-xs text-[#A8A29E] mt-0.5">Use a domain in the format <span className="font-mono">crm.myagency.com.au</span></p>
             </div>
           </div>
         ) : (
           <>
-            {/* 현재 커스텀 도메인 */}
+            {/* Current custom domain */}
             {domain?.customDomain && (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-[#F4F3F1] text-sm">
                 <Globe size={14} className="text-[#A8A29E]" />
-                <span className="text-[#57534E]">현재:</span>
+                <span className="text-[#57534E]">Current:</span>
                 <span className="font-mono font-semibold text-[#1C1917]">{domain.customDomain}</span>
                 <button
                   onClick={() => copyToClipboard(domain.customDomain, "Domain", toast)}
@@ -569,10 +569,10 @@ export default function DomainAccess() {
               </div>
             )}
 
-            {/* 도메인 등록 / 변경 */}
+            {/* Domain registration / update */}
             <div className="space-y-2">
               <label className="text-xs font-medium text-[#57534E] uppercase tracking-wide">
-                {domain?.customDomain ? "커스텀 도메인 변경" : "커스텀 도메인 등록"}
+                {domain?.customDomain ? "Change Custom Domain" : "Register Custom Domain"}
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -592,33 +592,33 @@ export default function DomainAccess() {
                 </button>
               </div>
               <p className="text-xs text-[#A8A29E]">
-                소유한 도메인을 입력하세요 (예: <span className="font-mono">crm.myagency.com.au</span>). 등록 후 아래에서 DNS를 설정하세요.
+                Enter a domain you own (e.g. <span className="font-mono">crm.myagency.com.au</span>). After registering, configure DNS below.
               </p>
             </div>
 
-            {/* ── DNS 설정 방법 선택 ─────────────────────────────────────────── */}
+            {/* ── DNS setup method selection ────────────────────────────────── */}
             <div className="space-y-4 pt-2 border-t border-[#F4F3F1]">
               <div>
-                <p className="text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-3">DNS 설정 방법 선택</p>
+                <p className="text-xs font-semibold text-[#57534E] uppercase tracking-wide mb-3">Select DNS Setup Method</p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <MethodTab
                     active={dnsMethod === "cname"}
                     onClick={() => setDnsMethod("cname")}
                     icon={<Network size={16} />}
-                    label="CNAME / TXT 방식"
-                    description="기존 DNS 제공업체에 레코드를 추가합니다. 이메일 등 다른 서비스에 영향 없음"
+                    label="CNAME / TXT method"
+                    description="Add records to your existing DNS provider. No impact on email or other services."
                   />
                   <MethodTab
                     active={dnsMethod === "nameserver"}
                     onClick={() => setDnsMethod("nameserver")}
                     icon={<Server size={16} />}
-                    label="네임서버(NS) 방식"
-                    description="도메인의 네임서버 전체를 Edubee로 변경합니다. 설정이 간단하지만 기존 DNS 초기화"
+                    label="Nameserver (NS) method"
+                    description="Change the entire domain nameservers to Edubee. Simpler to set up but resets existing DNS records."
                   />
                 </div>
               </div>
 
-              {/* 선택된 방법에 따른 내용 */}
+              {/* Content based on selected method */}
               {dnsMethod === "cname" ? (
                 <CnameTxtSection
                   cname={cname}
@@ -635,11 +635,11 @@ export default function DomainAccess() {
               )}
             </div>
 
-            {/* 도메인 등록됐지만 DNS 없는 경우 */}
+            {/* Domain registered but no DNS records yet */}
             {domain?.customDomain && !cname && !txt && dnsMethod === "cname" && (
               <div className="flex items-start gap-2 p-3 rounded-lg bg-[#F4F3F1] text-sm text-[#57534E]">
                 <Info size={14} className="mt-0.5 shrink-0" />
-                <p>DNS 레코드가 준비 중입니다. 잠시 후 페이지를 새로고침하세요.</p>
+                <p>DNS records are being prepared. Please refresh the page in a moment.</p>
               </div>
             )}
           </>

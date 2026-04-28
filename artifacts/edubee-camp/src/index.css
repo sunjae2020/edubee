@@ -60,7 +60,7 @@
   --color-sidebar-accent-border: hsl(var(--sidebar-accent-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-  /* ── 테넌트 브랜딩 오렌지 팔레트 → Tailwind text-orange-* / bg-orange-* 자동 매핑 ── */
+  /* ── Tenant branding orange palette → auto-mapped to Tailwind text-orange-* / bg-orange-* ── */
   --color-orange-50:  var(--e-orange-50);
   --color-orange-100: var(--e-orange-100);
   --color-orange-200: var(--e-orange-200);
@@ -87,7 +87,7 @@
   --neutral-600: 25 7% 33%;    /* #57534E */
   --neutral-900: 20 9% 10%;    /* #1C1917 */
 
-  /* ── 브랜딩 오렌지 팔레트 기본값 (applyThemeToDom이 JS로 덮어씀) ── */
+  /* ── Branding orange palette defaults (overridden by applyThemeToDom via JS) ── */
   --e-orange:     #F5821F;
   --e-orange-dk:  #d26a10;
   --e-orange-lt:  #fef0e3;

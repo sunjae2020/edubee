@@ -213,7 +213,7 @@ export default function Dashboard() {
               sub="converted to contract" />
           )}
 
-          {/* ── KPI 요약 (SA / AD 전용) ────────────────────────────── */}
+          {/* ── KPI Summary (SA / AD only) ────────────────────────────── */}
           {isSAorAD && stats?.kpiSummary && (
             <>
               <div className="col-span-2 md:col-span-4 flex items-center gap-3 mt-2">

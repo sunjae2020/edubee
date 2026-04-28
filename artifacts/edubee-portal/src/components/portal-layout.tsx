@@ -103,7 +103,7 @@ const PAGE_TITLES: Record<string, string> = {
 // ── Language ──────────────────────────────────────────────────────────────
 const LANGUAGES = [
   { code: "en", label: "English",  flag: "🇦🇺" },
-  { code: "ko", label: "한국어",    flag: "🇰🇷" },
+  { code: "ko", label: "Korean",    flag: "🇰🇷" },
   { code: "ja", label: "日本語",    flag: "🇯🇵" },
   { code: "zh", label: "中文",      flag: "🇨🇳" },
   { code: "th", label: "ภาษาไทย",   flag: "🇹🇭" },

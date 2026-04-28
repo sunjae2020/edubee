@@ -17,7 +17,7 @@ export const siteSettings = defineType({
           title: 'Banner Text',
           fields: [
             { name: 'en', type: 'string', title: 'English' },
-            { name: 'ko', type: 'string', title: '한국어' },
+            { name: 'ko', type: 'string', title: 'Korean' },
             { name: 'ja', type: 'string', title: '日本語' },
             { name: 'zh', type: 'string', title: '中文' },
             { name: 'th', type: 'string', title: 'ภาษาไทย' },

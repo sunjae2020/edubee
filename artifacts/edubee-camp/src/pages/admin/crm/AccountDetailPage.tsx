@@ -383,7 +383,7 @@ function ContactLookup({ value, onChange, placeholder }: {
                   <Input
                     value={cform.originalName}
                     onChange={e => setCform(f => ({ ...f, originalName: e.target.value }))}
-                    placeholder="e.g. 김민준"
+                    placeholder="e.g. Kim Minjun"
                     className="h-8 text-sm border-[#E8E6E2] focus:border-(--e-orange)"
                   />
                 </div>

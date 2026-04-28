@@ -165,7 +165,7 @@ router.post(
         lines: lineItems = [],
       } = req.body;
 
-      // camp_coordinator: 위임 재무 권한 체크
+      // camp_coordinator: check delegated finance permission
       const user = req.user!;
       if (user.role === "camp_coordinator" && user.organisationId && contractId) {
         const pgId = await resolvePackageGroupIdFromContractId(contractId as string);
@@ -267,9 +267,9 @@ router.post(
 
       // === BRIDGE: auto-create transaction record ===
       try {
-        // trust_receipt (고객 입금) → transactionType: 'payment_received', creditAmount 설정
-        // trust_transfer (송금)     → transactionType: 'bank_transfer',    amount 설정
-        // 그 외 타입                 → transactionType: paymentType,        amount 설정
+        // trust_receipt (customer deposit) → transactionType: 'payment_received', set creditAmount
+        // trust_transfer (remittance)      → transactionType: 'bank_transfer',    set amount
+        // other types                      → transactionType: paymentType,        set amount
         const txType =
           paymentType === "trust_receipt"  ? "payment_received" :
           paymentType === "trust_transfer" ? "bank_transfer"    :
@@ -295,7 +295,7 @@ router.post(
           status:           "Active",
         });
       } catch (bridgeError) {
-        // 브릿지 실패해도 payment_header 저장은 성공으로 처리
+        // Bridge failure does not affect the payment_header save — treat as success
         console.error("[Bridge] Failed to create transaction record:", bridgeError);
       }
       // === END BRIDGE ===

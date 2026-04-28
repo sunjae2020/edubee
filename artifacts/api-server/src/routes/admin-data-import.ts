@@ -19,10 +19,10 @@ const router = Router();
 
 /**
  * POST /api/admin/import-dev-data
- * 개발 DB 덤프를 현재 DB(프로덕션)에 수동으로 적용하는 엔드포인트.
- * super_admin JWT 필수.
+ * Endpoint to manually apply the dev DB dump to the current DB (production).
+ * Requires super_admin JWT.
  *
- * ⚠️  기존 데이터를 TRUNCATE 후 개발 데이터로 덮어씁니다.
+ * ⚠️  TRUNCATES existing data and overwrites with dev data.
  */
 router.post(
   "/import-dev-data",
@@ -55,8 +55,8 @@ router.post(
 
 /**
  * POST /api/admin/export-dev-data
- * 현재 개발 DB를 dev_seed.sql로 내보냅니다.
- * super_admin JWT 필수.
+ * Exports the current dev DB to dev_seed.sql.
+ * Requires super_admin JWT.
  */
 router.post(
   "/export-dev-data",
@@ -71,7 +71,7 @@ router.post(
     const workspaceRoot = getWorkspaceRoot();
     const scriptPath = path.join(workspaceRoot, "scripts", "export-dev-data.sh");
     if (!fs.existsSync(scriptPath)) {
-      return res.status(500).json({ error: "export-dev-data.sh 스크립트를 찾을 수 없습니다" });
+      return res.status(500).json({ error: "export-dev-data.sh script not found" });
     }
 
     console.log("[DataExport] Export requested by super_admin...");
@@ -90,7 +90,7 @@ router.post(
         ? Math.round(fs.statSync(seedPath).size / 1024) + " KB"
         : "unknown";
 
-      console.log(`[DataExport] 완료 (${elapsed}ms): ${fileSize}`);
+      console.log(`[DataExport] Completed (${elapsed}ms): ${fileSize}`);
 
       return res.json({
         success: true,
@@ -101,7 +101,7 @@ router.post(
       });
     } catch (err: any) {
       const elapsed = Date.now() - start;
-      console.error("[DataExport] 실패:", err.message);
+      console.error("[DataExport] Failed:", err.message);
       return res.status(500).json({
         success: false,
         elapsed,
@@ -115,7 +115,7 @@ router.post(
 
 /**
  * GET /api/admin/db-sync-status
- * dev_seed.sql 파일 정보 반환
+ * Returns dev_seed.sql file information
  */
 router.get(
   "/db-sync-status",
@@ -132,7 +132,7 @@ router.get(
 
     const stat = fs.statSync(seedPath);
     const content = fs.readFileSync(seedPath, "utf8");
-    const generatedMatch = content.match(/생성일:\s*(.+)/);
+    const generatedMatch = content.match(/generated_at:\s*(.+)/);
     const generatedAt = generatedMatch ? generatedMatch[1].trim() : null;
     const lineCount = content.split("\n").length;
 

@@ -21,14 +21,14 @@ export default function StaffKpiPage() {
   const canApprove = ['admin', 'super_admin'].includes(currentUser?.role ?? '');
   const canViewTeam = canApprove || currentUser?.role === 'team_manager';
 
-  // URL 파라미터에서 staffId 읽기 (?staffId=xxx)
+  // Read staffId from URL parameter (?staffId=xxx)
   const urlParams = new URLSearchParams(window.location.search);
   const urlStaffId = urlParams.get('staffId') ?? '';
 
   const now = new Date();
   const defaultYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-  // URL에 staffId가 있으면 그걸 초기값으로, 없으면 본인
+  // If staffId exists in URL use it as initial value, otherwise use current user
   const initialStaffId = urlStaffId || (currentUser?.id ?? '');
   const [filter,          setFilter]          = useState<KpiFilter>({ periodType: 'monthly', yearMonth: defaultYM });
   const [selectedStaffId, setSelectedStaffId] = useState<string>(initialStaffId);
@@ -38,7 +38,7 @@ export default function StaffKpiPage() {
   const { data, loading, error, fetchKpi, calculate } = useStaffKpi();
   const { processing, approve, pay }                   = useKpiApproval();
 
-  // URL staffId가 있고 자신이 아닌 경우 → 이름 표시를 위해 fetch
+  // If URL has staffId and it's not the current user → fetch name for display
   useEffect(() => {
     if (urlStaffId && urlStaffId !== currentUser?.id) {
       fetch(`${BASE}/api/users/${urlStaffId}`)
@@ -74,7 +74,7 @@ export default function StaffKpiPage() {
     if (selectedStaffId) await fetchKpi(selectedStaffId, filter);
   };
 
-  // URL에서 staffId가 넘어온 경우 (다른 직원 KPI 조회) → 직원 selector 고정
+  // If staffId is provided in URL (viewing another staff's KPI) → lock staff selector
   const isLockedToStaff = !!urlStaffId && !canApprove;
 
   return (
@@ -103,7 +103,7 @@ export default function StaffKpiPage() {
           </div>
         </div>
 
-        {/* 직원 선택 드롭다운: admin만 표시, URL로 고정된 경우 숨김 */}
+        {/* Staff selector dropdown: shown to admin only, hidden when locked by URL */}
         {canApprove && !isLockedToStaff && (
           <div className="relative">
             <select
@@ -120,7 +120,7 @@ export default function StaffKpiPage() {
           </div>
         )}
 
-        {/* admin이고 URL에서 특정 직원이 지정된 경우 → 드롭다운은 숨기지만 staffId 그대로 유지 */}
+        {/* Admin with a specific staff locked via URL → hide dropdown but keep staffId */}
         {canApprove && isLockedToStaff && staffName && (
           <span className="text-sm font-medium text-[#1C1917] px-3 py-2 bg-(--e-orange-lt) rounded-lg">
             {staffName}

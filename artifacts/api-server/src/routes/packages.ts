@@ -243,7 +243,7 @@ router.get("/package-groups/:id", authenticate, async (req, res) => {
 
 router.put("/package-groups/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    // CC: 위임된 패키지 그룹만 수정 가능 (raw pool query - pgBouncer leakage 방지)
+    // CC: only delegated package groups may be modified (raw pool query - prevents pgBouncer leakage)
     if (req.user!.role === "camp_coordinator") {
       const orgId = req.user!.organisationId;
       if (!orgId) return res.status(403).json({ error: "Forbidden" });
@@ -345,7 +345,7 @@ router.get("/package-groups/:id/images", authenticate, async (req, res) => {
   }
 });
 
-// ── CC 이미지 위임 검증 헬퍼 ──────────────────────────────────────────────────
+// ── CC image delegation validation helper ─────────────────────────────────────
 async function assertCCImageDelegation(orgId: string | null | undefined, pgId: string): Promise<string | null> {
   if (!orgId) return "Forbidden";
   const check = await pool.query(
@@ -670,7 +670,7 @@ router.get("/packages/:id", authenticate, async (req, res) => {
 
 router.put("/packages/:id", authenticate, requireRole(...ADMIN_ROLES, "camp_coordinator"), async (req, res) => {
   try {
-    // CC: package가 속한 package_group이 위임된 것인지 확인
+    // CC: verify that the package_group the package belongs to is delegated
     if (req.user!.role === "camp_coordinator") {
       const orgId = req.user!.organisationId;
       if (!orgId) return res.status(403).json({ error: "Forbidden" });
@@ -1225,7 +1225,7 @@ router.delete("/products/:id", authenticate, requireRole(...ADMIN_ROLES), async 
         .from(packageGroupProducts)
         .where(eq(packageGroupProducts.productId, req.params.id as string));
       return res.status(409).json({
-        error: `이 상품은 ${groupCount}개의 Package Group에서 사용 중입니다. 먼저 연결을 해제해주세요.`,
+        error: `This product is used in ${groupCount} Package Group(s). Please unlink it first.`,
         linkedGroupCount: Number(groupCount),
       });
     }
@@ -1454,7 +1454,7 @@ router.get("/interview-settings/:packageGroupId", authenticate, async (req, res)
   }
 });
 
-// ─── DELETE /api/package-groups/bulk  (super_admin 임시/영구 삭제) ────────────
+// ─── DELETE /api/package-groups/bulk  (super_admin soft/permanent delete) ─────
 router.delete("/package-groups/bulk", authenticate, async (req, res) => {
   if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
   try {
@@ -1472,7 +1472,7 @@ router.delete("/package-groups/bulk", authenticate, async (req, res) => {
   }
 });
 
-// ─── DELETE /api/packages/bulk  (super_admin 임시/영구 삭제) ─────────────────
+// ─── DELETE /api/packages/bulk  (super_admin soft/permanent delete) ──────────
 router.delete("/packages/bulk", authenticate, async (req, res) => {
   if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
   try {

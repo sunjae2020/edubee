@@ -514,7 +514,7 @@ export default function CampApplicationFullPage({ formInfo, programs, defaultPro
                 </Fld>
               </div>
               <Fld label={t("apply.nativeName")}>
-                <Inp value={applicant.fullNameNative} onChange={v => upApplicant("fullNameNative", v)} placeholder="김지원" />
+                <Inp value={applicant.fullNameNative} onChange={v => upApplicant("fullNameNative", v)} placeholder="Kim Jiwon" />
               </Fld>
               <Fld label={t("apply.englishName")}>
                 <Inp value={applicant.englishName} onChange={v => upApplicant("englishName", v)} placeholder="e.g. Kevin" />

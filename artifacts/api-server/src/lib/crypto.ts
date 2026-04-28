@@ -11,8 +11,8 @@ function getKey(): Buffer {
 }
 
 /**
- * AES-256-GCM 암호화. 반환값: "iv:authTag:ciphertext" (모두 hex)
- * 빈 값이거나 이미 암호화된 값이면 그대로 반환.
+ * AES-256-GCM encryption. Returns: "iv:authTag:ciphertext" (all hex)
+ * If value is empty or already encrypted, returns as-is.
  */
 export function encryptField(plaintext: string | null | undefined): string | null {
   if (!plaintext) return plaintext ?? null;
@@ -31,13 +31,13 @@ export function encryptField(plaintext: string | null | undefined): string | nul
 }
 
 /**
- * AES-256-GCM 복호화.
- * "iv:authTag:ciphertext" 형식이 아니면 평문으로 간주하고 그대로 반환.
+ * AES-256-GCM decryption.
+ * If the value is not in "iv:authTag:ciphertext" format, it is treated as plaintext and returned as-is.
  */
 export function decryptField(ciphertext: string | null | undefined): string | null {
   if (!ciphertext) return ciphertext ?? null;
   const parts = ciphertext.split(":");
-  if (parts.length !== 3) return ciphertext; // 평문 (레거시 데이터)
+  if (parts.length !== 3) return ciphertext; // plaintext (legacy data)
   try {
     const key = getKey();
     const [ivHex, authTagHex, encryptedHex] = parts;
@@ -49,13 +49,13 @@ export function decryptField(ciphertext: string | null | undefined): string | nu
     return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString("utf8");
   } catch (e) {
     console.error("[crypto] decryptField error:", e);
-    return ciphertext; // 복호화 실패 시 원본 반환
+    return ciphertext; // Return original on decryption failure
   }
 }
 
 /**
- * 여권번호 마스킹. "AB****89" 형식
- * 목록 페이지, 로그 등에서 민감 정보 노출 방지용
+ * Passport number masking. Format: "AB****89"
+ * Prevents sensitive data exposure on list pages, logs, etc.
  */
 export function maskPassport(passport: string | null | undefined): string | null {
   if (!passport) return null;
@@ -65,7 +65,7 @@ export function maskPassport(passport: string | null | undefined): string | null
 }
 
 /**
- * FIELD_ENCRYPTION_KEY 설정 여부 확인 (서버 시작 시 경고용)
+ * Checks whether FIELD_ENCRYPTION_KEY is configured (used for server startup warnings)
  */
 export function isCryptoConfigured(): boolean {
   return !!(ENCRYPTION_KEY && ENCRYPTION_KEY.length === 64);

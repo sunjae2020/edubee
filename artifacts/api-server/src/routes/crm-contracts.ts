@@ -74,7 +74,14 @@ router.get("/crm/contracts", authenticate, async (req, res) => {
     // CC users: skip tenant org filter (contracts are in master org; CC filter below handles scoping)
     if (req.tenant && !isCC) conds.push(sql`c.organisation_id = ${req.tenant.id}::uuid`);
     if (search)           conds.push(sql`(c.contract_number ILIKE ${"%" + search + "%"} OR c.student_name ILIKE ${"%" + search + "%"})`);
-    if (status)           conds.push(sql`c.status = ${status}`);
+    if (status) {
+      const statuses = status.split(",").map((s: string) => s.trim()).filter(Boolean);
+      if (statuses.length === 1) {
+        conds.push(sql`c.status = ${statuses[0]}`);
+      } else {
+        conds.push(sql`c.status = ANY(${statuses}::text[])`);
+      }
+    }
     if (dateFrom)         conds.push(sql`c.start_date >= ${dateFrom}::date`);
     if (dateTo)           conds.push(sql`c.start_date <= ${dateTo}::date`);
     if (ownerId)          conds.push(sql`a.owner_id = ${ownerId}::uuid`);
@@ -690,7 +697,7 @@ router.patch("/crm/contract-products/:id", authenticate, async (req, res) => {
       apDueDate, apAmount, apStatus,
       serviceModuleType,
     } = req.body;
-    // C-9: AR→AP 날짜 순서 검증 (지급일이 수금일보다 앞서면 거부)
+    // C-9: AR→AP date order validation (reject if payment date precedes collection date)
     if (arDueDate !== undefined || apDueDate !== undefined) {
       const [existing] = await db
         .select({ arDueDate: contractProducts.arDueDate, apDueDate: contractProducts.apDueDate })
@@ -780,7 +787,7 @@ router.post("/crm/contracts/:id/generate-schedule", authenticate, async (req, re
   }
 });
 
-// ─── DELETE /api/crm/contracts/bulk  (super_admin 임시/영구 삭제) ────────────
+// ─── DELETE /api/crm/contracts/bulk  (super_admin soft/permanent delete) ─────
 router.delete("/crm/contracts/bulk", authenticate, async (req, res) => {
   if ((req.user as any)?.role !== "super_admin") {
     return res.status(403).json({ error: "Forbidden" });

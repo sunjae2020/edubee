@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { format, differenceInWeeks } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { DateInput } from "@/components/ui/date-input";
 import { ClientNameCell } from "@/components/common/ClientNameCell";
 import { nameFromAccount } from "@/lib/nameUtils";
 import { useAuth } from "@/hooks/use-auth";
@@ -58,11 +59,21 @@ function duration(from?: string, to?: string) {
 }
 
 const CONTRACT_STATUS_STYLES: Record<string, string> = {
-  active:      "bg-[#DCFCE7] text-[#16A34A]",
-  "in progress": "bg-(--e-orange-lt) text-(--e-orange)",
-  overdue:     "bg-[#FEF2F2] text-[#DC2626]",
-  completed:   "bg-[#F4F3F1] text-[#57534E]",
-  draft:       "bg-[#F4F3F1] text-[#A8A29E]",
+  active:        "bg-[#DCFCE7] text-[#16A34A]",
+  "in progress": "bg-[#DCFCE7] text-[#16A34A]",
+  overdue:       "bg-[#FEF2F2] text-[#DC2626]",
+  completed:     "bg-[#F4F3F1] text-[#57534E]",
+  draft:         "bg-[#EFF6FF] text-[#2563EB]",
+  cancelled:     "bg-[#F4F3F1] text-[#A8A29E]",
+};
+
+const CONTRACT_STATUS_LABEL: Record<string, string> = {
+  draft:         "Pending",
+  active:        "Active",
+  "in progress": "Active",
+  overdue:       "Overdue",
+  completed:     "Completed",
+  cancelled:     "Cancelled",
 };
 
 const AR_STATUS_STYLES: Record<string, string> = {
@@ -80,11 +91,13 @@ const AP_STATUS_STYLES: Record<string, string> = {
   overdue: "bg-[#FEF2F2] text-[#DC2626]",
 };
 
-function StatusBadge({ s, map }: { s: string; map: Record<string, string> }) {
-  const cls = map[s?.toLowerCase()] ?? "bg-[#F4F3F1] text-[#57534E]";
+function StatusBadge({ s, map, labelMap }: { s: string; map: Record<string, string>; labelMap?: Record<string, string> }) {
+  const key = s?.toLowerCase();
+  const cls = map[key] ?? "bg-[#F4F3F1] text-[#57534E]";
+  const label = labelMap?.[key] ?? s;
   return (
     <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${cls}`}>
-      {s}
+      {label}
     </span>
   );
 }
@@ -166,8 +179,9 @@ export default function ContractListPage() {
   const [dateTo,    setDateTo]    = useState("");
   const [ownerId,   setOwnerId]   = useState("");
   const [payFreq,   setPayFreq]   = useState("");
-  const [arStatus,  setArStatus]  = useState("");
-  const [apStatus,  setApStatus]  = useState("");
+  const [arStatus,   setArStatus]   = useState("");
+  const [apStatus,   setApStatus]   = useState("");
+  const [overdueOnly, setOverdueOnly] = useState(false);
   const [period,    setPeriod]    = useState<Period | "">("");
   const [showAdv,   setShowAdv]   = useState(false);
   const [page,      setPage]      = useState(1);
@@ -216,7 +230,8 @@ export default function ContractListPage() {
 
   const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   if (search)   params.set("search", search);
-  if (status)   params.set("status", status);
+  const effectiveStatus = overdueOnly ? "overdue" : status;
+  if (effectiveStatus) params.set("status", effectiveStatus);
   if (dateFrom) params.set("dateFrom", dateFrom);
   if (dateTo)   params.set("dateTo", dateTo);
   if (ownerId)  params.set("ownerId", ownerId);
@@ -255,11 +270,19 @@ export default function ContractListPage() {
 
   const sortedIds = sorted.map(r => r.id);
 
+  const STATUS_OPTION_LABELS: Record<string, string> = {
+    "draft":             "Pending",
+    "active,in progress": "Active",
+    "completed":         "Completed",
+    "cancelled":         "Cancelled",
+  };
+
   const activeTags = useMemo(() => {
     const tags: { key: string; label: string }[] = [];
-    if (status)   tags.push({ key: "status",   label: `Status: ${status}`   });
-    if (dateFrom) tags.push({ key: "dateFrom", label: `From: ${dateFrom}`   });
-    if (dateTo)   tags.push({ key: "dateTo",   label: `To: ${dateTo}`       });
+    if (overdueOnly) tags.push({ key: "overdueOnly", label: "Overdue Only" });
+    else if (status) tags.push({ key: "status", label: `Status: ${STATUS_OPTION_LABELS[status] ?? status}` });
+    if (dateFrom) tags.push({ key: "dateFrom", label: `From: ${fmtDate(dateFrom)}` });
+    if (dateTo)   tags.push({ key: "dateTo",   label: `To: ${fmtDate(dateTo)}`   });
     if (applied.ownerId)  tags.push({ key: "ownerId",  label: `Owner: set`          });
     if (applied.payFreq)  tags.push({ key: "payFreq",  label: `Freq: ${payFreq}`    });
     if (applied.arStatus) tags.push({ key: "arStatus", label: `AR: ${arStatus}`     });
@@ -268,6 +291,7 @@ export default function ContractListPage() {
   }, [status, dateFrom, dateTo, applied, payFreq, arStatus, apStatus]);
 
   function removeTag(key: string) {
+    if (key === "overdueOnly") { setOverdueOnly(false); }
     if (key === "status")   { setStatus(""); }
     if (key === "dateFrom") { setDateFrom(""); setPeriod(""); }
     if (key === "dateTo")   { setDateTo(""); setPeriod(""); }
@@ -364,20 +388,35 @@ export default function ContractListPage() {
           </div>
 
           {/* Date range */}
-          <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPeriod(""); setPage(1); }}
-            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-(--e-orange)" />
+          <DateInput value={dateFrom} onChange={v => { setDateFrom(v); setPeriod(""); setPage(1); }} className="w-36" />
           <span className="text-[#A8A29E] text-xs">to</span>
-          <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPeriod(""); setPage(1); }}
-            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-(--e-orange)" />
+          <DateInput value={dateTo} onChange={v => { setDateTo(v); setPeriod(""); setPage(1); }} className="w-36" />
 
           {/* Status */}
-          <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}
-            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-(--e-orange) bg-white">
+          <select
+            value={overdueOnly ? "" : status}
+            disabled={overdueOnly}
+            onChange={e => { setStatus(e.target.value); setPage(1); }}
+            className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm outline-none focus:border-(--e-orange) bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <option value="">All Status</option>
-            {["active","in progress","overdue","completed","draft"].map(s => (
-              <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-            ))}
+            <option value="draft">Pending</option>
+            <option value="active,in progress">Active</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
           </select>
+
+          {/* Overdue Only checkbox */}
+          <label className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] cursor-pointer hover:bg-[#FAFAF9] select-none"
+            style={overdueOnly ? { borderColor: "#DC2626", background: "#FEF2F2", color: "#DC2626" } : {}}>
+            <input
+              type="checkbox"
+              className="rounded border-stone-300 accent-red-600"
+              checked={overdueOnly}
+              onChange={e => { setOverdueOnly(e.target.checked); setStatus(""); setPage(1); }}
+            />
+            Show Overdue Only
+          </label>
 
           {/* Advanced toggle */}
           <button
@@ -563,7 +602,7 @@ export default function ContractListPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <StatusBadge s={row.contractStatus} map={CONTRACT_STATUS_STYLES} />
+                    <StatusBadge s={row.contractStatus} map={CONTRACT_STATUS_STYLES} labelMap={CONTRACT_STATUS_LABEL} />
                   </td>
                   <td className="px-4 py-3 text-[11px] text-[#A8A29E] whitespace-nowrap">{fmtDate(row.createdAt)}</td>
                   <td className="px-4 py-3 text-[11px] text-[#A8A29E] whitespace-nowrap">{fmtDate(row.updatedAt)}</td>

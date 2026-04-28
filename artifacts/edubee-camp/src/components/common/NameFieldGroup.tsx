@@ -76,7 +76,7 @@ export function NameFieldGroup({
           </Label>
           <Input
             className="h-9 text-sm"
-            placeholder="e.g. 김민준"
+            placeholder="e.g. Kim Minjun"
             value={values.originalName ?? ""}
             onChange={e => onChange(fkey(prefix, "originalName"), e.target.value)}
             disabled={disabled}

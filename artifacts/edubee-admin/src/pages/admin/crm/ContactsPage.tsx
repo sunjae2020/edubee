@@ -198,12 +198,12 @@ export default function ContactsPage() {
   const softDelMutation = useMutation({
     mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/crm/contacts/bulk`, { data: { ids, soft: true } }).then(r => r.data),
     onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["crm-contacts"] }); clearSelection(); toast({ title: `${ids.length} moved to trash` }); },
-    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
   });
   const hardDelMutation = useMutation({
     mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/crm/contacts/bulk`, { data: { ids } }).then(r => r.data),
     onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["crm-contacts"] }); clearSelection(); toast({ title: `${ids.length} permanently deleted` }); },
-    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
   });
   const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
   const sortedIds = sorted.map(r => r.id);
@@ -394,7 +394,7 @@ export default function ContactsPage() {
             </div>
 
             <FormField label="Original Name">
-              <Input value={form.originalName ?? ""} onChange={e => patch("originalName", e.target.value)} className="h-9 text-sm" placeholder="e.g. 김소희" />
+              <Input value={form.originalName ?? ""} onChange={e => patch("originalName", e.target.value)} className="h-9 text-sm" placeholder="e.g. So-hee Kim" />
             </FormField>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

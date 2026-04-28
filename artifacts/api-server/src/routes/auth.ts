@@ -42,7 +42,7 @@ const refreshLimiter = rateLimit({
 const ACCESS_TOKEN_EXPIRY = "8h";
 const PORTAL_TOKEN_EXPIRY = "24h";
 const REFRESH_TOKEN_EXPIRY = "7d";
-const MAX_FAILED = 999999; // 계정 잠금 비활성화
+const MAX_FAILED = 999999; // account lock disabled
 const LOCK_MINUTES = 30;
 
 async function writeAuthLog(

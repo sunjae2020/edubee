@@ -265,7 +265,7 @@ function StudentCard({ index, student, spots, onChange, onRemove, canRemove }: {
           <input className={inp} value={student.lastName} onChange={set("lastName")} placeholder="Family name" />
         </div>
         <Field label="Full Name (Native Language)" half>
-          <input className={inp} value={student.fullNameNative} onChange={set("fullNameNative")} placeholder="e.g. 홍길동" />
+          <input className={inp} value={student.fullNameNative} onChange={set("fullNameNative")} placeholder="e.g. Hong Gildong" />
         </Field>
         <div>
           <Label required>Date of Birth</Label>
@@ -574,7 +574,7 @@ function SubmitStep({
         <Label>Preferred Language for Communication</Label>
         <select className={sel + " mt-1"} value={primaryLanguage} onChange={e => onLanguage(e.target.value)}>
           <option value="en">English</option>
-          <option value="ko">Korean (한국어)</option>
+          <option value="ko">Korean</option>
           <option value="ja">Japanese (日本語)</option>
           <option value="th">Thai (ภาษาไทย)</option>
         </select>

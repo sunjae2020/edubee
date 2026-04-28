@@ -102,21 +102,21 @@ export const ALL_DOC_CATEGORIES = [...STUDENT_DOC_CATEGORIES, ...CONSULTATION_DO
 export type DocCategory = typeof ALL_DOC_CATEGORIES[number];
 
 export const DOC_CATEGORY_LABELS: Record<DocCategory, string> = {
-  PASSPORT:      "여권 (Passport)",
-  PHOTO_ID:      "사진 / 신분증 (Photo ID)",
-  ACADEMIC:      "성적 / 졸업증명서 (Academic)",
+  PASSPORT:      "Passport",
+  PHOTO_ID:      "Photo / ID",
+  ACADEMIC:      "Transcript / Certificate (Academic)",
   ENGLISH_TEST:  "IELTS / TOEFL / PTE",
-  FINANCIAL:     "은행잔고 / 재정보증 (Financial)",
-  VISA_DOC:      "비자 서류 (Visa)",
+  FINANCIAL:     "Bank Statement / Financial Guarantee (Financial)",
+  VISA_DOC:      "Visa Documents",
   COE:           "Confirmation of Enrolment (COE)",
   OFFER_LETTER:  "LOO / Offer Letter",
-  INSURANCE:     "유학생 보험 (Insurance)",
-  CONSULTATION:  "상담신청서 (Consultation)",
-  QUOTATION:     "견적서 (Quotation)",
-  CONTRACT_DOC:  "계약서 (Contract Doc)",
-  CORRESPONDENCE: "이메일 / 메모 / 공문",
-  SCHOOL_INFO:   "학교 브로셔 / 안내자료",
-  OTHER:         "기타 (Other)",
+  INSURANCE:     "Student Insurance",
+  CONSULTATION:  "Consultation Form",
+  QUOTATION:     "Quotation",
+  CONTRACT_DOC:  "Contract Document",
+  CORRESPONDENCE: "Email / Memo / Official Correspondence",
+  SCHOOL_INFO:   "School Brochure / Information Material",
+  OTHER:         "Other",
 };
 
 // Categories that require expiry date input
@@ -138,10 +138,10 @@ async function getPermissionsForRole(role: string, group: string): Promise<{ can
 }
 
 /**
- * Sprint 3-01: 문서 접근 검증 미들웨어
- * - 테넌트 격리: 같은 테넌트 스키마의 문서만 접근 (DB 레벨에서도 격리됨)
- * - portal_student: 본인 contact_id 문서만 접근
- * - 미들웨어 통과 후 req.document에 doc 객체 저장
+ * Sprint 3-01: Document access verification middleware
+ * - Tenant isolation: only documents in the same tenant schema are accessible (also isolated at DB level)
+ * - portal_student: can only access documents tied to their own contact_id
+ * - After middleware passes, the doc object is stored on req.document
  */
 async function verifyDocumentAccess(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -159,11 +159,11 @@ async function verifyDocumentAccess(req: Request, res: Response, next: NextFunct
       return;
     }
 
-    // 테넌트 격리: DB 스키마가 이미 테넌트별로 분리되어 있으므로
-    // 쿼리 결과가 이미 현재 테넌트의 문서임을 보장 (방어 심층화).
+    // Tenant isolation: DB schemas are already separated per tenant,
+    // guaranteeing query results belong to the current tenant (defence in depth).
 
-    // portal_student: referenceType='contact' 문서는 본인 referenceId만 접근 가능
-    // (포털 유저는 authenticatePortal에서 contactId가 req.user에 주입됨)
+    // portal_student: for referenceType='contact' docs, only the matching referenceId is accessible
+    // (portal users have their contactId injected into req.user by authenticatePortal)
     if (
       requestingUser.role === "portal_student" &&
       doc.referenceType === "contact" &&
@@ -593,7 +593,7 @@ router.get("/documents/by-entity", async (req, res) => {
 });
 
 // GET /api/documents/:id/view
-// verifyDocumentAccess: 테넌트 격리 + portal_student 본인 문서 체크 (S3-01)
+// verifyDocumentAccess: tenant isolation + portal_student own-document check (S3-01)
 router.get("/documents/:id/view", verifyDocumentAccess, async (req, res) => {
   try {
     const role = req.user!.role;
@@ -622,7 +622,7 @@ router.get("/documents/:id/view", verifyDocumentAccess, async (req, res) => {
 });
 
 // GET /api/documents/:id/download
-// verifyDocumentAccess: 테넌트 격리 + portal_student 본인 문서 체크 (S3-01)
+// verifyDocumentAccess: tenant isolation + portal_student own-document check (S3-01)
 router.get("/documents/:id/download", verifyDocumentAccess, async (req, res) => {
   try {
     const role = req.user!.role;
@@ -783,7 +783,7 @@ router.put("/documents/default-permissions", requireRole("super_admin"), async (
   }
 });
 
-// ─── DELETE /api/documents/bulk  (super_admin 영구 삭제) ─────────────────────
+// ─── DELETE /api/documents/bulk  (super_admin permanent delete) ─────────────────────
 router.delete("/documents/bulk", authenticate, async (req, res) => {
   if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
   try {

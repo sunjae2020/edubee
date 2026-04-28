@@ -359,7 +359,7 @@ export default function LookupValuesPage() {
         <div>
           <h1 className="text-xl font-bold text-[#1C1917]">Lookup Values</h1>
           <p className="text-sm text-[#A8A29E] mt-0.5">
-            시스템 전반에서 사용되는 드롭다운 옵션을 관리합니다.
+            Manage dropdown options used throughout the system.
           </p>
         </div>
         {!hasAny && (

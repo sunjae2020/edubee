@@ -50,7 +50,7 @@ export type SeedStatus = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Tax Rates (3종 — GST 10%, Exempt, Zero-rated)
+// Tax Rates (3 types — GST 10%, Exempt, Zero-rated)
 // UNIQUE on name → onConflictDoNothing is safe
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -65,18 +65,18 @@ async function seedTaxRates(tx: any): Promise<void> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Product Groups (7종)
+// Product Groups (7 types)
 // UNIQUE on name → onConflictDoNothing is safe; returns name→id map
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PRODUCT_GROUP_SEEDS = [
-  { name: "Language Course",   description: "어학 과정",          status: "Active" },
-  { name: "Academic Program",  description: "학위 및 학업 과정",   status: "Active" },
-  { name: "Vocational (VET)",  description: "직업 교육 훈련",      status: "Active" },
-  { name: "Short Course",      description: "단기 연수 과정",      status: "Active" },
-  { name: "Camp Program",      description: "캠프 프로그램",       status: "Active" },
-  { name: "Placement Service", description: "배치 및 지원 서비스", status: "Active" },
-  { name: "Support Service",   description: "생활 지원 서비스",    status: "Active" },
+  { name: "Language Course",   description: "Language study programs",          status: "Active" },
+  { name: "Academic Program",  description: "Degree and academic programs",      status: "Active" },
+  { name: "Vocational (VET)",  description: "Vocational education and training", status: "Active" },
+  { name: "Short Course",      description: "Short-term study programs",         status: "Active" },
+  { name: "Camp Program",      description: "Camp programs",                     status: "Active" },
+  { name: "Placement Service", description: "Placement and support services",    status: "Active" },
+  { name: "Support Service",   description: "Living support services",           status: "Active" },
 ];
 
 async function seedProductGroups(tx: any): Promise<Record<string, string>> {
@@ -93,7 +93,7 @@ async function seedProductGroups(tx: any): Promise<Record<string, string>> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Product Types (14종 — serviceModuleType 매핑 포함)
+// Product Types (14 types — includes serviceModuleType mapping)
 // No UNIQUE on name → keep select-then-insert guard
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -189,7 +189,7 @@ async function seedDefaultTeam(tx: any): Promise<void> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Cost Centers (4종 — General, Operations, Marketing, Finance)
+// Cost Centers (4 types — General, Operations, Marketing, Finance)
 // UNIQUE on code & name → onConflictDoNothing is safe
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -205,7 +205,7 @@ async function seedCostCenters(tx: any): Promise<void> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Payment Infos (3종 — Bank Transfer, Credit Card, Cash)
+// Payment Infos (3 types — Bank Transfer, Credit Card, Cash)
 // UNIQUE on name → onConflictDoNothing is safe
 // ─────────────────────────────────────────────────────────────────────────────
 

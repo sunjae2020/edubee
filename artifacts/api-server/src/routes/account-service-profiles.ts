@@ -17,7 +17,7 @@ const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin", "camp_coordinator"] as const;
 
 // ============================================================
-// ■ SERVICE CATEGORIES (멀티 체크박스)
+// ■ SERVICE CATEGORIES (multi-checkbox)
 // ============================================================
 
 router.get(
@@ -261,7 +261,7 @@ router.delete(
 );
 
 // ============================================================
-// ■ COMPANY PROFILES (인턴십 호스트 컴퍼니 — 1:1)
+// ■ COMPANY PROFILES (internship host company — 1:1)
 // ============================================================
 
 router.get(
@@ -476,7 +476,7 @@ router.delete(
 );
 
 // ============================================================
-// ■ SERVICE PROFILE SUMMARY — Pre-fill 통합 소스
+// ■ SERVICE PROFILE SUMMARY — Unified pre-fill source
 // ============================================================
 
 // ============================================================

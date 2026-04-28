@@ -626,7 +626,7 @@ function CostLinePanel({ cp, contractId }: { cp: any; contractId: string }) {
   };
 
   const handleDelete = async (clId: string) => {
-    if (!window.confirm("이 Cost Line을 삭제하시겠습니까?")) return;
+    if (!window.confirm("Are you sure you want to delete this Cost Line?")) return;
     setDeleting(clId);
     try {
       await axios.delete(`${BASE}/api/cost-lines/${clId}`);
@@ -1362,7 +1362,7 @@ function PaymentScheduleTab({ contract }: { contract: any }) {
   };
 
   const handleDelete = async (cpId: string) => {
-    if (!window.confirm("이 인스톨먼트를 삭제하시겠습니까?")) return;
+    if (!window.confirm("Are you sure you want to delete this installment?")) return;
     setDeleting(cpId);
     try {
       await axios.delete(`${BASE}/api/crm/contract-products/${cpId}`);
@@ -1906,7 +1906,7 @@ function TransactionsTab({ contract, onRecordPayment }: { contract: any; onRecor
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleVoid = async (txnId: string) => {
-    if (!window.confirm("이 트랜잭션을 비활성화(Void)하시겠습니까? 취소할 수 없습니다.")) return;
+    if (!window.confirm("Are you sure you want to void this transaction? This action cannot be undone.")) return;
     setDeletingId(txnId);
     try {
       await axios.delete(`${BASE}/api/transactions/${txnId}`);
@@ -2069,7 +2069,7 @@ function UnifiedTransactionsTab({ contract, onRecordPayment }: { contract: any; 
   const [deletingTxnId, setDeletingTxnId] = useState<string | null>(null);
 
   const handleVoidPayment = async (payId: string) => {
-    if (!window.confirm("이 Payment를 Void 처리하시겠습니까? 연결된 Transaction도 자동으로 Inactive 됩니다.")) return;
+    if (!window.confirm("Are you sure you want to void this Payment? The linked Transaction will also be automatically set to Inactive.")) return;
     setVoidingId(payId);
     try {
       await axios.patch(`${BASE}/api/accounting/payments/${payId}/void`);

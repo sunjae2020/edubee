@@ -3,7 +3,7 @@ import { useListApplications, useCreateApplication, CreateApplicationRequest } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { format } from "date-fns";
+import { formatDate } from "@/lib/date-format";
 import { Search, Plus, Filter, MoreHorizontal, FileText, ChevronRight } from "lucide-react";
 import {
   DropdownMenu,
@@ -212,7 +212,7 @@ export default function Applications() {
                         {app.applicationNumber || `#APP-${app.id.substring(0,6).toUpperCase()}`}
                       </td>
                       <td className="px-6 py-3" style={{ color: "#57534E" }}>
-                        {format(new Date(app.createdAt), 'MMM dd, yyyy')}
+                        {formatDate(app.createdAt)}
                       </td>
                       <td className="px-6 py-3">
                         <span className="font-medium" style={{ color: "#1C1917" }}>{app.totalChildren + app.totalAdults} Total</span>

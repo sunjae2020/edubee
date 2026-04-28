@@ -182,7 +182,7 @@ function AddContactModal({ prospectId, onClose, onAdded }: {
         <div className="p-5 space-y-3">
           {err && <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded">{err}</p>}
           {[
-            { k: "fullName", label: "Full Name *", placeholder: "홍길동" },
+            { k: "fullName", label: "Full Name *", placeholder: "Hong Gildong" },
             { k: "email",    label: "Email",       placeholder: "contact@company.com" },
             { k: "phone",    label: "Phone",       placeholder: "+61 400 000 000" },
             { k: "title",    label: "Job Title",   placeholder: "CEO" },

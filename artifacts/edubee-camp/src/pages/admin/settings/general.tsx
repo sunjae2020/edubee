@@ -703,12 +703,12 @@ export default function GeneralSettings() {
             </div>
 
             <div className="rounded-lg bg-(--e-orange-lt) border border-(--e-orange)/20 px-4 py-3 text-xs text-[#92400E] space-y-1">
-              <p className="font-medium">Resend 설정 방법</p>
+              <p className="font-medium">How to set up Resend</p>
               <ol className="list-decimal list-inside space-y-0.5 text-[#A16207]">
-                <li><a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="underline">resend.com</a>에서 계정 생성</li>
-                <li>Domains 메뉴에서 발송 도메인 추가 및 인증 (DNS 설정)</li>
-                <li>API Keys 메뉴에서 API 키 생성</li>
-                <li>아래 필드에 API 키와 발송 이메일 주소를 입력 후 저장</li>
+                <li>Create an account at <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="underline">resend.com</a></li>
+                <li>Add and verify your sending domain under the Domains menu (DNS setup)</li>
+                <li>Generate an API key under the API Keys menu</li>
+                <li>Enter the API key and sending email address in the fields below and save</li>
               </ol>
             </div>
 
@@ -721,7 +721,7 @@ export default function GeneralSettings() {
                     value={resend.apiKey}
                     onChange={e => setResend(s => ({ ...s, apiKey: e.target.value }))}
                     className="h-8 text-sm pr-9 font-mono"
-                    placeholder={resendData?.hasApiKey ? "re_••••••••  (저장됨)" : "re_xxxxxxxxxxxxxxxxxxxx"}
+                    placeholder={resendData?.hasApiKey ? "re_••••••••  (saved)" : "re_xxxxxxxxxxxxxxxxxxxx"}
                   />
                   <button
                     type="button"
@@ -733,22 +733,22 @@ export default function GeneralSettings() {
                 </div>
                 {resendData?.hasApiKey && (
                   <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
-                    <CheckCircle2 className="w-3 h-3" /> API 키가 저장되어 있습니다. 변경하려면 새 키를 입력하세요.
+                    <CheckCircle2 className="w-3 h-3" /> An API key is saved. Enter a new key to replace it.
                   </p>
                 )}
               </div>
               <div>
-                <Label className="text-xs">발송 이메일 주소 (From)</Label>
+                <Label className="text-xs">Sender Email Address (From)</Label>
                 <Input
                   value={resend.from}
                   onChange={e => setResend(s => ({ ...s, from: e.target.value }))}
                   className="mt-1 h-8 text-sm"
                   placeholder="noreply@yourdomain.com"
                 />
-                <p className="text-[10px] text-muted-foreground mt-1">Resend에서 인증된 도메인의 이메일이어야 합니다.</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Must be an email from a domain verified in Resend.</p>
               </div>
               <div>
-                <Label className="text-xs">발송자 이름 (From Name)</Label>
+                <Label className="text-xs">Sender Name (From Name)</Label>
                 <Input
                   value={resend.fromName}
                   onChange={e => setResend(s => ({ ...s, fromName: e.target.value }))}
@@ -761,20 +761,20 @@ export default function GeneralSettings() {
             <div className="flex items-center gap-2 pt-1 flex-wrap">
               <Button size="sm" className="bg-(--e-orange) hover:bg-[#d97706] text-white gap-1.5" onClick={() => saveResend.mutate()} disabled={saveResend.isPending || loading}>
                 {saveResend.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saveResend.isSuccess ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
-                저장
+                Save
               </Button>
 
               <div className="flex items-center gap-1.5 ml-auto">
                 <Input
                   value={testTarget}
                   onChange={e => setTestTarget(e.target.value)}
-                  placeholder="테스트 수신 이메일..."
+                  placeholder="Test recipient email..."
                   className="h-8 text-xs w-52"
                   type="email"
                 />
                 <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs shrink-0" onClick={() => sendTestEmail.mutate()} disabled={sendTestEmail.isPending}>
                   {sendTestEmail.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                  테스트 발송
+                  Send Test
                 </Button>
               </div>
             </div>

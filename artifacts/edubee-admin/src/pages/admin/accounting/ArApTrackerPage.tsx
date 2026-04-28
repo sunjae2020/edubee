@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { SortableTh, useSortState, useSorted } from "@/components/ui/sortable-th";
+import { DateInput } from "@/components/ui/date-input";
 import { TableFooter } from "@/components/ui/table-footer";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -263,11 +264,9 @@ function FilterBar({
         onChange={e => onSearch(e.target.value)}
         className="h-9 text-sm w-56"
       />
-      <Input type="date" value={dateFrom} onChange={e => onDateFrom(e.target.value)}
-        className="h-9 text-sm w-36" />
+      <DateInput value={dateFrom} onChange={onDateFrom} className="w-36" />
       <span className="text-stone-400 text-sm">—</span>
-      <Input type="date" value={dateTo} onChange={e => onDateTo(e.target.value)}
-        className="h-9 text-sm w-36" />
+      <DateInput value={dateTo} onChange={onDateTo} className="w-36" />
       <div className="flex items-center gap-1.5 flex-wrap">
         {statuses.map(s => (
           <button

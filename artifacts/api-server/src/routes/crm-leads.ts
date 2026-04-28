@@ -399,7 +399,7 @@ router.patch("/crm/leads/:id/toggle-active", authenticate, requireRole(...ADMIN_
   }
 });
 
-// ─── DELETE /api/crm/leads/bulk  (super_admin 임시/영구 삭제) ────────────────
+// ─── DELETE /api/crm/leads/bulk  (super_admin soft/permanent delete) ─────────
 router.delete("/crm/leads/bulk", authenticate, async (req, res) => {
   if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
   try {

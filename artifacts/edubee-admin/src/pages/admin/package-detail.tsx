@@ -446,7 +446,7 @@ export default function PackageDetail() {
             inputType="number"
             display={
               rec.adults != null
-                ? <span className="text-blue-600 font-semibold">{rec.adults} 명</span>
+                ? <span className="text-blue-600 font-semibold">{rec.adults} people</span>
                 : <span className="text-muted-foreground/50">—</span>
             }
           />
@@ -464,7 +464,7 @@ export default function PackageDetail() {
             inputType="number"
             display={
               rec.children != null
-                ? <span className="text-green-600 font-semibold">{rec.children} 명</span>
+                ? <span className="text-green-600 font-semibold">{rec.children} people</span>
                 : <span className="text-muted-foreground/50">—</span>
             }
           />

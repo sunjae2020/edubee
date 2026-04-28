@@ -101,7 +101,7 @@ export function ChatWidget() {
         const u = [...prev];
         u[u.length - 1] = {
           role: "assistant",
-          content: text || "답변을 불러오지 못했습니다.",
+          content: text || "Unable to retrieve a response.",
           sources: sources.length ? sources : undefined,
           chunksUsed: chunksUsed || undefined,
         };
@@ -110,7 +110,7 @@ export function ChatWidget() {
     } catch (e: any) {
       setMessages(prev => {
         const u = [...prev];
-        u[u.length - 1] = { role: "assistant", content: e.message ?? "오류가 발생했습니다. 잠시 후 다시 시도해주세요." };
+        u[u.length - 1] = { role: "assistant", content: e.message ?? "An error occurred. Please try again shortly." };
         return u;
       });
     } finally {
@@ -126,7 +126,7 @@ export function ChatWidget() {
   const reset = () => {
     setMessages([{
       role: "assistant",
-      content: "대화가 초기화되었습니다. 새로운 질문을 입력해 주세요! 😊",
+      content: "Conversation reset. Feel free to ask a new question! 😊",
     }]);
   };
 
@@ -150,14 +150,14 @@ export function ChatWidget() {
                   <Bot className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm text-white leading-tight">Edubee AI 어시스턴트</p>
-                  <p className="text-[10px] text-white/75 leading-tight">Gemini 2.5 · 지식 베이스 기반 답변</p>
+                  <p className="font-semibold text-sm text-white leading-tight">Edubee AI Assistant</p>
+                  <p className="text-[10px] text-white/75 leading-tight">Gemini 2.5 · Knowledge base powered</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
                 <button
                   onClick={reset}
-                  title="대화 초기화"
+                  title="Reset conversation"
                   className="w-7 h-7 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-white/80" />
@@ -202,7 +202,7 @@ export function ChatWidget() {
                         {msg.chunksUsed ? (
                           <span className="inline-flex items-center gap-0.5 text-[10px] bg-(--e-orange)/8 text-(--e-orange) px-1.5 py-0.5 rounded-full">
                             <Zap className="w-2 h-2" />
-                            {msg.chunksUsed}개 문서 참조
+                            {msg.chunksUsed} docs referenced
                           </span>
                         ) : null}
                         {msg.sources?.map((s, si) => (
@@ -219,7 +219,7 @@ export function ChatWidget() {
               {/* Quick questions — shown only at start */}
               {messages.length === 1 && (
                 <div className="pt-1 space-y-1.5">
-                  <p className="text-[10px] text-gray-400 px-0.5">자주 묻는 질문</p>
+                  <p className="text-[10px] text-gray-400 px-0.5">Frequently asked questions</p>
                   {QUICK_QUESTIONS.map(q => (
                     <button
                       key={q}
@@ -244,7 +244,7 @@ export function ChatWidget() {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={handleKey}
-                  placeholder="질문을 입력하세요..."
+                  placeholder="Type your question..."
                   disabled={streaming}
                   className="flex-1 bg-transparent text-sm text-gray-800 placeholder:text-gray-400 outline-none disabled:opacity-60"
                 />
@@ -260,7 +260,7 @@ export function ChatWidget() {
                 </button>
               </div>
               <p className="text-[9px] text-gray-400 mt-1.5 text-center">
-                등록된 문서를 기반으로 답변합니다 · AI 답변은 참고용입니다
+                Answers are based on registered documents · AI responses are for reference only
               </p>
             </div>
           </motion.div>
@@ -274,7 +274,7 @@ export function ChatWidget() {
         whileTap={{ scale: 0.95 }}
         className="fixed bottom-4 right-4 z-40 flex items-center gap-2 bg-(--e-orange) text-white shadow-lg hover:bg-[#d97706] transition-colors rounded-full"
         style={{ padding: open ? "10px 16px 10px 12px" : "12px 18px 12px 14px" }}
-        title={open ? "채팅 닫기" : "AI 상담하기"}
+        title={open ? "Close chat" : "AI Consultation"}
       >
         <AnimatePresence mode="wait">
           {open ? (
@@ -296,7 +296,7 @@ export function ChatWidget() {
               transition={{ duration: 0.2 }}
               className="text-sm font-semibold overflow-hidden whitespace-nowrap"
             >
-              AI 상담
+              AI Chat
             </motion.span>
           )}
         </AnimatePresence>

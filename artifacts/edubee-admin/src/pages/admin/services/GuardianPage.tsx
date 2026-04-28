@@ -110,7 +110,7 @@ export default function GuardianPage() {
         >
           <div className="flex items-center gap-2 font-medium" style={{ color: "#C2410C" }}>
             <AlertCircle size={16} style={{ color: "var(--e-orange)" }} />
-            이번 달 가디언 청구 예정: {billingDueCount}건
+            Guardian billing due this month: {billingDueCount}
           </div>
           <button
             onClick={() => navigate("/admin/services/guardian?billingDue=1")}

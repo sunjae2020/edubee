@@ -517,7 +517,7 @@ export function ApplicationModal({ open, onClose, programs, defaultProgramId }: 
                         <Input value={primary.lastName} onChange={(v) => updatePrimary("lastName", v)} placeholder="e.g. Kim" />
                       </Field>
                       <Field label={t("apply.nativeName")}>
-                        <Input value={primary.fullNameNative} onChange={(v) => updatePrimary("fullNameNative", v)} placeholder="김지원" />
+                        <Input value={primary.fullNameNative} onChange={(v) => updatePrimary("fullNameNative", v)} placeholder="Kim Jiwon" />
                       </Field>
                       <Field label={t("apply.englishName")}>
                         <Input value={primary.englishName} onChange={(v) => updatePrimary("englishName", v)} placeholder="e.g. Kevin" />

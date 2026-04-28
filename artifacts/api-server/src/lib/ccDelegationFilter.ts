@@ -1,16 +1,16 @@
 /**
  * CC Delegation Contract Filter
- * camp_coordinator가 접근할 수 있는 Contract ID 목록을 반환.
- * 위임된 Package Group → owner 스키마의 campApplications → contracts 경로로 탐색.
+ * Returns a list of Contract IDs accessible to a camp_coordinator.
+ * Traverses: delegated Package Group → campApplications in owner schema → contracts.
  *
- * Note: 미들웨어(routes/index.ts)가 CC 요청을 owner 스키마로 라우팅하므로
- * db.select()는 이미 owner 스키마에서 실행됨. 이 함수는 pool(raw SQL)로
- * 명시적 스키마를 사용하여 안전하게 contract ID를 반환.
+ * Note: Since the middleware (routes/index.ts) routes CC requests to the owner schema,
+ * db.select() already runs in the owner schema. This function uses pool (raw SQL) with
+ * explicit schema names to safely return contract IDs.
  */
 import { pool } from "@workspace/db";
 
 /**
- * CC org의 위임된 packageGroupId 목록 + owner subdomain 반환 (public 스키마 직접 조회)
+ * Returns the list of delegated packageGroupIds for a CC org + owner subdomain (queries public schema directly)
  */
 export async function getCCDelegatedPackageGroupIds(coordinatorOrgId: string): Promise<string[]> {
   const result = await pool.query<{ package_group_id: string }>(
@@ -25,8 +25,8 @@ export async function getCCDelegatedPackageGroupIds(coordinatorOrgId: string): P
 }
 
 /**
- * CC가 접근 가능한 Contract ID 목록 반환.
- * owner 스키마에서 직접 조회하여 cross-tenant 접근을 지원.
+ * Returns the list of Contract IDs accessible to a CC.
+ * Queries the owner schema directly to support cross-tenant access.
  */
 export async function getCCDelegatedContractIds(coordinatorOrgId: string): Promise<string[]> {
   // Get delegated PG IDs + owner subdomain in one query

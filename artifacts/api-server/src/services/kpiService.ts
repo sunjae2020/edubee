@@ -2,7 +2,7 @@ import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
 // ─────────────────────────────────────────────
-// 타입 정의
+// Type definitions
 // ─────────────────────────────────────────────
 
 export interface KpiPeriodInput {
@@ -17,27 +17,27 @@ export interface StaffKpiResult {
   periodType: string;
   periodStart: string;
   periodEnd: string;
-  // 활동 KPI
+  // Activity KPI
   leadCount: number;
   conversionCount: number;
   conversionRate: number;   // %
   paymentProcessedCount: number;
   visaGrantedCount: number;
-  // 파이낸스 KPI
+  // Finance KPI
   arScheduled: number;
   arCollected: number;
   arOverdue: number;
   apScheduled: number;
   apPaid: number;
   netRevenue: number;       // arCollected - apPaid
-  // 목표 & 성과급
+  // Target & incentive
   targetAmount: number;
   excessAmount: number;     // netRevenue - targetAmount
   incentiveType: string | null;   // percentage | fixed | none
   incentiveRate: number | null;
   incentiveFixed: number | null;
-  incentiveAmount: number;  // 최종 계산 성과급
-  // 기간 레코드 id (이미 저장된 경우)
+  incentiveAmount: number;  // Final calculated incentive
+  // Period record id (if already saved)
   kpiPeriodId?: string;
   kpiStatus?: string;       // draft | submitted | approved | paid
 }
@@ -47,7 +47,7 @@ export interface TeamKpiResult {
   teamName: string;
   memberCount: number;
   members: StaffKpiResult[];
-  // 팀 합산 (members 롤업)
+  // Team totals (members rollup)
   leadCount: number;
   conversionCount: number;
   conversionRate: number;
@@ -68,11 +68,11 @@ export interface TeamKpiResult {
 }
 
 // ─────────────────────────────────────────────
-// 헬퍼: 성과급 계산
+// Helper: incentive calculation
 // ─────────────────────────────────────────────
-// 공식: excess > 0 일 때만 성과급 발생
+// Formula: incentive is only generated when excess > 0
 //   percentage: excessAmount × incentiveRate
-//   fixed:      incentiveFixed (초과 달성 시 고정 지급)
+//   fixed:      incentiveFixed (fixed payout when target exceeded)
 //   none:       0
 
 function calcIncentive(
@@ -92,7 +92,7 @@ function calcIncentive(
 }
 
 // ─────────────────────────────────────────────
-// 핵심 함수 1: 직원 KPI 계산
+// Core function 1: Calculate staff KPI
 // ─────────────────────────────────────────────
 
 export async function calcStaffKpi(
@@ -101,7 +101,7 @@ export async function calcStaffKpi(
 ): Promise<StaffKpiResult> {
   const { periodStart, periodEnd, periodType } = period;
 
-  // ① 직원 정보
+  // ① Staff info
   const staffRow = await db.execute(sql`
     SELECT id, full_name
     FROM users
@@ -111,7 +111,7 @@ export async function calcStaffKpi(
   const staff = staffRow.rows[0] as { id: string; full_name: string };
   if (!staff) throw new Error(`Staff not found: ${staffId}`);
 
-  // ② 활동 KPI — 리드 수 (closed/lost 제외한 활성 리드)
+  // ② Activity KPI — lead count (active leads, excluding closed/lost)
   const leadRes = await db.execute(sql`
     SELECT COUNT(*) AS lead_count
     FROM leads
@@ -122,7 +122,7 @@ export async function calcStaffKpi(
   `);
   const leadCount = Number((leadRes.rows[0] as any).lead_count ?? 0);
 
-  // ③ 활동 KPI — 전환 수 (Contract 생성 기준, camp_provider_id 로 직원 귀속)
+  // ③ Activity KPI — conversion count (based on Contract creation, attributed via camp_provider_id)
   const convRes = await db.execute(sql`
     SELECT COUNT(*) AS conversion_count
     FROM contracts
@@ -137,8 +137,8 @@ export async function calcStaffKpi(
       ? Math.round((conversionCount / leadCount) * 10000) / 100
       : 0;
 
-  // ④ 활동 KPI — 비자 승인 수
-  // visa_decision_date + visa_granted = true 조합으로 집계
+  // ④ Activity KPI — visa approvals count
+  // Aggregated by visa_decision_date + visa_granted = true combination
   const visaRes = await db.execute(sql`
     SELECT COUNT(*) AS visa_count
     FROM study_abroad_mgt
@@ -149,9 +149,9 @@ export async function calcStaffKpi(
   `);
   const visaGrantedCount = Number((visaRes.rows[0] as any).visa_count ?? 0);
 
-  // ⑤ 활동 KPI — 결제 처리 건수
-  // payment_lines.staff_id 직접 사용 (backfill 완료 후 정확한 집계)
-  // payment_headers.created_by 도 OR 조건으로 병행 (안전망)
+  // ⑤ Activity KPI — payment processing count
+  // Uses payment_lines.staff_id directly (accurate after backfill completion)
+  // Also uses payment_headers.created_by as OR condition (safety net)
   const paymentRes = await db.execute(sql`
     SELECT COUNT(*) AS payment_count
     FROM payment_lines pl
@@ -167,17 +167,17 @@ export async function calcStaffKpi(
     (paymentRes.rows[0] as any).payment_count ?? 0
   );
 
-  // ⚠️ AR/AP 집계는 contracts.owner_id 기준
-  // 현재 DB: contracts 51건 중 50건 owner_id = NULL (2026-03 기준)
-  // → KPI 금액이 낮게 집계되는 원인
+  // ⚠️ AR/AP aggregation is based on contracts.owner_id
+  // Current DB: 50 out of 51 contracts have owner_id = NULL (as of 2026-03)
+  // → This is why KPI amounts are under-aggregated
   //
-  // 해결 방법 (운영 프로세스):
-  // 1. 계약 생성 시 owner_id 필수 입력 (UI에서 required 처리 필요)
-  // 2. 기존 데이터: 계약 담당자 확인 후 수동 입력 필요
-  //    UPDATE contracts SET owner_id = '{담당자_uuid}'
+  // Resolution (operational process):
+  // 1. Make owner_id required when creating a contract (handle as required in UI)
+  // 2. Existing data: confirm contract owner then enter manually
+  //    UPDATE contracts SET owner_id = '{staff_uuid}'
   //    WHERE id = '{contract_id}';
-  // 3. leads.assigned_staff_id 도 동일하게 입력 필요 (현재 6.7% 만 입력)
-  // ⑥ 파이낸스 KPI — AR/AP (contracts.camp_provider_id 기준)
+  // 3. leads.assigned_staff_id also needs to be filled in (currently only 6.7% populated)
+  // ⑥ Finance KPI — AR/AP (based on contracts.camp_provider_id)
   const arApRes = await db.execute(sql`
     SELECT
       COALESCE(SUM(cp.ar_amount), 0)                                                     AS ar_scheduled,
@@ -200,7 +200,7 @@ export async function calcStaffKpi(
   const apPaid      = Number(arAp.ap_paid      ?? 0);
   const netRevenue  = Math.round((arCollected - apPaid) * 100) / 100;
 
-  // ⑦ 목표 금액 조회 (kpi_targets — staff 우선, 없으면 team 기준)
+  // ⑦ Fetch target amount (kpi_targets — staff first, fall back to team)
   const targetRes = await db.execute(sql`
     SELECT
       kt.target_amount,
@@ -217,7 +217,7 @@ export async function calcStaffKpi(
     LIMIT 1
   `);
 
-  // staff 목표 없으면 team 목표 조회
+  // If no staff target, look up team target
   let targetRow = targetRes.rows[0] as any;
   if (!targetRow) {
     const teamTargetRes = await db.execute(sql`
@@ -246,7 +246,7 @@ export async function calcStaffKpi(
   const excessAmount   = Math.round(Math.max(0, netRevenue - targetAmount) * 100) / 100;
   const incentiveAmount = calcIncentive(excessAmount, incentiveType, incentiveRate, incentiveFixed);
 
-  // ⑧ 기존 staff_kpi_periods 레코드 조회
+  // ⑧ Fetch existing staff_kpi_periods record
   const kpiRow = await db.execute(sql`
     SELECT id, status
     FROM staff_kpi_periods
@@ -286,10 +286,10 @@ export async function calcStaffKpi(
 }
 
 // ─────────────────────────────────────────────
-// 핵심 함수 2: KPI 저장/갱신 (upsert)
+// Core function 2: Save/update KPI (upsert)
 // ─────────────────────────────────────────────
-// draft | submitted 상태일 때만 덮어쓴다.
-// approved | paid 상태는 수정 불가.
+// Only overwrites when status is draft | submitted.
+// approved | paid status cannot be modified.
 
 export async function saveStaffKpi(
   data: StaffKpiResult
@@ -304,7 +304,7 @@ export async function saveStaffKpi(
   `);
   const row = existing.rows[0] as any;
 
-  // approved / paid 는 수정 금지
+  // approved / paid cannot be modified
   if (row && (row.status === "approved" || row.status === "paid")) {
     return { id: row.id, status: row.status };
   }
@@ -368,21 +368,21 @@ export async function saveStaffKpi(
 }
 
 // ─────────────────────────────────────────────
-// 핵심 함수 3: 팀 KPI 계산 (직원 롤업)
+// Core function 3: Calculate team KPI (staff rollup)
 // ─────────────────────────────────────────────
 
 export async function calcTeamKpi(
   teamId: string,
   period: KpiPeriodInput
 ): Promise<TeamKpiResult> {
-  // 팀 정보
+  // Team info
   const teamRow = await db.execute(sql`
     SELECT id, name FROM teams WHERE id = ${teamId} LIMIT 1
   `);
   const team = teamRow.rows[0] as any;
   if (!team) throw new Error(`Team not found: ${teamId}`);
 
-  // 팀 소속 직원 목록 (users.team_id 구조)
+  // List of team members (users.team_id structure)
   const membersRes = await db.execute(sql`
     SELECT id FROM users
     WHERE team_id = ${teamId}
@@ -390,12 +390,12 @@ export async function calcTeamKpi(
   `);
   const memberIds = (membersRes.rows as any[]).map((r) => r.id as string);
 
-  // 각 직원 KPI 계산
+  // Calculate KPI for each staff member
   const members: StaffKpiResult[] = await Promise.all(
     memberIds.map((id) => calcStaffKpi(id, period))
   );
 
-  // 팀 합산 롤업
+  // Team aggregate rollup
   const sum = <K extends keyof StaffKpiResult>(key: K): number =>
     members.reduce((acc, m) => acc + Number(m[key] ?? 0), 0);
 
@@ -405,7 +405,7 @@ export async function calcTeamKpi(
   const totalAp          = sum("apPaid");
   const netRevenue       = Math.round((totalAr - totalAp) * 100) / 100;
 
-  // 팀 목표 조회
+  // Fetch team target
   const teamTargetRes = await db.execute(sql`
     SELECT target_amount, incentive_type, incentive_rate, incentive_fixed
     FROM kpi_targets
@@ -425,7 +425,7 @@ export async function calcTeamKpi(
   const excessAmount   = Math.round(Math.max(0, netRevenue - targetAmount) * 100) / 100;
   const incentiveAmount = calcIncentive(excessAmount, incentiveType, incentiveRate, incentiveFixed);
 
-  // 기존 team_kpi_periods 조회
+  // Fetch existing team_kpi_periods record
   const tkRow = await db.execute(sql`
     SELECT id, status FROM team_kpi_periods
     WHERE team_id    = ${teamId}
@@ -464,7 +464,7 @@ export async function calcTeamKpi(
 }
 
 // ─────────────────────────────────────────────
-// 핵심 함수 4: 팀 KPI 저장/갱신 (upsert)
+// Core function 4: Save/update team KPI (upsert)
 // ─────────────────────────────────────────────
 
 export async function saveTeamKpi(

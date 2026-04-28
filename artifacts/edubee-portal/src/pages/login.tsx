@@ -20,13 +20,13 @@ interface Tenant {
   subdomain: string | null;
 }
 
-/** dev환경 여부: localhost 또는 .replit.app 도메인 */
+/** Whether in dev environment: localhost or .replit.app domain */
 function isDevEnv() {
   const h = window.location.hostname;
   return h === "localhost" || h === "127.0.0.1" || h.endsWith(".replit.app") || h.endsWith(".repl.co");
 }
 
-/** 서브도메인에서 테넌트 슬러그 추출 */
+/** Extract tenant slug from subdomain */
 function getTenantSlugFromDomain(): string | null {
   const h = window.location.hostname;
   const match = h.match(/^([^.]+)\.edubee\.co$/);
@@ -52,7 +52,7 @@ export default function LoginPage() {
   const primary = theme.primaryColor;
   const dk      = darken(primary, 15);
 
-  // 도메인에 서브도메인이 없는 개발 환경이면 테넌트 목록 로드
+  // Load tenant list if in dev environment with no subdomain
   useEffect(() => {
     if (isDevEnv() && !getTenantSlugFromDomain()) {
       setShowTenantSelector(true);
@@ -78,7 +78,7 @@ export default function LoginPage() {
     setError("");
     setIsLoading(true);
     try {
-      // dev 환경에서 선택된 테넌트를 localStorage에 저장 → api.ts의 headers()가 읽어서 X-Organisation-Id로 전송
+      // Save selected tenant to localStorage in dev env → headers() in api.ts reads it and sends as X-Organisation-Id
       if (showTenantSelector && selectedTenant) {
         localStorage.setItem("portal_tenant_slug", selectedTenant);
       } else {
@@ -206,7 +206,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* ── 개발환경 테넌트 선택기 ── */}
+            {/* ── Dev environment tenant selector ── */}
             {showTenantSelector && tenants.length > 0 && (
               <div>
                 <label className="block text-xs font-medium text-[#57534E] mb-1">

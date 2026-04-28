@@ -287,7 +287,7 @@ router.post("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), asy
       notes, assignedStaffId, agentAccountId,
       signatureImage, signatureDate,
       participants,
-      // ── 미성년자 보호자 동의 (Australian Privacy Act — APP 3.3) ────────────
+      // ── Guardian consent for minors (Australian Privacy Act — APP 3.3) ────────
       guardianConsentGiven, guardianConsentAt, guardianEmail, guardianPhone,
     } = req.body;
 
@@ -301,7 +301,7 @@ router.post("/camp-applications", authenticate, requireRole(...ADMIN_ROLES), asy
       return res.status(400).json({ error: "Package is required" });
     }
 
-    // ── 미성년자 보호자 동의 검증 ────────────────────────────────────────────
+    // ── Guardian consent validation for minors ────────────────────────────────
     if (applicantDob) {
       const ageMs = Date.now() - new Date(applicantDob).getTime();
       const ageMY = ageMs / (365.25 * 24 * 60 * 60 * 1000);
@@ -775,7 +775,7 @@ router.post("/camp-applications/:id/convert-to-contract", authenticate, requireR
   }
 });
 
-// ─── DELETE /api/camp-applications/bulk  (super_admin 임시/영구 삭제) ─────────
+// ─── DELETE /api/camp-applications/bulk  (super_admin soft/permanent delete) ──
 router.delete("/camp-applications/bulk", authenticate, async (req, res) => {
   if (!["super_admin","admin"].includes((req.user as any)?.role)) return res.status(403).json({ error: "Forbidden" });
   try {

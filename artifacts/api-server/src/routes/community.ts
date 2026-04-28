@@ -424,7 +424,7 @@ router.delete("/community/comments/:id", authenticate, async (req, res) => {
   }
 });
 
-// ─── DELETE /api/community/bulk  (super_admin 영구 삭제) ─────────────────────
+// ─── DELETE /api/community/bulk  (super_admin permanent delete) ──────────────
 router.delete("/community/bulk", authenticate, async (req, res) => {
   if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
   try {

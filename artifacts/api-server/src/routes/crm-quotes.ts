@@ -663,7 +663,7 @@ router.post("/crm/quotes/:id/send-email", authenticate, requireRole(...ADMIN_ROL
   }
 });
 
-// ─── DELETE /api/crm/quotes/bulk  (super_admin 임시/영구 삭제) ────────────────
+// ─── DELETE /api/crm/quotes/bulk  (super_admin soft/permanent delete) ─────────
 router.delete("/crm/quotes/bulk", authenticate, async (req, res) => {
   if ((req.user as any)?.role !== "super_admin") return res.status(403).json({ error: "Forbidden" });
   try {

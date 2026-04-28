@@ -268,12 +268,12 @@ export default function CrmLeadsPage() {
   const softDelMutation = useMutation({
     mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/crm/leads/bulk`, { data: { ids, soft: true } }).then(r => r.data),
     onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["crm-leads-table"] }); clearSelection(); toast({ title: `${ids.length} moved to trash` }); },
-    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
   });
   const hardDelMutation = useMutation({
     mutationFn: (ids: string[]) => axios.delete(`${BASE}/api/crm/leads/bulk`, { data: { ids } }).then(r => r.data),
     onSuccess: (_d, ids) => { qc.invalidateQueries({ queryKey: ["crm-leads-table"] }); clearSelection(); toast({ title: `${ids.length} permanently deleted` }); },
-    onError: () => toast({ title: "삭제 실패", variant: "destructive" }),
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
   });
   const bulkLoading = softDelMutation.isPending || hardDelMutation.isPending;
 
@@ -517,7 +517,7 @@ export default function CrmLeadsPage() {
               <SelectField value={form.status} onChange={v => setForm(f => ({ ...f, status: v }))} options={KANBAN_COLS.map(c => c.key)} placeholder="Status" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-stone-600">Assigned Staff (담당 직원)</Label>
+              <Label className="text-xs font-medium text-stone-600">Assigned Staff</Label>
               <Select value={form.assignedStaffId || "__none__"} onValueChange={v => setForm(f => ({ ...f, assignedStaffId: v === "__none__" ? "" : v }))}>
                 <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select staff…" /></SelectTrigger>
                 <SelectContent>

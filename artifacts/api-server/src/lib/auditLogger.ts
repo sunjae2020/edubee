@@ -2,9 +2,9 @@ import { db } from "@workspace/db";
 import { auditLogs } from "@workspace/db/schema";
 
 /**
- * CUD 감사 로그 기록 유틸 — S4-02
- * contracts, invoices, payment_headers 등 핵심 테이블 변경 이력 추적.
- * 민감 정보(여권번호, 비밀번호 등)는 자동으로 [REDACTED] 처리.
+ * CUD audit log utility — S4-02
+ * Tracks change history for core tables: contracts, invoices, payment_headers, etc.
+ * Sensitive fields (passport number, password, etc.) are automatically [REDACTED].
  */
 
 const SENSITIVE_FIELDS = [
@@ -56,13 +56,13 @@ export async function logAudit(params: AuditParams): Promise<void> {
       userAgent:     params.userAgent?.slice(0, 500) ?? null,
     });
   } catch (err) {
-    // 감사 로그 실패는 주 트랜잭션을 막지 않음 — 경고 로그만 기록
+    // Audit log failure does not block the main transaction — warning log only
     console.warn("[auditLogger] Failed to write audit log:", err);
   }
 }
 
 /**
- * Express req 객체에서 공통 감사 파라미터 추출 헬퍼
+ * Helper to extract common audit parameters from an Express req object
  */
 export function auditParamsFromReq(req: any): Pick<AuditParams, "changedBy" | "changedByEmail" | "changedByRole" | "ipAddress" | "userAgent"> {
   return {

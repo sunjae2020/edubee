@@ -1747,7 +1747,7 @@ export default function QuoteBuilderPage() {
               <Input
                 value={originalName}
                 onChange={(e) => setOriginalName(e.target.value)}
-                placeholder="e.g. 홍길동"
+                placeholder="e.g. Gil-dong Hong"
                 className="h-8 text-sm mt-1"
               />
             </div>

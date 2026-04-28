@@ -12,7 +12,7 @@ export const faqItem = defineType({
       validation: R => R.required(),
       fields: [
         { name: 'en', type: 'string', title: 'English' },
-        { name: 'ko', type: 'string', title: '한국어' },
+        { name: 'ko', type: 'string', title: 'Korean' },
         { name: 'ja', type: 'string', title: '日本語' },
         { name: 'zh', type: 'string', title: '中文' },
         { name: 'th', type: 'string', title: 'ภาษาไทย' },
@@ -26,7 +26,7 @@ export const faqItem = defineType({
       validation: R => R.required(),
       fields: [
         { name: 'en', type: 'text', title: 'English', rows: 4 },
-        { name: 'ko', type: 'text', title: '한국어', rows: 4 },
+        { name: 'ko', type: 'text', title: 'Korean', rows: 4 },
         { name: 'ja', type: 'text', title: '日本語', rows: 4 },
         { name: 'zh', type: 'text', title: '中文', rows: 4 },
         { name: 'th', type: 'text', title: 'ภาษาไทย', rows: 4 },

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/date-format";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -353,7 +353,7 @@ function KnowledgePanel({ onStatusChange }: { onStatusChange: () => void }) {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-[11px] text-muted-foreground whitespace-nowrap">
-                      {format(new Date(doc.createdAt), "yyyy.MM.dd HH:mm")}
+                      {formatDateTime(doc.createdAt)}
                     </td>
                     <td className="px-4 py-3">
                       <button

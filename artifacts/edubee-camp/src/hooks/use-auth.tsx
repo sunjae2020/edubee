@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 import { getViewAsUserId } from "./use-view-as";
 import axios from "axios";
 
-// JWT 페이로드 파싱 (클라이언트 측 읽기 전용)
+// Parse JWT payload (client-side read-only)
 function parseJwt(token: string): Record<string, any> | null {
   try {
     const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
@@ -15,8 +15,8 @@ function parseJwt(token: string): Record<string, any> | null {
   }
 }
 
-// BASE_PATH 에서 "/api/..." 앞의 접두사 제거
-// 예: "/camp/api/..." → "/api/..."  (Replit 프록시 라우팅 호환)
+// Strip prefix before "/api/..." from BASE_PATH
+// e.g. "/camp/api/..." → "/api/..."  (Replit proxy routing compatibility)
 const CAMP_BASE_STRIP = import.meta.env.BASE_URL.replace(/\/$/, ""); // e.g. "/camp"
 
 function fixApiUrl(url: string | undefined): string | undefined {
@@ -29,12 +29,12 @@ function fixApiUrl(url: string | undefined): string | undefined {
 
 // Attach JWT + View-As + Org-Id headers to every axios request
 axios.interceptors.request.use((config) => {
-  // URL 재작성: /camp/api/... → /api/...
+  // Rewrite URL: /camp/api/... → /api/...
   config.url = fixApiUrl(config.url);
 
   const token = localStorage.getItem("edubee_token");
   const viewAsId = getViewAsUserId();
-  // JWT에서 organisationId 추출 → X-Organisation-Id 헤더 설정
+  // Extract organisationId from JWT → set X-Organisation-Id header
   const orgId = token ? (parseJwt(token)?.organisationId ?? null) : null;
 
   if (token) config.headers["Authorization"] = `Bearer ${token}`;
@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const viewAsId = getViewAsUserId();
       const currentOrgId = currentToken ? (parseJwt(currentToken)?.organisationId ?? null) : null;
 
-      // URL 재작성: /camp/api/... → /api/...
+      // Rewrite URL: /camp/api/... → /api/...
       let url = input instanceof Request ? input.url : input.toString();
       const fixedUrl = fixApiUrl(url) ?? url;
       if (fixedUrl !== url) {

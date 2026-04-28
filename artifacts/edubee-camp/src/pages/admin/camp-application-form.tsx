@@ -254,7 +254,7 @@ function AdultCard({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Native Name">
-              <Input className={inputCls} value={data.fullNameNative} onChange={e => set("fullNameNative", e.target.value)} placeholder="e.g. 김지수" />
+              <Input className={inputCls} value={data.fullNameNative} onChange={e => set("fullNameNative", e.target.value)} placeholder="e.g. Kim Jisu" />
             </Field>
             <Field label="Relationship to Student">
               <select className={selectCls} value={data.relationship} onChange={e => set("relationship", e.target.value)}>
@@ -339,7 +339,7 @@ function StudentCard({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Native Name">
-              <Input className={inputCls} value={data.fullNameNative} onChange={e => set("fullNameNative", e.target.value)} placeholder="e.g. 김지수" />
+              <Input className={inputCls} value={data.fullNameNative} onChange={e => set("fullNameNative", e.target.value)} placeholder="e.g. Kim Jisu" />
             </Field>
             <Field label="English Name / Nick">
               <Input className={inputCls} value={data.englishName} onChange={e => set("englishName", e.target.value)} placeholder="e.g. Jessica" />
@@ -419,7 +419,7 @@ export default function AdminCampApplicationForm() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  // ── 신청인 정보
+  // ── Applicant information
   const [firstName,       setFirstName]       = useState("");
   const [lastName,        setLastName]        = useState("");
   const [originalName,    setOriginalName]    = useState("");
@@ -429,7 +429,7 @@ export default function AdminCampApplicationForm() {
   const [nationality,     setNationality]     = useState("");
   const [dob,             setDob]             = useState("");
 
-  // ── 프로그램
+  // ── Programme
   const [packageGroupId,  setPackageGroupId]  = useState("");
   const [packageId,       setPackageId]       = useState("");
   const [preferredStart,  setPreferredStart]  = useState("");
@@ -440,23 +440,23 @@ export default function AdminCampApplicationForm() {
   const [adults,    setAdults]    = useState<AdultParticipant[]>([]);
   const [students,  setStudents]  = useState<StudentParticipant[]>([]);
 
-  // ── 추가 요구사항
+  // ── Additional requirements
   const [specialReqs,     setSpecialReqs]     = useState("");
   const [dietaryReqs,     setDietaryReqs]     = useState("");
   const [medicalCond,     setMedicalCond]     = useState("");
 
-  // ── 비상 연락처
+  // ── Emergency contact
   const [ecName,          setEcName]          = useState("");
   const [ecPhone,         setEcPhone]         = useState("");
 
-  // ── 서명
+  // ── Signature
   const [signatureImage,  setSignatureImage]  = useState<string | null>(null);
   const [signDate,        setSignDate]        = useState("");
 
-  // ── 기타
+  // ── Other
   const [notes,           setNotes]           = useState("");
 
-  // ── 첨부 문서
+  // ── Attached documents
   const [stagedFiles,     setStagedFiles]     = useState<StagedFile[]>([]);
 
   // ── Sync participant arrays with counts
@@ -676,7 +676,7 @@ export default function AdminCampApplicationForm() {
       {/* ── Form ── */}
       <form id="camp-app-form" onSubmit={onSubmit} className="max-w-3xl mx-auto px-6 py-8 space-y-6">
 
-        {/* 신청인 정보 */}
+        {/* Applicant information */}
         <Section title="Primary Contact / Applicant">
           <div className="grid grid-cols-2 gap-4">
             <Field label="First Name" required>
@@ -688,7 +688,7 @@ export default function AdminCampApplicationForm() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Korean Name">
-              <Input value={originalName} onChange={e => setOriginalName(e.target.value)} placeholder="e.g. 김지수" className={inputCls} />
+              <Input value={originalName} onChange={e => setOriginalName(e.target.value)} placeholder="e.g. Kim Jisu" className={inputCls} />
             </Field>
             <Field label="English Name / Nick">
               <Input value={englishName} onChange={e => setEnglishName(e.target.value)} placeholder="e.g. Jisu" className={inputCls} />
@@ -712,7 +712,7 @@ export default function AdminCampApplicationForm() {
           </div>
         </Section>
 
-        {/* 프로그램 선택 */}
+        {/* Programme selection */}
         <Section title="Programme">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Package Group" required>
@@ -784,7 +784,7 @@ export default function AdminCampApplicationForm() {
           </div>
         )}
 
-        {/* 추가 요구사항 */}
+        {/* Additional requirements */}
         <Section title="General Requirements">
           <Field label="Special Requirements">
             <Textarea value={specialReqs} onChange={e => setSpecialReqs(e.target.value)} placeholder="Enter any special requirements" rows={3} className={textareaCls} />
@@ -797,7 +797,7 @@ export default function AdminCampApplicationForm() {
           </Field>
         </Section>
 
-        {/* 비상 연락처 */}
+        {/* Emergency contact */}
         <Section title="Emergency Contact">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Contact Name">
@@ -809,7 +809,7 @@ export default function AdminCampApplicationForm() {
           </div>
         </Section>
 
-        {/* 첨부 문서 */}
+        {/* Attached documents */}
         <div className="rounded-xl border border-border overflow-hidden">
           <div className="bg-(--e-orange) text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 flex items-center gap-2">
             <Paperclip className="w-4 h-4" />
@@ -825,7 +825,7 @@ export default function AdminCampApplicationForm() {
           </div>
         </div>
 
-        {/* 서명 */}
+        {/* Signature */}
         <Section title="Declaration & Signature">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
             <SignaturePad label="Signature (Draw)" value={signatureImage} onChange={setSignatureImage} height={160} />
@@ -835,7 +835,7 @@ export default function AdminCampApplicationForm() {
           </div>
         </Section>
 
-        {/* 메모 */}
+        {/* Internal notes */}
         <Section title="Internal Notes">
           <Field label="Notes (not visible to applicant)">
             <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Internal notes..." rows={4} className={textareaCls} />

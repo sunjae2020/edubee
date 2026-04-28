@@ -16,11 +16,11 @@ const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
 
 // ─────────────────────────────────────────────
-// 헬퍼: 기간 start/end 자동 계산
+// Helper: auto-calculate period start/end
 // ─────────────────────────────────────────────
 function resolvePeriod(
   periodType: string,
-  yearMonth?: string // 'YYYY-MM' 형식, 없으면 현재 월
+  yearMonth?: string // 'YYYY-MM' format; defaults to current month if omitted
 ): KpiPeriodInput {
   const base = yearMonth ? new Date(yearMonth + "-01") : new Date();
   const y = base.getFullYear();
@@ -61,9 +61,9 @@ function resolvePeriod(
 
 // ─────────────────────────────────────────────
 // GET /api/kpi/staff/:staffId
-// 직원 KPI 조회 (계산만, 저장 안함)
+// Retrieve staff KPI (calculate only, no save)
 // Query: ?periodType=monthly&yearMonth=2026-03
-// Access: admin/super_admin 전체 + 본인 + team_manager(팀원만)
+// Access: admin/super_admin all + self + team_manager (own team members only)
 // ─────────────────────────────────────────────
 router.get(
   "/staff/:staffId",
@@ -74,12 +74,12 @@ router.get(
       const currentUser   = (req as any).user as { id: string; role: string };
       const role          = currentUser?.role ?? "";
 
-      // ── 접근 제어 ────────────────────────────────────────────────────────
+      // ── Access control ────────────────────────────────────────────────────────
       if (!ADMIN_ROLES.includes(role)) {
         if (currentUser.id === staffId) {
-          // 본인 KPI → 허용
+          // Own KPI → allow
         } else if (role === "team_manager") {
-          // 팀장 → 같은 팀 직원만 허용
+          // Team manager → only allow their team members
           const rows = await db.execute(sql`
             SELECT team_id FROM users WHERE id = ${staffId} LIMIT 1
           `);
@@ -110,7 +110,7 @@ router.get(
 
 // ─────────────────────────────────────────────
 // GET /api/kpi/team/:teamId
-// 팀 KPI 조회 (소속 직원 롤업)
+// Retrieve team KPI (rollup of team members)
 // Query: ?periodType=monthly&yearMonth=2026-03
 // ─────────────────────────────────────────────
 router.get(
@@ -134,7 +134,7 @@ router.get(
 
 // ─────────────────────────────────────────────
 // GET /api/kpi/summary
-// 전체 직원 KPI 요약 (Admin용)
+// All-staff KPI summary (Admin use)
 // Query: ?periodType=monthly&yearMonth=2026-03
 // ─────────────────────────────────────────────
 router.get(
@@ -175,7 +175,7 @@ router.get(
 
 // ─────────────────────────────────────────────
 // POST /api/kpi/calculate/staff/:staffId
-// 직원 KPI 계산 후 DB 저장 (upsert)
+// Calculate staff KPI and save to DB (upsert)
 // ─────────────────────────────────────────────
 router.post(
   "/calculate/staff/:staffId",
@@ -202,7 +202,7 @@ router.post(
 
 // ─────────────────────────────────────────────
 // POST /api/kpi/calculate/team/:teamId
-// 팀 KPI 계산 후 DB 저장 (upsert)
+// Calculate team KPI and save to DB (upsert)
 // ─────────────────────────────────────────────
 router.post(
   "/calculate/team/:teamId",
@@ -229,8 +229,8 @@ router.post(
 
 // ─────────────────────────────────────────────
 // GET /api/kpi/targets
-// 목표 설정 목록 조회
-// Query: ?staffId=xxx 또는 ?teamId=xxx
+// List KPI targets
+// Query: ?staffId=xxx or ?teamId=xxx
 // ─────────────────────────────────────────────
 router.get(
   "/targets",
@@ -279,7 +279,7 @@ router.get(
 
 // ─────────────────────────────────────────────
 // POST /api/kpi/targets
-// 목표 설정 생성 (Admin 전용)
+// Create KPI target (Admin only)
 // ─────────────────────────────────────────────
 router.post(
   "/targets",
@@ -296,13 +296,13 @@ router.post(
       if (!staffId && !teamId) {
         return res.status(400).json({
           success: false,
-          error: "staffId 또는 teamId 중 하나는 필수입니다.",
+          error: "Either staffId or teamId is required.",
         });
       }
       if (!periodType || !targetAmount || !validFrom) {
         return res.status(400).json({
           success: false,
-          error: "periodType, targetAmount, validFrom 은 필수입니다.",
+          error: "periodType, targetAmount, and validFrom are required.",
         });
       }
 
@@ -341,7 +341,7 @@ router.post(
 
 // ─────────────────────────────────────────────
 // PUT /api/kpi/targets/:id
-// 목표 설정 수정
+// Update KPI target
 // ─────────────────────────────────────────────
 router.put(
   "/targets/:id",
@@ -369,7 +369,7 @@ router.put(
         WHERE id = ${id}
       `);
 
-      res.json({ success: true, message: "목표 설정이 수정되었습니다." });
+      res.json({ success: true, message: "KPI target updated successfully." });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }
@@ -378,9 +378,9 @@ router.put(
 
 // ─────────────────────────────────────────────
 // PATCH /api/kpi/approve/:kpiPeriodId
-// KPI 기간 승인 (Admin 전용)
+// Approve KPI period (Admin only)
 // Body: { type: 'staff' | 'team', approvedBy }
-// 상태: submitted → approved
+// Status: submitted → approved
 // ─────────────────────────────────────────────
 router.patch(
   "/approve/:kpiPeriodId",
@@ -404,7 +404,7 @@ router.patch(
           AND status IN ('draft', 'submitted')
       `);
 
-      res.json({ success: true, message: "승인 완료되었습니다." });
+      res.json({ success: true, message: "Approval completed." });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }
@@ -413,9 +413,9 @@ router.patch(
 
 // ─────────────────────────────────────────────
 // PATCH /api/kpi/pay/:kpiPeriodId
-// 성과급 지급 처리 (Admin 전용)
+// Process incentive payment (Admin only)
 // Body: { type: 'staff' | 'team' }
-// 상태: approved → paid
+// Status: approved → paid
 // ─────────────────────────────────────────────
 router.patch(
   "/pay/:kpiPeriodId",
@@ -437,7 +437,7 @@ router.patch(
           AND status  = 'approved'
       `);
 
-      res.json({ success: true, message: "지급 처리 완료되었습니다." });
+      res.json({ success: true, message: "Payment processed successfully." });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }
@@ -446,7 +446,7 @@ router.patch(
 
 // ─────────────────────────────────────────────
 // POST /api/kpi/scheduler/run
-// 스케줄러 즉시 수동 실행 (Admin/SuperAdmin 전용, 테스트용)
+// Trigger scheduler immediately / manually (Admin/SuperAdmin only, for testing)
 // Body: { periodType?: 'monthly' | 'quarterly' }
 // ─────────────────────────────────────────────
 router.post(

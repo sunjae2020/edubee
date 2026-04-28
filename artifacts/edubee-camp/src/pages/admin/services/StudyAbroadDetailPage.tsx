@@ -540,8 +540,8 @@ function OverviewTab({ record, onStageChange, onSave }: {
             <Input value={studentLastName} onChange={e => { setStudentLastName(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Kim" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-stone-500">Original Name (한글이름)</Label>
-            <Input value={studentOriginalName} onChange={e => { setStudentOriginalName(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. 김지원" />
+            <Label className="text-xs text-stone-500">Original Name (Native Script)</Label>
+            <Input value={studentOriginalName} onChange={e => { setStudentOriginalName(e.target.value); mark(); }} className="h-8 text-xs" placeholder="e.g. Kim Jiwon" />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-500">English Name (Nick Name)</Label>

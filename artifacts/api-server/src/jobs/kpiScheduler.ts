@@ -3,9 +3,9 @@ import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
 // ─────────────────────────────────────────────
-// KPI 월간 자동 계산 스케줄러
-// 실행 시점: 매월 1일 00:05 (Australia/Sydney)
-// 대상: 전월 전체 직원 KPI 계산 → staff_kpi_periods upsert
+// KPI monthly auto-calculation scheduler
+// Runs: 1st of each month at 00:05 (Australia/Sydney)
+// Target: calculate KPI for all staff in the previous month → upsert staff_kpi_periods
 // ─────────────────────────────────────────────
 
 async function calcAndSaveAllStaffKpi(
@@ -14,7 +14,7 @@ async function calcAndSaveAllStaffKpi(
   periodType:  string
 ): Promise<void> {
 
-  console.log(`[KPI Scheduler] 집계 시작: ${periodStart} ~ ${periodEnd}`);
+  console.log(`[KPI Scheduler] Aggregation started: ${periodStart} ~ ${periodEnd}`);
 
   const staffRes = await db.execute(sql`
     SELECT id, full_name FROM users
@@ -215,18 +215,18 @@ async function calcAndSaveAllStaffKpi(
 
     } catch (err) {
       errorCount++;
-      console.error(`[KPI Scheduler] ❌ ${staff.full_name} 오류:`, err);
+      console.error(`[KPI Scheduler] ❌ ${staff.full_name} error:`, err);
     }
   }
 
   console.log(
-    `[KPI Scheduler] 완료 — ` +
-    `성공: ${successCount}, 스킵: ${skipCount}, 오류: ${errorCount}`
+    `[KPI Scheduler] Done — ` +
+    `success: ${successCount}, skipped: ${skipCount}, errors: ${errorCount}`
   );
 }
 
 // ─────────────────────────────────────────────
-// 스케줄러 시작 함수 (index.ts 에서 호출)
+// Scheduler start function (called from index.ts)
 // ─────────────────────────────────────────────
 export function startKpiScheduler(): void {
 
@@ -257,12 +257,12 @@ export function startKpiScheduler(): void {
     { timezone: "Australia/Sydney" }
   );
 
-  console.log("[KPI Scheduler] 등록 완료 — monthly(매월 1일 00:05) + quarterly(분기 1일 00:10)");
+  console.log("[KPI Scheduler] Registered — monthly (1st of each month 00:05) + quarterly (1st of quarter 00:10)");
 }
 
 // ─────────────────────────────────────────────
-// 수동 실행 함수 (API 또는 테스트용)
-// POST /api/kpi/scheduler/run 에서 호출 가능
+// Manual trigger function (for API or testing)
+// Can be called from POST /api/kpi/scheduler/run
 // ─────────────────────────────────────────────
 export async function runKpiSchedulerNow(
   periodType: string = "monthly"
@@ -274,7 +274,7 @@ export async function runKpiSchedulerNow(
     const end   = new Date(prev.getFullYear(), prev.getMonth() + 1, 0)
                     .toISOString().split("T")[0];
     await calcAndSaveAllStaffKpi(start, end, periodType);
-    return { success: true, message: `${start} ~ ${end} KPI 집계 완료` };
+    return { success: true, message: `KPI aggregation complete: ${start} ~ ${end}` };
   } catch (err: any) {
     return { success: false, message: err.message };
   }
