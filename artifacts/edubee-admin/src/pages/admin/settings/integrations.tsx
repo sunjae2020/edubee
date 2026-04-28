@@ -527,6 +527,151 @@ function AirtableSection() {
   );
 }
 
+// ── Slack Section ─────────────────────────────────────────────────────────────
+function SlackSection({ data, onSave, saving }: {
+  data: any;
+  onSave: (payload: any) => void;
+  saving: boolean;
+}) {
+  const { toast } = useToast();
+  const slack = data?.slack ?? {};
+  const [webhookUrl, setWebhookUrl] = useState(slack.webhookUrl ?? "");
+  const [enabled, setEnabled] = useState(slack.enabled ?? false);
+  const [events, setEvents] = useState({
+    newContract:     slack.events?.newContract     ?? true,
+    contractStatus:  slack.events?.contractStatus  ?? true,
+    newStudent:      slack.events?.newStudent       ?? true,
+    paymentReceived: slack.events?.paymentReceived ?? false,
+  });
+  const [testing, setTesting] = useState(false);
+  const [showUrl, setShowUrl] = useState(false);
+
+  // Sync from parent data
+  useEffect(() => {
+    setWebhookUrl(data?.slack?.webhookUrl ?? "");
+    setEnabled(data?.slack?.enabled ?? false);
+    setEvents({
+      newContract:     data?.slack?.events?.newContract     ?? true,
+      contractStatus:  data?.slack?.events?.contractStatus  ?? true,
+      newStudent:      data?.slack?.events?.newStudent       ?? true,
+      paymentReceived: data?.slack?.events?.paymentReceived ?? false,
+    });
+  }, [data]);
+
+  const isConnected = !!(slack.enabled && slack.webhookUrl);
+
+  async function handleTest() {
+    if (!webhookUrl) return;
+    setTesting(true);
+    try {
+      await axios.post(`${BASE}/api/slack/test`, { webhookUrl });
+      toast({ title: "Test message sent to Slack!" });
+    } catch (e: any) {
+      toast({ title: "Test failed", description: e?.response?.data?.error ?? "Check your webhook URL", variant: "destructive" });
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  const EVENT_OPTIONS = [
+    { key: "newContract",     label: "New contract created" },
+    { key: "contractStatus",  label: "Contract status changed" },
+    { key: "newStudent",      label: "New student registered" },
+    { key: "paymentReceived", label: "Payment received" },
+  ] as const;
+
+  return (
+    <IntegrationCard
+      icon={MessageSquare}
+      iconBg="bg-[#4A154B]/10"
+      iconColor="text-[#4A154B]"
+      name="Slack"
+      description="Get real-time CRM notifications in your Slack workspace via Incoming Webhook"
+      badge={<StatusBadge connected={isConnected} />}
+    >
+      <div className="space-y-5">
+        {/* Setup guide */}
+        <div className="bg-[#FFF7ED] border border-[#FDDCB5] rounded-lg p-3 text-xs text-[#92400E] space-y-1">
+          <p className="font-semibold">Setup (one-time):</p>
+          <p>1. Go to <strong>api.slack.com/apps</strong> → Create New App → From scratch</p>
+          <p>2. Incoming Webhooks → Activate → Add New Webhook to Workspace</p>
+          <p>3. Choose a channel → Copy the Webhook URL below</p>
+        </div>
+
+        {/* Webhook URL */}
+        <div className="space-y-1.5">
+          <label className={label}>Webhook URL</label>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                className={inp}
+                type={showUrl ? "text" : "password"}
+                value={webhookUrl}
+                onChange={e => setWebhookUrl(e.target.value)}
+                placeholder="https://hooks.slack.com/services/T.../B.../..."
+              />
+              <button
+                type="button"
+                onClick={() => setShowUrl(s => !s)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-[#57534E]"
+              >
+                {showUrl ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+            <button
+              onClick={handleTest}
+              disabled={testing || !webhookUrl}
+              className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1] flex items-center gap-1.5 disabled:opacity-40 transition whitespace-nowrap"
+            >
+              {testing ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />}
+              Test
+            </button>
+          </div>
+        </div>
+
+        {/* Enable toggle */}
+        <label className="flex items-center gap-3 cursor-pointer">
+          <div
+            onClick={() => setEnabled((v: boolean) => !v)}
+            className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${enabled ? "bg-(--e-orange)" : "bg-[#D4D0CB]"}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${enabled ? "translate-x-5" : ""}`} />
+          </div>
+          <span className="text-sm text-[#1C1917]">Enable Slack notifications</span>
+        </label>
+
+        {/* Events */}
+        {enabled && (
+          <div className="space-y-2">
+            <p className={label}>Notify on</p>
+            {EVENT_OPTIONS.map(({ key, label: evLabel }) => (
+              <label key={key} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={events[key]}
+                  onChange={e => setEvents(ev => ({ ...ev, [key]: e.target.checked }))}
+                  className="w-4 h-4 accent-orange-500 rounded"
+                />
+                <span className="text-sm text-[#1C1917]">{evLabel}</span>
+              </label>
+            ))}
+          </div>
+        )}
+
+        <button
+          onClick={() => onSave({ slack: { enabled, webhookUrl, events } })}
+          disabled={saving}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-60"
+          style={{ background: "var(--e-orange)" }}
+        >
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+          Save Slack Settings
+        </button>
+      </div>
+    </IntegrationCard>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 // ── Google Drive Section ────────────────────────────────────────────────────
 
@@ -536,8 +681,17 @@ function GoogleDriveSection() {
   const [location] = useLocation();
   const [rootFolderInput, setRootFolderInput] = useState("");
   const [editingRoot, setEditingRoot] = useState(false);
+  const [editingCreds, setEditingCreds] = useState(false);
+  const [clientIdInput, setClientIdInput] = useState("");
+  const [clientSecretInput, setClientSecretInput] = useState("");
+  const [showSecret, setShowSecret] = useState(false);
 
-  const { data: gdStatus, isLoading } = useQuery<{ connected: boolean; rootFolderId?: string | null }>({
+  const { data: gdStatus, isLoading } = useQuery<{
+    credentialsConfigured: boolean;
+    clientId: string | null;
+    connected: boolean;
+    rootFolderId?: string | null;
+  }>({
     queryKey: ["google-drive-status"],
     queryFn: () => axios.get(`${BASE}/api/google-drive/status`).then(r => r.data),
     retry: false,
@@ -553,16 +707,31 @@ function GoogleDriveSection() {
       qc.invalidateQueries({ queryKey: ["google-drive-status"] });
       window.history.replaceState({}, "", window.location.pathname);
     } else if (result === "error") {
-      toast({ title: "Google Drive connection failed", description: params.get("msg") ?? "", variant: "destructive" });
+      const msg = params.get("msg") ?? "Unknown error";
+      toast({ title: "Google Drive connection failed", description: msg, variant: "destructive" });
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [location]);
+
+  const saveCredsMutation = useMutation({
+    mutationFn: () => axios.put(`${BASE}/api/google-drive/credentials`, {
+      clientId: clientIdInput.trim(),
+      clientSecret: clientSecretInput.trim(),
+    }),
+    onSuccess: () => {
+      toast({ title: "Google API credentials saved" });
+      qc.invalidateQueries({ queryKey: ["google-drive-status"] });
+      setEditingCreds(false);
+      setClientSecretInput("");
+    },
+    onError: (e: any) => toast({ title: "Save failed", description: e?.response?.data?.error, variant: "destructive" }),
+  });
 
   const connectMutation = useMutation({
     mutationFn: () => axios.get(`${BASE}/api/google-drive/auth-url`).then(r => r.data.url as string),
     onSuccess: (url) => { window.location.href = url; },
     onError: (e: any) => {
-      const msg = e?.response?.data?.error ?? e?.response?.data?.message ?? "Failed to connect. Check that GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set in Railway Variables.";
+      const msg = e?.response?.data?.error ?? e?.response?.data?.message ?? "Failed to connect";
       toast({ title: "Google Drive Error", description: msg, variant: "destructive" });
     },
   });
@@ -581,6 +750,9 @@ function GoogleDriveSection() {
 
   if (isLoading) return <div className="flex justify-center py-6"><Loader2 size={20} className="animate-spin text-[#A8A29E]" /></div>;
 
+  const credentialsConfigured = gdStatus?.credentialsConfigured ?? false;
+  const connected = gdStatus?.connected ?? false;
+
   return (
     <IntegrationCard
       icon={HardDrive}
@@ -588,81 +760,165 @@ function GoogleDriveSection() {
       iconColor="text-blue-600"
       name="Google Drive"
       description="Auto-create student folders in Google Drive linked to Account records"
-      badge={<StatusBadge connected={gdStatus?.connected} />}
+      badge={<StatusBadge connected={connected} />}
     >
-      <div className="space-y-4">
-        {gdStatus?.connected ? (
-          <>
+      <div className="space-y-5">
+
+        {/* ── Step 1: Google API Credentials ── */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className={label}>Step 1 — Your Google API Credentials</p>
+            {credentialsConfigured && !editingCreds && (
+              <button
+                onClick={() => { setClientIdInput(gdStatus?.clientId?.replace("...", "") ?? ""); setEditingCreds(true); }}
+                className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+              >
+                <Edit2 size={11} /> Edit
+              </button>
+            )}
+          </div>
+
+          {credentialsConfigured && !editingCreds ? (
             <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
               <CheckCircle2 size={14} className="shrink-0" />
-              <span>Google Drive connected. Folders can be auto-created per Account.</span>
+              <span>Credentials saved — Client ID: <code className="font-mono text-xs">{gdStatus?.clientId}</code></span>
             </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="bg-[#FFF7ED] border border-[#FDDCB5] rounded-lg p-3 text-xs text-[#92400E] space-y-1">
+                <p className="font-semibold">One-time setup in Google Cloud Console:</p>
+                <p>1. Create a project → APIs &amp; Services → OAuth 2.0 Client ID</p>
+                <p>2. Application type: <strong>Web application</strong></p>
+                <p>3. Authorized redirect URI:</p>
+                <p className="font-mono bg-white/60 px-2 py-0.5 rounded">https://api.edubee.co/api/google-drive/callback</p>
+                <p>4. Enable <strong>Google Drive API</strong> in the project</p>
+              </div>
 
-            {/* Root folder config */}
-            <div className="space-y-1.5">
-              <label className={label}>Root Folder ID <span className="text-[#A8A29E] font-normal normal-case">(location for new folder creation)</span></label>
-              {editingRoot ? (
-                <div className="flex items-center gap-2">
+              <div className="space-y-2">
+                <div className="space-y-1">
+                  <label className={label}>Client ID</label>
                   <input
                     className={inp}
-                    value={rootFolderInput}
-                    onChange={e => setRootFolderInput(e.target.value)}
-                    placeholder="Google Drive Folder ID (last part of the URL)"
+                    value={clientIdInput}
+                    onChange={e => setClientIdInput(e.target.value)}
+                    placeholder="xxxx.apps.googleusercontent.com"
                   />
-                  <button
-                    onClick={() => saveRootMutation.mutate()}
-                    disabled={saveRootMutation.isPending}
-                    className="h-9 px-3 rounded-lg bg-(--e-orange) text-white text-sm hover:bg-(--e-orange-hover) flex items-center gap-1.5"
-                  >
-                    {saveRootMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save
-                  </button>
-                  <button onClick={() => setEditingRoot(false)} className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E]">Cancel</button>
                 </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-9 px-3 flex items-center border border-[#E8E6E2] rounded-lg bg-[#F4F3F1] text-sm text-[#57534E] font-mono truncate">
-                    {gdStatus?.rootFolderId ?? <span className="text-[#A8A29E]">Not set — folders created in My Drive root</span>}
+                <div className="space-y-1">
+                  <label className={label}>Client Secret</label>
+                  <div className="relative">
+                    <input
+                      className={inp}
+                      type={showSecret ? "text" : "password"}
+                      value={clientSecretInput}
+                      onChange={e => setClientSecretInput(e.target.value)}
+                      placeholder="GOCSPX-..."
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSecret(s => !s)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-[#57534E]"
+                    >
+                      {showSecret ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
                   </div>
-                  <button onClick={() => { setRootFolderInput(gdStatus?.rootFolderId ?? ""); setEditingRoot(true); }}
-                    className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-[#F4F3F1]">
-                    <Edit2 size={13} /> Edit
-                  </button>
                 </div>
-              )}
-              <p className="text-xs text-[#A8A29E]">
-                Paste the ID that comes after folders/ in the Google Drive URL.
-                Example: <code className="font-mono">https://drive.google.com/drive/folders/<strong>1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs</strong></code>
-              </p>
-            </div>
+              </div>
 
-            <button
-              onClick={() => disconnectMutation.mutate()}
-              disabled={disconnectMutation.isPending}
-              className="flex items-center gap-1.5 text-sm text-red-500 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition"
-            >
-              {disconnectMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-              Disconnect Google Drive
-            </button>
-          </>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm text-[#57534E]">
-              Connecting your Google account allows you to auto-create student folders from the Account page.
-            </p>
-            <div className="bg-[#FFF7ED] border border-[#FDDCB5] rounded-lg p-3 text-xs text-[#92400E] space-y-1">
-              <p className="font-semibold">Pre-configuration required:</p>
-              <p>1. Google Cloud Console → Create an OAuth 2.0 Client ID</p>
-              <p>2. Redirect URI: <code className="font-mono">https://api.edubee.co/api/google-drive/callback</code></p>
-              <p>3. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to Railway Variables</p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => saveCredsMutation.mutate()}
+                  disabled={saveCredsMutation.isPending || !clientIdInput || !clientSecretInput}
+                  className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold text-white transition disabled:opacity-50"
+                  style={{ background: "var(--e-orange)" }}
+                >
+                  {saveCredsMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  Save Credentials
+                </button>
+                {editingCreds && (
+                  <button onClick={() => setEditingCreds(false)} className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E]">Cancel</button>
+                )}
+              </div>
             </div>
-            <button
-              onClick={() => connectMutation.mutate()}
-              disabled={connectMutation.isPending}
-              className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 transition"
-            >
-              {connectMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <HardDrive size={14} />}
-              Connect Google Drive
-            </button>
+          )}
+        </div>
+
+        {/* ── Step 2: Connect Google Account ── */}
+        {credentialsConfigured && (
+          <div className="space-y-3 pt-3 border-t border-[#E8E6E2]">
+            <p className={label}>Step 2 — Connect Your Google Account</p>
+
+            {connected ? (
+              <>
+                <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+                  <CheckCircle2 size={14} className="shrink-0" />
+                  <span>Google Drive connected. Folders can be auto-created per Account.</span>
+                </div>
+
+                {/* Root folder config */}
+                <div className="space-y-1.5">
+                  <label className={label}>
+                    Root Folder ID <span className="text-[#A8A29E] font-normal normal-case">(location for new folder creation)</span>
+                  </label>
+                  {editingRoot ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        className={inp}
+                        value={rootFolderInput}
+                        onChange={e => setRootFolderInput(e.target.value)}
+                        placeholder="Google Drive Folder ID (last part of the URL)"
+                      />
+                      <button
+                        onClick={() => saveRootMutation.mutate()}
+                        disabled={saveRootMutation.isPending}
+                        className="h-9 px-3 rounded-lg bg-(--e-orange) text-white text-sm hover:bg-(--e-orange-hover) flex items-center gap-1.5"
+                      >
+                        {saveRootMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save
+                      </button>
+                      <button onClick={() => setEditingRoot(false)} className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E]">Cancel</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-9 px-3 flex items-center border border-[#E8E6E2] rounded-lg bg-[#F4F3F1] text-sm text-[#57534E] font-mono truncate">
+                        {gdStatus?.rootFolderId ?? <span className="text-[#A8A29E]">Not set — folders created in My Drive root</span>}
+                      </div>
+                      <button
+                        onClick={() => { setRootFolderInput(gdStatus?.rootFolderId ?? ""); setEditingRoot(true); }}
+                        className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] flex items-center gap-1.5 hover:bg-[#F4F3F1]"
+                      >
+                        <Edit2 size={13} /> Edit
+                      </button>
+                    </div>
+                  )}
+                  <p className="text-xs text-[#A8A29E]">
+                    Paste the ID after <code className="font-mono">folders/</code> in the Google Drive URL.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => disconnectMutation.mutate()}
+                  disabled={disconnectMutation.isPending}
+                  className="flex items-center gap-1.5 text-sm text-red-500 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition"
+                >
+                  {disconnectMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                  Disconnect Google Drive
+                </button>
+              </>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-[#57534E]">
+                  Connect your Google account to auto-create student folders from the Account page.
+                </p>
+                <button
+                  onClick={() => connectMutation.mutate()}
+                  disabled={connectMutation.isPending}
+                  className="flex items-center gap-2 h-9 px-4 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 transition"
+                >
+                  {connectMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <HardDrive size={14} />}
+                  Connect Google Drive
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -828,6 +1084,12 @@ export default function TenantIntegrations() {
         </IntegrationCard>
       </section>
 
+      {/* ── Messaging ──────────────────────────────────────────────────────── */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-bold text-[#A8A29E] uppercase tracking-widest">Messaging</h2>
+        <SlackSection data={data} onSave={saveMutation.mutate} saving={saveMutation.isPending} />
+      </section>
+
       {/* ── Data Sync ──────────────────────────────────────────────────────── */}
       <section className="space-y-3">
         <h2 className="text-xs font-bold text-[#A8A29E] uppercase tracking-widest">Data Sync</h2>
@@ -844,14 +1106,6 @@ export default function TenantIntegrations() {
       <section className="space-y-3">
         <h2 className="text-xs font-bold text-[#A8A29E] uppercase tracking-widest">Coming Soon</h2>
         <div className="space-y-3 opacity-60 pointer-events-none">
-          <IntegrationCard
-            icon={MessageSquare}
-            iconBg="bg-[#F0FDF4]"
-            iconColor="text-green-600"
-            name="Slack"
-            description="Get real-time notifications in your Slack workspace"
-            badge={<StatusBadge comingSoon />}
-          />
           <IntegrationCard
             icon={Building2}
             iconBg="bg-[#FFF0F6]"

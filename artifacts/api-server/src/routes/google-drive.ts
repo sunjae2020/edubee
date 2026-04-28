@@ -9,29 +9,62 @@ import { requireRole } from "../middleware/requireRole.js";
 const router = Router();
 const ADMIN_ROLES = ["super_admin", "admin"];
 
-function getOAuth2Client() {
-  return new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI ?? `${process.env.APP_URL ?? "https://api.edubee.co"}/api/google-drive/callback`,
-  );
+const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI ?? "https://api.edubee.co/api/google-drive/callback";
+
+function makeOAuth2Client(clientId: string, clientSecret: string) {
+  return new google.auth.OAuth2(clientId, clientSecret, REDIRECT_URI);
 }
+
+async function loadOrgGoogle(orgId: string) {
+  const [org] = await db.select().from(organisations).where(eq(organisations.id, orgId));
+  const g = ((org?.integrations as any) ?? {}).google ?? {};
+  return { org, g };
+}
+
+// ─── PUT /api/google-drive/credentials — save tenant's own OAuth credentials ──
+
+router.put("/google-drive/credentials", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const { clientId, clientSecret } = req.body as { clientId?: string; clientSecret?: string };
+    const orgId = req.tenant?.id;
+    if (!orgId) return res.status(400).json({ error: "No organisation" });
+
+    const [org] = await db.select().from(organisations).where(eq(organisations.id, orgId));
+    const integrations = ((org.integrations as any) ?? {}) as Record<string, any>;
+    integrations.google = {
+      ...integrations.google,
+      clientId:     clientId?.trim()     || null,
+      clientSecret: clientSecret?.trim() || null,
+      // clear OAuth tokens when credentials change
+      ...(clientId?.trim() !== integrations.google?.clientId ? {
+        connected: false, accessToken: null, refreshToken: null, expiryDate: null,
+      } : {}),
+    };
+    await db.update(organisations).set({ integrations }).where(eq(organisations.id, orgId));
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[PUT /google-drive/credentials]", err);
+    res.status(500).json({ error: "Failed to save credentials" });
+  }
+});
 
 // ─── GET /api/google-drive/auth-url ──────────────────────────────────────────
 
-router.get("/google-drive/auth-url", authenticate, requireRole(...ADMIN_ROLES), (req, res) => {
-  const clientId     = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
-    return res.status(400).json({
-      error: "Google Drive is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to environment variables (Railway Variables).",
-    });
-  }
-
+router.get("/google-drive/auth-url", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const oauth2Client = getOAuth2Client();
     const orgId = req.tenant?.id ?? "";
+    const { g } = await loadOrgGoogle(orgId);
+
+    const clientId     = g.clientId;
+    const clientSecret = g.clientSecret;
+
+    if (!clientId || !clientSecret) {
+      return res.status(400).json({
+        error: "Google credentials not configured. Please enter your Google Client ID and Client Secret first.",
+      });
+    }
+
+    const oauth2Client = makeOAuth2Client(clientId, clientSecret);
     const state = Buffer.from(orgId).toString("base64url");
     const url = oauth2Client.generateAuthUrl({
       access_type: "offline",
@@ -45,7 +78,7 @@ router.get("/google-drive/auth-url", authenticate, requireRole(...ADMIN_ROLES), 
     res.json({ url });
   } catch (err) {
     console.error("[GET /google-drive/auth-url]", err);
-    res.status(500).json({ error: "Failed to generate auth URL. Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET." });
+    res.status(500).json({ error: "Failed to generate auth URL" });
   }
 });
 
@@ -53,10 +86,9 @@ router.get("/google-drive/auth-url", authenticate, requireRole(...ADMIN_ROLES), 
 // Google redirects here after OAuth consent — no Bearer token available
 
 router.get("/google-drive/callback", async (req, res) => {
+  const appUrl = process.env.APP_URL ?? "https://app.edubee.co";
   try {
     const { code, state, error } = req.query as Record<string, string>;
-
-    const appUrl = process.env.APP_URL ?? "https://app.edubee.co";
 
     if (error) {
       return res.redirect(`${appUrl}/admin/settings/integrations?google=error&msg=${encodeURIComponent(error)}`);
@@ -70,28 +102,33 @@ router.get("/google-drive/callback", async (req, res) => {
       return res.redirect(`${appUrl}/admin/settings/integrations?google=error&msg=invalid_state`);
     }
 
-    const oauth2Client = getOAuth2Client();
-    const { tokens } = await oauth2Client.getToken(code);
-
-    const [org] = await db.select().from(organisations).where(eq(organisations.id, orgId));
+    const { org, g } = await loadOrgGoogle(orgId);
     if (!org) {
       return res.redirect(`${appUrl}/admin/settings/integrations?google=error&msg=org_not_found`);
     }
 
+    const clientId     = g.clientId;
+    const clientSecret = g.clientSecret;
+    if (!clientId || !clientSecret) {
+      return res.redirect(`${appUrl}/admin/settings/integrations?google=error&msg=credentials_not_configured`);
+    }
+
+    const oauth2Client = makeOAuth2Client(clientId, clientSecret);
+    const { tokens } = await oauth2Client.getToken(code);
+
     const integrations = ((org.integrations as any) ?? {}) as Record<string, any>;
     integrations.google = {
+      ...integrations.google,
       connected:    true,
       accessToken:  tokens.access_token,
       refreshToken: tokens.refresh_token ?? integrations.google?.refreshToken,
       expiryDate:   tokens.expiry_date,
-      rootFolderId: integrations.google?.rootFolderId ?? null,
     };
     await db.update(organisations).set({ integrations }).where(eq(organisations.id, orgId));
 
     return res.redirect(`${appUrl}/admin/settings/integrations?google=connected`);
   } catch (err: any) {
     console.error("[GET /google-drive/callback]", err);
-    const appUrl = process.env.APP_URL ?? "https://app.edubee.co";
     return res.redirect(`${appUrl}/admin/settings/integrations?google=error&msg=${encodeURIComponent(err.message ?? "unknown")}`);
   }
 });
@@ -103,6 +140,8 @@ router.get("/google-drive/status", authenticate, async (req, res) => {
     const integrations = ((req.tenant?.integrations as any) ?? {}) as Record<string, any>;
     const g = integrations.google ?? {};
     res.json({
+      credentialsConfigured: !!g.clientId && !!g.clientSecret,
+      clientId:     g.clientId ? `${(g.clientId as string).slice(0, 12)}...` : null,
       connected:    !!g.connected && !!g.accessToken,
       rootFolderId: g.rootFolderId ?? null,
     });
@@ -121,7 +160,16 @@ router.post("/google-drive/disconnect", authenticate, requireRole(...ADMIN_ROLES
 
     const [org] = await db.select().from(organisations).where(eq(organisations.id, orgId));
     const integrations = ((org.integrations as any) ?? {}) as Record<string, any>;
-    delete integrations.google;
+    // keep clientId/clientSecret, only clear OAuth tokens
+    integrations.google = {
+      clientId:     integrations.google?.clientId ?? null,
+      clientSecret: integrations.google?.clientSecret ?? null,
+      connected:    false,
+      accessToken:  null,
+      refreshToken: null,
+      expiryDate:   null,
+      rootFolderId: integrations.google?.rootFolderId ?? null,
+    };
     await db.update(organisations).set({ integrations }).where(eq(organisations.id, orgId));
 
     res.json({ success: true });
@@ -154,11 +202,11 @@ router.put("/google-drive/root-folder", authenticate, requireRole(...ADMIN_ROLES
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function getDriveClient(orgId: string) {
-  const [org] = await db.select().from(organisations).where(eq(organisations.id, orgId));
-  const g = (org.integrations as any)?.google as any;
+  const { g } = await loadOrgGoogle(orgId);
   if (!g?.accessToken) throw new Error("Google Drive is not connected. Please connect in Settings → Integrations.");
+  if (!g?.clientId || !g?.clientSecret) throw new Error("Google credentials not configured.");
 
-  const oauth2Client = getOAuth2Client();
+  const oauth2Client = makeOAuth2Client(g.clientId, g.clientSecret);
   oauth2Client.setCredentials({
     access_token:  g.accessToken,
     refresh_token: g.refreshToken,
@@ -178,7 +226,6 @@ async function getDriveClient(orgId: string) {
 }
 
 function buildFolderName(account: any, contact: any): string {
-  // Format: YYYY-LASTNAME_Firstname-Nationality
   const dob = contact?.dob ?? contact?.dateOfBirth;
   const year = dob ? new Date(dob).getFullYear().toString() : "XXXX";
 
@@ -213,8 +260,8 @@ router.post("/google-drive/accounts/:id/folder", authenticate, requireRole(...AD
 
     const folderName = buildFolderName(account, contact);
 
-    const [org] = await db.select().from(organisations).where(eq(organisations.id, orgId));
-    const rootFolderId = (org.integrations as any)?.google?.rootFolderId as string | undefined;
+    const { g } = await loadOrgGoogle(orgId);
+    const rootFolderId = g.rootFolderId as string | undefined;
 
     const drive = await getDriveClient(orgId);
 
