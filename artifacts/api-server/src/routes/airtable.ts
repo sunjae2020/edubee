@@ -233,23 +233,41 @@ router.post("/airtable/sync/:id", ...guard, async (req, res) => {
     }
     res.json({ success: true, message: "Sync started in background", baseId: base.id });
 
-    // Run sync in background after response is sent
+    // Run sync in background after response is sent.
+    // All work runs inside one outer try/catch so any failure (including
+    // unexpected throws inside the .then handler itself) records the
+    // failure to lastSyncStatus instead of leaving "Sync in progress..." stuck.
     console.log(`[Airtable] Manual sync started: ${base.name} (${base.baseId}) org=${orgId}`);
-    syncAirtableBase(base, orgId).then(async (result) => {
-      const latestBases = await getBases(orgId);
-      const latestIdx = latestBases.findIndex(b => b.id === req.params.id);
-      if (latestIdx !== -1) {
-        latestBases[latestIdx].lastSyncedAt    = new Date().toISOString();
-        latestBases[latestIdx].lastSyncStatus  = result.success ? "success" : "error";
-        latestBases[latestIdx].lastSyncMessage = result.success
-          ? `Synced: ${JSON.stringify(result.details)}`
-          : result.error ?? "Unknown error";
-        await saveBases(orgId, latestBases);
+    void (async () => {
+      try {
+        const result = await syncAirtableBase(base, orgId);
+        const latestBases = await getBases(orgId);
+        const latestIdx = latestBases.findIndex(b => b.id === req.params.id);
+        if (latestIdx !== -1) {
+          latestBases[latestIdx].lastSyncedAt    = new Date().toISOString();
+          latestBases[latestIdx].lastSyncStatus  = result.success ? "success" : "error";
+          latestBases[latestIdx].lastSyncMessage = result.success
+            ? `Synced: ${JSON.stringify(result.details)}`
+            : result.error ?? "Unknown error";
+          await saveBases(orgId, latestBases);
+        }
+        console.log(`[Airtable] Manual sync completed: ${base.name} success=${result.success}`);
+      } catch (err: any) {
+        console.error("[Airtable] Background sync error:", err);
+        try {
+          const latestBases = await getBases(orgId);
+          const latestIdx = latestBases.findIndex(b => b.id === req.params.id);
+          if (latestIdx !== -1) {
+            latestBases[latestIdx].lastSyncedAt    = new Date().toISOString();
+            latestBases[latestIdx].lastSyncStatus  = "error";
+            latestBases[latestIdx].lastSyncMessage = `Sync crashed: ${err?.message ?? String(err)}`;
+            await saveBases(orgId, latestBases);
+          }
+        } catch (recordErr) {
+          console.error("[Airtable] Failed to record sync error:", recordErr);
+        }
       }
-      console.log(`[Airtable] Manual sync completed: ${base.name} success=${result.success}`);
-    }).catch((err: any) => {
-      console.error("[Airtable] Background sync error:", err);
-    });
+    })();
   } catch (err: any) {
     console.error("[Airtable] POST /sync error:", err);
     return res.status(500).json({ error: err.message ?? "Internal server error" });

@@ -6,7 +6,8 @@ import { requireRole } from "../middleware/requireRole.js";
 
 const router = Router();
 
-router.use(authenticate);
+// Path-scoped so this sub-router (mounted at "/") doesn't reject sibling routes.
+router.use("/menu-allocation", authenticate);
 
 // GET /api/menu-allocation — Retrieve all categories and items
 router.get("/menu-allocation", async (_req, res) => {

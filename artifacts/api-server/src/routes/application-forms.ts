@@ -10,7 +10,8 @@ const router = Router();
 
 const ADMIN_ROLES = ["super_admin", "admin", "admission", "team_manager"] as const;
 
-router.use(authenticate);
+// Path-scoped so this sub-router (mounted at "/") doesn't reject sibling routes.
+router.use("/application-forms", authenticate);
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 

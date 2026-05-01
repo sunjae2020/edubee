@@ -154,10 +154,21 @@ const _tenantDbs   = new Map<string, NodePgDatabase<typeof schema>>();
 // would wrap the already-wrapped query method, causing exponential nesting.
 const ORIG_QUERY = Symbol("origQuery");
 
+// Per-tenant Node-side concurrency cap. pgBouncer multiplexes the actual DB
+// connections, so this is mostly an in-process queue depth knob. Override with
+// TENANT_POOL_MAX env var if a tenant routinely runs many concurrent queries
+// (e.g. background syncs running alongside user traffic).
+const TENANT_POOL_MAX = Math.max(1, parseInt(process.env.TENANT_POOL_MAX ?? "10", 10));
+const TENANT_POOL_IDLE_MS = Math.max(1000, parseInt(process.env.TENANT_POOL_IDLE_MS ?? "30000", 10));
+
 function getTenantPool(tenantSlug: string): InstanceType<typeof Pool> {
   assertSafeSchemaName(tenantSlug);
   if (!_tenantPools.has(tenantSlug)) {
-    const p = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
+    const p = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: TENANT_POOL_MAX,
+      idleTimeoutMillis: TENANT_POOL_IDLE_MS,
+    });
 
     // pgBouncer transaction mode: SET search_path on connect is unreliable because
     // each transaction may land on a different backend connection.

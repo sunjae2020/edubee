@@ -6,7 +6,8 @@ import { requireRole } from "../middleware/requireRole.js";
 import { eq, asc, and, ne, sql } from "drizzle-orm";
 
 const router = Router();
-router.use(authenticate);
+// Path-scoped so this sub-router (mounted at "/") doesn't reject sibling routes.
+router.use("/settings/lookups", authenticate);
 
 // ── Lookup groups metadata ──────────────────────────────────────────────────
 export const LOOKUP_GROUPS: Record<string, { label: string; description: string }> = {

@@ -272,7 +272,9 @@ async function enrichDocuments(rawDocs: any[], role: string): Promise<any[]> {
   return result;
 }
 
-router.use(authenticate);
+// Path-scoped so this sub-router (mounted at "/" in routes/index.ts) doesn't
+// reject sibling routes like /quickbooks/callback when they pass through.
+router.use("/documents", authenticate);
 
 // POST /api/documents — upload
 router.post("/documents", upload.single("file"), async (req, res) => {
