@@ -131,6 +131,19 @@ export const TENANT_TABLES = [
   "visa_services_mgt",
 ] as const;
 
+// ─── Schema 이름 안전성 검증 ─────────────────────────────────────────────────
+// PostgreSQL identifier 패턴 (소문자/숫자/하이픈/언더스코어만 허용).
+// search_path / "schema".table 같은 SQL identifier 보간 전에 반드시 호출하여
+// SQL injection을 차단해야 함.
+const SAFE_SCHEMA_RE = /^[a-z0-9_-]+$/i;
+
+export function assertSafeSchemaName(name: string): string {
+  if (typeof name !== "string" || name.length === 0 || name.length > 63 || !SAFE_SCHEMA_RE.test(name)) {
+    throw new Error(`Invalid schema name: ${JSON.stringify(name)}`);
+  }
+  return name;
+}
+
 // ─── 테넌트별 Connection Pool 캐시 ───────────────────────────────────────────
 // 각 테넌트마다 search_path가 설정된 소형 pool (max: 5)
 const _tenantPools = new Map<string, InstanceType<typeof Pool>>();
@@ -142,6 +155,7 @@ const _tenantDbs   = new Map<string, NodePgDatabase<typeof schema>>();
 const ORIG_QUERY = Symbol("origQuery");
 
 function getTenantPool(tenantSlug: string): InstanceType<typeof Pool> {
+  assertSafeSchemaName(tenantSlug);
   if (!_tenantPools.has(tenantSlug)) {
     const p = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
 

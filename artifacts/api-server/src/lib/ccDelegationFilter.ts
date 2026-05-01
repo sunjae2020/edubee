@@ -7,7 +7,7 @@
  * db.select() already runs in the owner schema. This function uses pool (raw SQL) with
  * explicit schema names to safely return contract IDs.
  */
-import { pool } from "@workspace/db";
+import { pool, assertSafeSchemaName } from "@workspace/db";
 
 /**
  * Returns the list of delegated packageGroupIds for a CC org + owner subdomain (queries public schema directly)
@@ -54,6 +54,7 @@ export async function getCCDelegatedContractIds(coordinatorOrgId: string): Promi
   const contractIds = new Set<string>();
 
   for (const [ownerSchema, pgIds] of byOwner) {
+    assertSafeSchemaName(ownerSchema);
     // Path 1: contracts via camp_applications.contract_id
     const campRes = await pool.query<{ contract_id: string }>(
       `SELECT DISTINCT contract_id

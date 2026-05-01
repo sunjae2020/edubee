@@ -242,33 +242,32 @@ router.post("/login", loginLimiter, async (req, res) => {
   }
 
   // ── STEP 2: External portal partner
-  // The tenantResolver sets req.tenantId (org UUID) from X-Organisation-Id header.
-  // If a tenant is identified, scope portal accounts to that tenant only.
+  // The tenantResolver sets req.tenantId (org UUID) from X-Organisation-Id header,
+  // and the schema middleware switches db→tenant schema. Portal accounts live in
+  // {tenant}.accounts (NOT public.accounts which is empty under schema-per-tenant).
+  // Require an explicit tenant to prevent cross-tenant brute-force probing.
   const requestingTenantId = (req as any).tenantId as string | undefined;
+  if (!requestingTenantId) {
+    return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
+  }
 
-  // Use staticDb (always public schema) — portal accounts live in public.accounts
   // Try portal_email first, fall back to email column for accounts where portal_email was not set
-  let portalAccount = await staticDb.select().from(accounts)
-    .where(
-      requestingTenantId
-        ? and(eq(accounts.portalEmail as any, normalizedEmail), eq(accounts.organisationId as any, requestingTenantId))
-        : eq(accounts.portalEmail as any, normalizedEmail)
-    )
+  let portalAccount = await db.select().from(accounts)
+    .where(and(
+      eq(accounts.portalEmail as any, normalizedEmail),
+      eq(accounts.organisationId as any, requestingTenantId),
+    ))
     .limit(1)
     .then(r => r[0] ?? null);
 
   if (!portalAccount) {
     // Fallback: match by email column, but only for accounts that have portal_role set
-    const [fallback] = await staticDb.select().from(accounts)
-      .where(
-        requestingTenantId
-          ? and(
-              eq(accounts.email as any, normalizedEmail),
-              sql`portal_role IS NOT NULL`,
-              eq(accounts.organisationId as any, requestingTenantId)
-            )
-          : and(eq(accounts.email as any, normalizedEmail), sql`portal_role IS NOT NULL`)
-      )
+    const [fallback] = await db.select().from(accounts)
+      .where(and(
+        eq(accounts.email as any, normalizedEmail),
+        sql`portal_role IS NOT NULL`,
+        eq(accounts.organisationId as any, requestingTenantId),
+      ))
       .limit(1);
     portalAccount = fallback ?? null;
   }
@@ -308,13 +307,13 @@ router.post("/login", loginLimiter, async (req, res) => {
   if (!valid) {
     const attempts = (portalAccount.portalFailedAttempts ?? 0) + 1;
     const lockData = attempts >= MAX_FAILED ? { portalLockedUntil: new Date(Date.now() + LOCK_MINUTES * 60_000) } : {};
-    await staticDb.update(accounts).set({ portalFailedAttempts: attempts, ...lockData } as any).where(eq(accounts.id, portalAccount.id));
+    await db.update(accounts).set({ portalFailedAttempts: attempts, ...lockData } as any).where(eq(accounts.id, portalAccount.id));
     await writeAuthLog("portal", portalAccount.id, normalizedEmail, "login_fail", ip, ua);
     return res.status(401).json({ error: "Unauthorized", message: "Invalid credentials" });
   }
 
   // Success
-  await staticDb.update(accounts).set({
+  await db.update(accounts).set({
     portalFailedAttempts: 0,
     portalLockedUntil: null,
     portalLastLoginAt: new Date(),
