@@ -1,6 +1,5 @@
 import { db } from "@workspace/db";
 import { chartOfAccounts } from "@workspace/db/schema";
-import { sql } from "drizzle-orm";
 
 const COA_ROWS: Array<{ code: string; name: string; accountType: string }> = [
   { code: "1100", name: "Cash & Bank — Operating",        accountType: "asset"     },
@@ -39,14 +38,16 @@ const COA_ROWS: Array<{ code: string; name: string; accountType: string }> = [
   { code: "5900", name: "Other Expenses",                 accountType: "expense"   },
 ];
 
-export async function seedChartOfAccounts() {
+// Seed CoA for a specific tenant. Per-tenant isolation: each org owns its
+// own copy. ON CONFLICT (organisation_id, code) DO NOTHING.
+export async function seedChartOfAccounts(organisationId: string) {
   try {
     await db
       .insert(chartOfAccounts)
-      .values(COA_ROWS)
-      .onConflictDoNothing({ target: chartOfAccounts.code });
+      .values(COA_ROWS.map((r) => ({ ...r, organisationId })))
+      .onConflictDoNothing({ target: [chartOfAccounts.organisationId, chartOfAccounts.code] });
 
-    console.log("[CoA Seed] Chart of accounts seeded (ON CONFLICT DO NOTHING)");
+    console.log(`[CoA Seed] Chart of accounts seeded for org ${organisationId}`);
   } catch (err) {
     console.error("[CoA Seed] Failed to seed chart of accounts:", err);
   }

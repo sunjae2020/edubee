@@ -170,16 +170,24 @@ export async function checkTenantSchemaExists(tenantSlug: string): Promise<boole
  * 모든 테넌트 schema 목록 조회
  */
 export async function listTenantSchemas(): Promise<string[]> {
-  const systemSchemas = new Set([
-    "public", "pg_catalog", "information_schema", "pg_toast",
-    "pg_temp_1", "pg_toast_temp_1",
-  ]);
-  const result = await pool.query<{ nspname: string }>(
-    "SELECT nspname FROM pg_namespace ORDER BY nspname"
+  // Tenant schemas are derived from organisations.subdomain. Anything else
+  // (Supabase platform schemas: auth, storage, realtime, vault, extensions,
+  // graphql, graphql_public, pgbouncer; or pg_*) must be excluded — otherwise
+  // syncAllTenantSchemas will dump tenant tables into them.
+  const result = await pool.query<{ subdomain: string }>(
+    `SELECT subdomain FROM organisations
+      WHERE subdomain IS NOT NULL
+        AND subdomain <> ''
+      ORDER BY subdomain`
   );
-  return result.rows
-    .map((r) => r.nspname)
-    .filter((n) => !systemSchemas.has(n) && !n.startsWith("pg_"));
+  const subdomains = new Set(result.rows.map((r) => r.subdomain));
+
+  // Cross-check against pg_namespace so we only return schemas that actually exist.
+  const ns = await pool.query<{ nspname: string }>(
+    `SELECT nspname FROM pg_namespace WHERE nspname = ANY($1::text[])`,
+    [Array.from(subdomains)]
+  );
+  return ns.rows.map((r) => r.nspname);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

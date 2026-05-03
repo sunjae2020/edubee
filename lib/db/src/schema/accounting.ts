@@ -18,17 +18,22 @@ import { accounts } from "./crm";
 import { organisations } from "./settings";
 
 // ── Chart of Accounts ──────────────────────────────────────────────────────
+// Per-tenant: each organisation owns its own copy of CoA codes.
+// UNIQUE is on (organisation_id, code), not code alone.
 export const chartOfAccounts = pgTable("chart_of_accounts", {
-  id:          uuid("id").primaryKey().defaultRandom(),
-  code:        varchar("code", { length: 10 }).notNull().unique(),
-  name:        varchar("name", { length: 255 }).notNull(),
-  accountType: varchar("account_type", { length: 20 }).notNull(),
-  description: text("description"),
-  parentCode:  varchar("parent_code", { length: 10 }),
-  isActive:    boolean("is_active").notNull().default(true),
-  createdOn:   timestamp("created_on").notNull().defaultNow(),
-  modifiedOn:  timestamp("modified_on").notNull().defaultNow(),
-});
+  id:             uuid("id").primaryKey().defaultRandom(),
+  organisationId: uuid("organisation_id").notNull().references(() => organisations.id),
+  code:           varchar("code", { length: 10 }).notNull(),
+  name:           varchar("name", { length: 255 }).notNull(),
+  accountType:    varchar("account_type", { length: 20 }).notNull(),
+  description:    text("description"),
+  parentCode:     varchar("parent_code", { length: 10 }),
+  isActive:       boolean("is_active").notNull().default(true),
+  createdOn:      timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:     timestamp("modified_on").notNull().defaultNow(),
+}, (t) => ({
+  orgCode: unique("chart_of_accounts_org_code_unique").on(t.organisationId, t.code),
+}));
 
 // ── Product Cost Lines ─────────────────────────────────────────────────────
 export const productCostLines = pgTable("product_cost_lines", {
@@ -41,7 +46,9 @@ export const productCostLines = pgTable("product_cost_lines", {
   rate:              decimal("rate", { precision: 8, scale: 4 }),
   baseAmount:        decimal("base_amount", { precision: 12, scale: 2 }),
   calculatedAmount:  decimal("calculated_amount", { precision: 12, scale: 2 }),
-  coaCode:           varchar("coa_code", { length: 10 }).references(() => chartOfAccounts.code),
+  coaCode:           varchar("coa_code", { length: 10 }),
+  // FK is composite (organisation_id, coa_code) → chart_of_accounts(organisation_id, code) — enforced in DB only
+  organisationId:    uuid("organisation_id").notNull().references(() => organisations.id),
   description:       text("description"),
   status:            varchar("status", { length: 20 }).notNull().default("pending"),
   paidAt:            timestamp("paid_at"),
@@ -81,7 +88,8 @@ export const paymentLines = pgTable("payment_lines", {
   paymentHeaderId:   uuid("payment_header_id").notNull().references(() => paymentHeaders.id),
   invoiceId:         uuid("invoice_id").references(() => invoices.id),
   contractProductId: uuid("contract_product_id").references(() => contractProducts.id),
-  coaCode:           varchar("coa_code", { length: 10 }).references(() => chartOfAccounts.code),
+  // FK is composite (organisation_id, coa_code) — enforced in DB only
+  coaCode:           varchar("coa_code", { length: 10 }),
   splitType:         varchar("split_type", { length: 50 }),
   amount:            decimal("amount", { precision: 12, scale: 2 }).notNull().default("0"),
   staffId:           uuid("staff_id").references(() => users.id),
@@ -93,11 +101,13 @@ export const paymentLines = pgTable("payment_lines", {
 // ── Journal Entries ────────────────────────────────────────────────────────
 export const journalEntries = pgTable("journal_entries", {
   id:               uuid("id").primaryKey().defaultRandom(),
+  organisationId:   uuid("organisation_id").notNull().references(() => organisations.id),
   entryDate:        date("entry_date").notNull(),
   paymentHeaderId:  uuid("payment_header_id").references(() => paymentHeaders.id),
   paymentLineId:    uuid("payment_line_id").references(() => paymentLines.id),
-  debitCoa:         varchar("debit_coa", { length: 10 }).notNull().references(() => chartOfAccounts.code),
-  creditCoa:        varchar("credit_coa", { length: 10 }).notNull().references(() => chartOfAccounts.code),
+  // FK is composite (organisation_id, debit_coa/credit_coa) — enforced in DB only
+  debitCoa:         varchar("debit_coa", { length: 10 }).notNull(),
+  creditCoa:        varchar("credit_coa", { length: 10 }).notNull(),
   amount:           decimal("amount", { precision: 12, scale: 2 }).notNull().default("0"),
   description:      text("description"),
   studentAccountId: uuid("student_account_id").references(() => accounts.id, { onDelete: "set null" }),
@@ -226,3 +236,29 @@ export const paymentInfos = pgTable("payment_infos", {
 
 export type PaymentInfo    = typeof paymentInfos.$inferSelect;
 export type NewPaymentInfo = typeof paymentInfos.$inferInsert;
+
+// ── Journal Entry Mappings (DR/CR rules) ─────────────────────────────────────
+// Single source of truth for paymentType × splitType → DR/CR mapping.
+// Replaces the in-code DR_CR_MAP in services/journalEntryService.ts.
+// splitType = '*' acts as a wildcard (any splitType for that paymentType).
+// Per-tenant DR/CR rules. FK on (organisation_id, debit_coa/credit_coa) is
+// enforced at the DB level (composite FK to chart_of_accounts).
+export const journalEntryMappings = pgTable("journal_entry_mappings", {
+  id:             uuid("id").primaryKey().defaultRandom(),
+  organisationId: uuid("organisation_id").notNull().references(() => organisations.id),
+  paymentType:    varchar("payment_type", { length: 50 }).notNull(),
+  splitType:      varchar("split_type",   { length: 50 }).notNull().default("*"),
+  debitCoa:       varchar("debit_coa",    { length: 10 }).notNull(),
+  creditCoa:      varchar("credit_coa",   { length: 10 }).notNull(),
+  entryType:      varchar("entry_type",   { length: 50 }).notNull(),
+  description:    text("description"),
+  isActive:       boolean("is_active").notNull().default(true),
+  createdOn:      timestamp("created_on").notNull().defaultNow(),
+  modifiedOn:     timestamp("modified_on").notNull().defaultNow(),
+  createdBy:      uuid("created_by").references(() => users.id),
+}, (t) => ({
+  uniqKey: unique("journal_entry_mappings_org_key").on(t.organisationId, t.paymentType, t.splitType),
+}));
+
+export type JournalEntryMapping    = typeof journalEntryMappings.$inferSelect;
+export type NewJournalEntryMapping = typeof journalEntryMappings.$inferInsert;

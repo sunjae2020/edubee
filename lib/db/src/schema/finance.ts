@@ -329,3 +329,49 @@ export type ContractFinanceItem = typeof contractFinanceItems.$inferSelect;
 export type InsertContractFinanceItem = z.infer<typeof insertContractFinanceItemSchema>;
 export type UserLedger = typeof userLedger.$inferSelect;
 export type InsertUserLedger = z.infer<typeof insertUserLedgerSchema>;
+
+// ── Invoice Schedules (recurring billing) ──────────────────────────────────
+// Master record describing how to auto-generate recurring invoices.
+// Replaces ad-hoc parent_invoice_id self-reference for scheduled billing.
+export const invoiceSchedules = pgTable("invoice_schedules", {
+  id:                uuid("id").primaryKey().defaultRandom(),
+  organisationId:    uuid("organisation_id").notNull().references(() => organisations.id),
+  contractId:        uuid("contract_id").references(() => contracts.id, { onDelete: "cascade" }),
+  contractProductId: uuid("contract_product_id"),
+  accountId:         uuid("account_id").references(() => accounts.id),
+  invoiceType:       varchar("invoice_type", { length: 20 }).notNull().default("client"),
+  frequency:         varchar("frequency",    { length: 20 }).notNull(),
+  // 'monthly' | 'quarterly' | 'termly' | 'weekly'
+  amount:            decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  currency:          varchar("currency", { length: 10 }).notNull().default("AUD"),
+  description:       text("description"),
+  startDate:         date("start_date").notNull(),
+  endDate:           date("end_date"),
+  nextRunDate:       date("next_run_date").notNull(),
+  lastRunDate:       date("last_run_date"),
+  runCount:          integer("run_count").notNull().default(0),
+  maxRuns:           integer("max_runs"),
+  status:            varchar("status", { length: 20 }).notNull().default("active"),
+  // 'active' | 'paused' | 'completed' | 'cancelled'
+  createdBy:         uuid("created_by").references(() => users.id),
+  createdAt:         timestamp("created_at").notNull().defaultNow(),
+  updatedAt:         timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const invoiceScheduleRuns = pgTable("invoice_schedule_runs", {
+  id:         uuid("id").primaryKey().defaultRandom(),
+  organisationId: uuid("organisation_id").notNull().references(() => organisations.id),
+  scheduleId: uuid("schedule_id").notNull().references(() => invoiceSchedules.id, { onDelete: "cascade" }),
+  runDate:    date("run_date").notNull(),
+  invoiceId:  uuid("invoice_id").references((): AnyPgColumn => invoices.id),
+  status:     varchar("status", { length: 20 }).notNull().default("ok"),
+  // 'ok' | 'failed' | 'skipped'
+  errorMsg:   text("error_msg"),
+  createdAt:  timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  uniqRun: unique("invoice_schedule_runs_idem").on(t.scheduleId, t.runDate),
+}));
+
+export type InvoiceSchedule    = typeof invoiceSchedules.$inferSelect;
+export type NewInvoiceSchedule = typeof invoiceSchedules.$inferInsert;
+export type InvoiceScheduleRun = typeof invoiceScheduleRuns.$inferSelect;

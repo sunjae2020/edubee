@@ -11,10 +11,19 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const pool = new Pool({
+  connectionString:      process.env.DATABASE_URL,
+  max:                   20,    // max concurrent connections
+  connectionTimeoutMillis: 5000,  // throw if no connection available within 5s
+  idleTimeoutMillis:     30000, // release idle connections after 30s
+  statement_timeout:     15000, // kill any query that runs longer than 15s
+});
 // Ensure staticDb always uses public schema (pgBouncer transaction mode can leak search_path)
 pool.on("connect", (client: any) => {
   client.query("SET search_path = public");
+});
+pool.on("error", (err: Error) => {
+  console.error("[DB Pool] Unexpected error on idle client:", err.message);
 });
 
 // ─── 기본 DB (public schema — 플랫폼 라우트, 마이그레이션 용) ─────────────────

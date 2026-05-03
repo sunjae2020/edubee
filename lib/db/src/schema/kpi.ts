@@ -2,6 +2,7 @@ import { pgTable, uuid, varchar, date, integer,
          decimal, timestamp, text, unique } from 'drizzle-orm/pg-core';
 import { users } from './users';
 import { teams } from './teams';
+import { organisations } from './settings';
 
 // ─────────────────────────────────────────────
 // 1. staffKpiPeriods
@@ -10,6 +11,7 @@ import { teams } from './teams';
 // ─────────────────────────────────────────────
 export const staffKpiPeriods = pgTable('staff_kpi_periods', {
   id:          uuid('id').primaryKey().defaultRandom(),
+  organisationId: uuid('organisation_id').notNull().references(() => organisations.id),
   staffId:     uuid('staff_id').notNull().references(() => users.id),
 
   periodType:  varchar('period_type', { length: 20 }).notNull(),
@@ -69,6 +71,7 @@ export const staffKpiPeriods = pgTable('staff_kpi_periods', {
 // ─────────────────────────────────────────────
 export const kpiTargets = pgTable('kpi_targets', {
   id:          uuid('id').primaryKey().defaultRandom(),
+  organisationId: uuid('organisation_id').notNull().references(() => organisations.id),
 
   // 직원 또는 팀 중 하나만 설정 (CHECK 제약은 마이그레이션 SQL에서 처리)
   staffId:     uuid('staff_id').references(() => users.id),
@@ -103,6 +106,7 @@ export const kpiTargets = pgTable('kpi_targets', {
 // ─────────────────────────────────────────────
 export const teamKpiPeriods = pgTable('team_kpi_periods', {
   id:          uuid('id').primaryKey().defaultRandom(),
+  organisationId: uuid('organisation_id').notNull().references(() => organisations.id),
   teamId:      uuid('team_id').notNull().references(() => teams.id),
 
   periodType:  varchar('period_type', { length: 20 }).notNull(),
@@ -144,7 +148,57 @@ export const teamKpiPeriods = pgTable('team_kpi_periods', {
   modifiedOn:  timestamp('modified_on').notNull().defaultNow(),
 },
 (table) => ({
-  uniquePeriod: unique().on(table.teamId, table.periodType, table.periodStart),
+  uniquePeriod: unique('team_kpi_periods_org_team_period_unique')
+    .on(table.organisationId, table.teamId, table.periodType, table.periodStart),
+}));
+
+// ─────────────────────────────────────────────
+// 4. incentiveTiers — 매출 구간별 인센티브 정책 마스터
+//    `staff_kpi_periods.incentive_tier` 의 master.
+//    역할(role) + 매출 구간(min/max)별 rate/fixed bonus 적용.
+//    effective_from/to 로 정책 변경 이력 보존 → 과거 정산 변경 방지.
+// ─────────────────────────────────────────────
+export const incentiveTiers = pgTable('incentive_tiers', {
+  id:           uuid('id').primaryKey().defaultRandom(),
+  organisationId: uuid('organisation_id').notNull().references(() => organisations.id),
+  tierName:     varchar('tier_name',     { length: 50  }).notNull(),
+                // 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | etc.
+  appliesToRole: varchar('applies_to_role', { length: 50 }),
+                // null = applies to all roles
+                // e.g. 'admission' | 'team_manager' | 'finance'
+  periodType:   varchar('period_type',   { length: 20 }).notNull().default('monthly'),
+                // monthly | quarterly | half_year | yearly
+
+  // ── 적용 매출 구간 (귀속 매출 기준) ───────
+  minRevenue:   decimal('min_revenue',   { precision: 12, scale: 2 }).notNull().default('0'),
+  maxRevenue:   decimal('max_revenue',   { precision: 12, scale: 2 }),
+                // null = no upper bound
+
+  // ── 인센티브 ──────────────────────────────
+  incentiveType:  varchar('incentive_type',  { length: 20 }).notNull(),
+                  // percentage | fixed
+  incentiveRate:  decimal('incentive_rate',  { precision: 8,  scale: 4 }),
+                  // 0.0500 = 5% (applied to revenue OR excess amount)
+  incentiveFixed: decimal('incentive_fixed', { precision: 12, scale: 2 }),
+                  // 고정 보너스
+  appliesTo:      varchar('applies_to',      { length: 20 }).notNull().default('excess'),
+                  // 'excess' = (revenue - min) * rate
+                  // 'total'  = revenue * rate
+
+  // ── 정책 이력 ─────────────────────────────
+  effectiveFrom: date('effective_from').notNull(),
+  effectiveTo:   date('effective_to'),
+                 // null = currently active
+
+  description:  text('description'),
+  status:       varchar('status', { length: 20 }).notNull().default('Active'),
+  createdBy:    uuid('created_by').references(() => users.id),
+  createdOn:    timestamp('created_on').notNull().defaultNow(),
+  modifiedOn:   timestamp('modified_on').notNull().defaultNow(),
+}, (t) => ({
+  // 테넌트별 같은 역할 × 기간 × 구간 × 시작일 조합은 1건만
+  uniqTierBracket: unique('incentive_tiers_bracket')
+    .on(t.organisationId, t.tierName, t.appliesToRole, t.periodType, t.effectiveFrom),
 }));
 
 // ─────────────────────────────────────────────
@@ -156,3 +210,5 @@ export type KpiTarget         = typeof kpiTargets.$inferSelect;
 export type NewKpiTarget      = typeof kpiTargets.$inferInsert;
 export type TeamKpiPeriod     = typeof teamKpiPeriods.$inferSelect;
 export type NewTeamKpiPeriod  = typeof teamKpiPeriods.$inferInsert;
+export type IncentiveTier     = typeof incentiveTiers.$inferSelect;
+export type NewIncentiveTier  = typeof incentiveTiers.$inferInsert;
