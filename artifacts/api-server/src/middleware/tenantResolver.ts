@@ -169,7 +169,12 @@ export async function tenantResolver(
 
     // ── 5th priority: Full pass-through ────────────────────────────────────────────
     next();
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.message?.includes("timeout") || err?.code === "ETIMEDOUT" || err?.code === "57014") {
+      console.error("[tenantResolver] DB timeout — returning 503");
+      res.status(503).json({ message: "Service temporarily unavailable. Please try again." });
+      return;
+    }
     console.error("[tenantResolver]", err);
     next(err);
   }
