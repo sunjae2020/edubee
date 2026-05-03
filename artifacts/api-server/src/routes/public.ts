@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, pool, staticDb } from "@workspace/db";
+import { db, pool, staticDb, runWithTenantSchema } from "@workspace/db";
 import { GoogleGenAI } from "@google/genai";
 import {
   packageGroups,
@@ -46,6 +46,9 @@ const pubSessions = new Map<string, Turn[]>();
 
 const router = Router();
 
+// camp.edubee.co always serves data from this tenant (override via env if needed).
+const CAMP_TENANT = process.env.PLATFORM_SUBDOMAIN ?? "myagency";
+
 // Country → currency mapping
 const COUNTRY_CURRENCY: Record<string, { currency: string; symbol: string; flag: string; decimalPlaces: number }> = {
   AU: { currency: "AUD", symbol: "A$", flag: "🇦🇺", decimalPlaces: 2 },
@@ -75,8 +78,9 @@ function formatPrice(amount: string | null, symbol: string, decimalPlaces: numbe
   return `${symbol}${num.toLocaleString("en-US", { minimumFractionDigits: decimalPlaces, maximumFractionDigits: decimalPlaces })}`;
 }
 
-// GET /api/public/packages — no auth
+// GET /api/public/packages — no auth (camp.edubee.co tenant)
 router.get("/public/packages", async (req, res) => {
+  await runWithTenantSchema(CAMP_TENANT, async () => {
   try {
     const groups = await db
       .select()
@@ -215,6 +219,7 @@ router.get("/public/packages", async (req, res) => {
     console.error(err);
     return res.status(500).json({ error: "Internal Server Error" });
   }
+  });
 });
 
 // Participant schema
@@ -444,6 +449,7 @@ router.post("/public/applications", async (req, res) => {
 // GET /api/public/exchange-rates — public, no auth required
 // Returns latest X→AUD rate per currency, formatted for frontend context
 router.get("/public/exchange-rates", async (_req, res) => {
+  await runWithTenantSchema(CAMP_TENANT, async () => {
   try {
     // Get all rates ordered by effectiveDate desc so we can take latest per currency
     const allRates = await db
@@ -485,6 +491,7 @@ router.get("/public/exchange-rates", async (_req, res) => {
     console.error(err);
     return res.status(500).json({ success: false, error: "RATES_UNAVAILABLE" });
   }
+  });
 });
 
 // ─── POST /api/public/chatbot/message — no auth, landing page widget ───────
