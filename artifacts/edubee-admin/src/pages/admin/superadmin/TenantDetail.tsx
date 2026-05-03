@@ -31,6 +31,8 @@ type PlatformPlan = {
   featureAiAssistant: boolean;
   featureAccounting: boolean;
   featureAvetmiss: boolean;
+  featureCamp: boolean;
+  featureFinance: boolean;
   featureApiAccess: boolean;
   featureWhiteLabel: boolean;
   isPopular: boolean;
@@ -180,16 +182,37 @@ const PLAN_COLOR: Record<string, { bg: string; color: string; border: string }> 
   enterprise: { bg: "#F5F3FF", color: "#6D28D9",  border: "#DDD6FE" },
 };
 
-const FEATURE_LABELS: Array<{ key: keyof PlatformPlan; label: string }> = [
-  { key: "featureCommission",     label: "Commission Auto-Calc"              },
-  { key: "featureVisa",           label: "Visa Management"                   },
-  { key: "featureServiceModules", label: "Services (Pickup/Homestay/Intern)" },
-  { key: "featureMultiBranch",    label: "Multi-Branch"                      },
-  { key: "featureAiAssistant",    label: "AI Assistant"                      },
-  { key: "featureAccounting",     label: "Accounting"                        },
-  { key: "featureAvetmiss",       label: "AVETMISS Reporting"                },
-  { key: "featureApiAccess",      label: "REST API / Webhook"                },
-  { key: "featureWhiteLabel",     label: "White-label"                       },
+type FeatureDef = { key: keyof PlatformPlan; label: string; comingSoon?: boolean };
+type FeatureGroup = { icon: string; title: string; rows: FeatureDef[] };
+
+const FEATURE_GROUPS: FeatureGroup[] = [
+  {
+    icon: "💰", title: "Finance", rows: [
+      { key: "featureFinance",    label: "Finance Module" },
+      { key: "featureCommission", label: "Commission Auto-Calc" },
+      { key: "featureAccounting", label: "Accounting (AR/AP)" },
+    ],
+  },
+  {
+    icon: "📦", title: "Service & Package", rows: [
+      { key: "featureServiceModules", label: "Service Modules" },
+      { key: "featureCamp",           label: "Camp Management" },
+      { key: "featureVisa",           label: "Visa Management" },
+    ],
+  },
+  {
+    icon: "🏢", title: "Operations", rows: [
+      { key: "featureMultiBranch", label: "Multi-Branch",     comingSoon: true },
+      { key: "featureAvetmiss",    label: "AVETMISS Reports", comingSoon: true },
+    ],
+  },
+  {
+    icon: "🤖", title: "AI & Integration", rows: [
+      { key: "featureAiAssistant", label: "AI Assistant",        comingSoon: true },
+      { key: "featureApiAccess",   label: "REST API / Webhook",  comingSoon: true },
+      { key: "featureWhiteLabel",  label: "White-label" },
+    ],
+  },
 ];
 
 function fmtLimit(v: number) {
@@ -248,7 +271,9 @@ function Field({ label, children }: { label: React.ReactNode; children: React.Re
 function PlanInfoCard({ plan }: { plan: PlatformPlan }) {
   const c = PLAN_COLOR[plan.code] ?? PLAN_COLOR.solo;
   const isContact = Number(plan.priceMonthly) === 0;
-  const activeFeatures = FEATURE_LABELS.filter(f => plan[f.key]);
+  const totalActive = FEATURE_GROUPS.reduce(
+    (n, g) => n + g.rows.filter(r => plan[r.key]).length, 0
+  );
 
   return (
     <div
@@ -281,23 +306,42 @@ function PlanInfoCard({ plan }: { plan: PlatformPlan }) {
         </div>
       </div>
 
-      {/* Features */}
-      {activeFeatures.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {activeFeatures.map(f => (
-            <span
-              key={f.key as string}
-              className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium"
-              style={{ background: "rgba(255,255,255,0.7)", color: c.color, border: `1px solid ${c.border}` }}
-            >
-              <Check size={9} strokeWidth={3} /> {f.label}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {activeFeatures.length === 0 && (
+      {/* Features grouped by category */}
+      {totalActive === 0 ? (
         <p className="text-xs text-[#A8A29E]">CRM core only (Lead → Invoice)</p>
+      ) : (
+        <div className="space-y-2">
+          {FEATURE_GROUPS.map(group => {
+            const active = group.rows.filter(r => plan[r.key]);
+            if (active.length === 0) return null;
+            return (
+              <div key={group.title}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: c.color, opacity: 0.85 }}>
+                  {group.icon} {group.title}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {active.map(r => (
+                    <span
+                      key={String(r.key)}
+                      className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium"
+                      style={{ background: "rgba(255,255,255,0.7)", color: c.color, border: `1px solid ${c.border}` }}
+                    >
+                      <Check size={9} strokeWidth={3} /> {r.label}
+                      {r.comingSoon && (
+                        <span
+                          className="font-semibold"
+                          style={{ fontSize: 9, background: "#E8E0D8", color: "#9C6A3A", padding: "1px 5px", borderRadius: 4, marginLeft: 2 }}
+                        >
+                          SOON
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );

@@ -24,6 +24,7 @@ type PlatformPlan = {
   featureMultiBranch: boolean;
   featureAiAssistant: boolean;
   featureAccounting: boolean;
+  featureAvetmiss: boolean;
   featureCamp: boolean;
   featureFinance: boolean;
   featureApiAccess: boolean;
@@ -39,10 +40,46 @@ const EMPTY_FORM: Omit<PlatformPlan, "id" | "isActive" | "sortOrder"> = {
   maxUsers: 5, maxStudents: 100, maxBranches: 1, storageGb: 10,
   featureCommission: false, featureVisa: false, featureServiceModules: false,
   featureMultiBranch: false, featureAiAssistant: false, featureAccounting: false,
+  featureAvetmiss: false,
   featureCamp: false, featureFinance: false,
   featureApiAccess: false, featureWhiteLabel: false,
   isPopular: false,
 };
+
+// Categorised feature catalogue. `comingSoon` flags features that exist as
+// platform_plans columns but are not yet wired to any runtime gate or module.
+type FeatureDef = { key: keyof PlatformPlan; label: string; comingSoon?: boolean };
+type FeatureGroup = { icon: string; title: string; rows: FeatureDef[] };
+
+const FEATURE_GROUPS: FeatureGroup[] = [
+  {
+    icon: "💰", title: "Finance", rows: [
+      { key: "featureFinance",    label: "Finance Module" },
+      { key: "featureCommission", label: "Commission Auto-Calculation" },
+      { key: "featureAccounting", label: "Full Accounting Module (AR/AP)" },
+    ],
+  },
+  {
+    icon: "📦", title: "Service & Package", rows: [
+      { key: "featureServiceModules", label: "Service Modules (Pickup · Homestay · Internship · Settlement)" },
+      { key: "featureCamp",           label: "Camp Management" },
+      { key: "featureVisa",           label: "Visa Management Module" },
+    ],
+  },
+  {
+    icon: "🏢", title: "Operations", rows: [
+      { key: "featureMultiBranch", label: "Multi-Branch Support",  comingSoon: true },
+      { key: "featureAvetmiss",    label: "AVETMISS Reporting",    comingSoon: true },
+    ],
+  },
+  {
+    icon: "🤖", title: "AI & Integration", rows: [
+      { key: "featureAiAssistant", label: "AI Assistant",             comingSoon: true },
+      { key: "featureApiAccess",   label: "REST API / Webhook",       comingSoon: true },
+      { key: "featureWhiteLabel",  label: "White-label & Custom Branding" },
+    ],
+  },
+];
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 
@@ -195,33 +232,28 @@ function FormPanel({
         {numField("storageGb", "Storage (GB)", "storageGb")}
       </div>
 
-      {/* Features */}
-      <div>
-        <p className="text-xs font-medium text-[#57534E] uppercase tracking-[0.05em] mb-3">Features</p>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-0.5">
-          <Toggle id="fc" label="Commission Auto-Calculation" checked={form.featureCommission}
-            onChange={v => setForm(p => ({ ...p, featureCommission: v }))} />
-          <Toggle id="fv" label="Visa Management Module" checked={form.featureVisa}
-            onChange={v => setForm(p => ({ ...p, featureVisa: v }))} />
-          <Toggle id="fs" label="Service Modules (Pickup · Homestay · Internship · Settlement)"
-            checked={form.featureServiceModules}
-            onChange={v => setForm(p => ({ ...p, featureServiceModules: v }))} />
-          <Toggle id="fm" label="Multi-Branch Support" checked={form.featureMultiBranch}
-            onChange={v => setForm(p => ({ ...p, featureMultiBranch: v }))} />
-          <Toggle id="fai" label="AI Assistant" checked={form.featureAiAssistant}
-            onChange={v => setForm(p => ({ ...p, featureAiAssistant: v }))} />
-          <Toggle id="facc" label="Full Accounting Module (AR/AP)" checked={form.featureAccounting}
-            onChange={v => setForm(p => ({ ...p, featureAccounting: v }))} />
-          <Toggle id="fcamp" label="Camp Management" checked={form.featureCamp}
-            onChange={v => setForm(p => ({ ...p, featureCamp: v }))} />
-          <Toggle id="ffin" label="Finance Module" checked={form.featureFinance}
-            onChange={v => setForm(p => ({ ...p, featureFinance: v }))} />
-          <Toggle id="fapi" label="API Access" checked={form.featureApiAccess}
-            onChange={v => setForm(p => ({ ...p, featureApiAccess: v }))} />
-          <Toggle id="fwl" label="White-label & Custom Branding" checked={form.featureWhiteLabel}
-            onChange={v => setForm(p => ({ ...p, featureWhiteLabel: v }))} />
-        </div>
-        <div className="border-t border-[#E8E6E2] mt-3 pt-3">
+      {/* Features — grouped by category */}
+      <div className="space-y-4">
+        <p className="text-xs font-medium text-[#57534E] uppercase tracking-[0.05em]">Features</p>
+        {FEATURE_GROUPS.map(group => (
+          <div key={group.title}>
+            <p className="text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "#9C6A3A" }}>
+              {group.icon} {group.title}
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0.5 pl-1">
+              {group.rows.map(row => (
+                <Toggle
+                  key={String(row.key)}
+                  id={`tog-${String(row.key)}`}
+                  label={row.label + (row.comingSoon ? "  ·  SOON" : "")}
+                  checked={!!(form as any)[row.key]}
+                  onChange={v => setForm(p => ({ ...p, [row.key]: v }))}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+        <div className="border-t border-[#E8E6E2] pt-3">
           <Toggle id="fpop" label="Mark as Popular" checked={form.isPopular}
             onChange={v => setForm(p => ({ ...p, isPopular: v }))} />
         </div>
@@ -263,19 +295,6 @@ function FormPanel({
 
 // ── Plan card ─────────────────────────────────────────────────────────────────
 
-const CHIP_LABELS: Array<{ key: keyof PlatformPlan; label: string }> = [
-  { key: "featureCommission",     label: "Commission Auto-Calc" },
-  { key: "featureVisa",           label: "Visa Management"      },
-  { key: "featureServiceModules", label: "Services (Pickup/Homestay/Internship)" },
-  { key: "featureMultiBranch",    label: "Multi-Branch"         },
-  { key: "featureAiAssistant",    label: "AI Assistant"         },
-  { key: "featureAccounting",     label: "Accounting (AR/AP)"   },
-  { key: "featureCamp",           label: "Camp Management"      },
-  { key: "featureFinance",        label: "Finance Module"       },
-  { key: "featureApiAccess",      label: "REST API / Webhook"   },
-  { key: "featureWhiteLabel",     label: "White-label"          },
-];
-
 function fmtLimit(val: number) {
   return val >= 9999 ? "Unlimited" : val.toLocaleString();
 }
@@ -290,7 +309,6 @@ function PlanCard({
   onDeactivate: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
-  const activeFeatures = CHIP_LABELS.filter(c => plan[c.key]);
 
   return (
     <div
@@ -337,15 +355,44 @@ function PlanCard({
         <span className="flex items-center gap-1"><Building2 size={12} /> {fmtLimit(plan.maxBranches)} branches</span>
       </div>
 
-      {/* Feature chips */}
-      <div className="flex flex-wrap gap-1 flex-1 content-start mb-4">
-        {activeFeatures.length === 0 ? (
-          <span className="text-xs text-[#A8A29E]">No features enabled</span>
-        ) : activeFeatures.map(c => (
-          <span key={c.key} className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: "#F4F3F1", color: "#57534E" }}>
-            {c.label}
-          </span>
-        ))}
+      {/* Feature chips — grouped by category */}
+      <div className="flex-1 content-start mb-4 space-y-2">
+        {(() => {
+          const totalActive = FEATURE_GROUPS.reduce(
+            (n, g) => n + g.rows.filter(r => plan[r.key]).length, 0
+          );
+          if (totalActive === 0) return <span className="text-xs text-[#A8A29E]">No features enabled</span>;
+          return FEATURE_GROUPS.map(group => {
+            const active = group.rows.filter(r => plan[r.key]);
+            if (active.length === 0) return null;
+            return (
+              <div key={group.title}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "#9C6A3A" }}>
+                  {group.icon} {group.title}
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {active.map(r => (
+                    <span
+                      key={String(r.key)}
+                      className="text-[11px] px-2 py-0.5 rounded-full inline-flex items-center gap-1"
+                      style={{ background: "#F4F3F1", color: "#57534E" }}
+                    >
+                      {r.label}
+                      {r.comingSoon && (
+                        <span
+                          className="font-semibold"
+                          style={{ fontSize: 9, background: "#E8E0D8", color: "#9C6A3A", padding: "1px 5px", borderRadius: 4 }}
+                        >
+                          SOON
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          });
+        })()}
       </div>
 
       {/* Footer */}
@@ -474,6 +521,7 @@ export default function PlatformPlans() {
       featureMultiBranch: plan.featureMultiBranch,
       featureAiAssistant: plan.featureAiAssistant,
       featureAccounting: plan.featureAccounting,
+      featureAvetmiss: plan.featureAvetmiss,
       featureCamp: plan.featureCamp,
       featureFinance: plan.featureFinance,
       featureApiAccess: plan.featureApiAccess,
