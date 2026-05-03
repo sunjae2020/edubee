@@ -8,6 +8,7 @@ import {
   CheckCircle2, XCircle, ChevronDown, ChevronUp,
   Loader2, Save, Cable, Database, Plus, Trash2,
   Edit2, RefreshCw, Eye, EyeOff, HardDrive, ExternalLink, FolderOpen,
+  Receipt,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -691,11 +692,39 @@ function GoogleDriveSection() {
     clientId: string | null;
     connected: boolean;
     rootFolderId?: string | null;
+    autoCreateOnAccount?: boolean;
+    subfolderTemplate?: string[];
+    tokenExpiryDate?: number | null;
+    tokenExpiringSoon?: boolean;
+    tokenExpired?: boolean;
+    auditLog?: Array<{ action: string; at: string; userId?: string | null; accountId?: string | null; message?: string | null }>;
   }>({
     queryKey: ["google-drive-status"],
     queryFn: () => axios.get(`${BASE}/api/google-drive/status`).then(r => r.data),
     retry: false,
     throwOnError: false,
+  });
+
+  // Local editable copies for settings
+  const [autoCreateLocal, setAutoCreateLocal] = useState<boolean | null>(null);
+  const [subfolderInput, setSubfolderInput]   = useState<string>("");
+  const [editingSubfolders, setEditingSubfolders] = useState(false);
+
+  useEffect(() => {
+    if (gdStatus && autoCreateLocal === null) {
+      setAutoCreateLocal(!!gdStatus.autoCreateOnAccount);
+    }
+  }, [gdStatus]);
+
+  const saveSettingsMutation = useMutation({
+    mutationFn: (payload: { autoCreateOnAccount?: boolean; subfolderTemplate?: string[] }) =>
+      axios.put(`${BASE}/api/google-drive/settings`, payload),
+    onSuccess: () => {
+      toast({ title: "Settings saved" });
+      qc.invalidateQueries({ queryKey: ["google-drive-status"] });
+      setEditingSubfolders(false);
+    },
+    onError: (e: any) => toast({ title: "Save failed", description: e?.response?.data?.error, variant: "destructive" }),
   });
 
   // Handle OAuth redirect result
@@ -785,13 +814,16 @@ function GoogleDriveSection() {
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="bg-[#FFF7ED] border border-[#FDDCB5] rounded-lg p-3 text-xs text-[#92400E] space-y-1">
+              <div className="bg-[#FFF7ED] border border-[#FDDCB5] rounded-lg p-3 text-xs text-[#92400E] space-y-1.5">
                 <p className="font-semibold">One-time setup in Google Cloud Console:</p>
-                <p>1. Create a project → APIs &amp; Services → OAuth 2.0 Client ID</p>
-                <p>2. Application type: <strong>Web application</strong></p>
-                <p>3. Authorized redirect URI:</p>
-                <p className="font-mono bg-white/60 px-2 py-0.5 rounded">https://api.edubee.co/api/google-drive/callback</p>
-                <p>4. Enable <strong>Google Drive API</strong> in the project</p>
+                <p>1. Open <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer" className="underline">console.cloud.google.com</a> and create a new project (or select an existing one).</p>
+                <p>2. Go to <strong>APIs &amp; Services → Library</strong> and enable <strong>Google Drive API</strong>.</p>
+                <p>3. Go to <strong>APIs &amp; Services → OAuth consent screen</strong>. User type: <strong>External</strong>. Fill in app name and support email; add your domain to Authorized domains.</p>
+                <p>4. Go to <strong>APIs &amp; Services → Credentials → Create credentials → OAuth client ID</strong>. Application type: <strong>Web application</strong>.</p>
+                <p>5. Under <strong>Authorized redirect URIs</strong>, add exactly:</p>
+                <p className="font-mono bg-white/60 px-2 py-0.5 rounded select-all">https://api.edubee.co/api/google-drive/callback</p>
+                <p>6. Click <strong>Create</strong>, then copy the <strong>Client ID</strong> and <strong>Client Secret</strong> into the fields below.</p>
+                <p>7. While the app is in <em>Testing</em> mode, add your Google account as a Test user (OAuth consent screen → Test users) — required before you can connect.</p>
               </div>
 
               <div className="space-y-2">
@@ -895,6 +927,110 @@ function GoogleDriveSection() {
                   </p>
                 </div>
 
+                {/* ── Token expiry warning ── */}
+                {gdStatus?.tokenExpired && (
+                  <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 px-3 py-2 rounded-lg border border-red-200">
+                    <span className="font-semibold">Token expired —</span>
+                    <span>Reconnect Google Drive to restore access.</span>
+                  </div>
+                )}
+                {!gdStatus?.tokenExpired && gdStatus?.tokenExpiringSoon && (
+                  <div className="flex items-start gap-2 text-sm text-amber-800 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
+                    <span className="font-semibold">Token expiring soon —</span>
+                    <span>Expires {gdStatus?.tokenExpiryDate ? new Date(gdStatus.tokenExpiryDate).toLocaleString() : "shortly"}. Reconnect to keep auto-folder creation working.</span>
+                  </div>
+                )}
+
+                {/* ── Step 3: Auto-create toggle ── */}
+                <div className="space-y-2 pt-3 border-t border-[#E8E6E2]">
+                  <p className={label}>Step 3 — Auto-create folder on Account creation</p>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autoCreateLocal ?? false}
+                      onChange={(e) => {
+                        const next = e.target.checked;
+                        setAutoCreateLocal(next);
+                        saveSettingsMutation.mutate({ autoCreateOnAccount: next });
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm text-[#57534E]">
+                      Automatically create a Drive folder when a new <strong>Student</strong> Account is created
+                    </span>
+                  </label>
+                </div>
+
+                {/* ── Step 4: Subfolder template ── */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className={label}>Step 4 — Subfolder Template</p>
+                    {!editingSubfolders && (
+                      <button
+                        onClick={() => {
+                          setSubfolderInput((gdStatus?.subfolderTemplate ?? []).join("\n"));
+                          setEditingSubfolders(true);
+                        }}
+                        className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        <Edit2 size={11} /> Edit
+                      </button>
+                    )}
+                  </div>
+                  {editingSubfolders ? (
+                    <div className="space-y-2">
+                      <textarea
+                        className={`${inp} min-h-[120px] font-mono text-xs`}
+                        value={subfolderInput}
+                        onChange={(e) => setSubfolderInput(e.target.value)}
+                        placeholder={"Visa\nApplication\nContracts\nReceipts\nOther"}
+                      />
+                      <p className="text-xs text-[#A8A29E]">One folder name per line. Max 20.</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => saveSettingsMutation.mutate({
+                            subfolderTemplate: subfolderInput.split("\n").map(s => s.trim()).filter(Boolean),
+                          })}
+                          disabled={saveSettingsMutation.isPending}
+                          className="h-9 px-3 rounded-lg bg-(--e-orange) text-white text-sm flex items-center gap-1.5"
+                        >
+                          {saveSettingsMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save
+                        </button>
+                        <button onClick={() => setEditingSubfolders(false)} className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E]">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {(gdStatus?.subfolderTemplate ?? []).map((s) => (
+                        <span key={s} className="text-xs px-2 py-0.5 rounded-full bg-[#F4F3F1] border border-[#E8E6E2] text-[#57534E] font-mono">
+                          {s}
+                        </span>
+                      ))}
+                      {(!gdStatus?.subfolderTemplate || gdStatus.subfolderTemplate.length === 0) && (
+                        <span className="text-xs text-[#A8A29E]">No subfolders — only the parent folder will be created.</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Audit log (last 10) ── */}
+                {gdStatus?.auditLog && gdStatus.auditLog.length > 0 && (
+                  <div className="space-y-2 pt-3 border-t border-[#E8E6E2]">
+                    <p className={label}>Recent Activity</p>
+                    <div className="max-h-40 overflow-y-auto border border-[#E8E6E2] rounded-lg divide-y divide-[#F4F3F1]">
+                      {gdStatus.auditLog.map((entry, i) => (
+                        <div key={i} className="px-3 py-1.5 text-xs flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <span className="font-mono text-[#57534E]">{entry.action}</span>
+                            {entry.message && <span className="text-[#A8A29E] ml-2">— {entry.message}</span>}
+                          </div>
+                          <span className="text-[#A8A29E] shrink-0">{new Date(entry.at).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <button
                   onClick={() => disconnectMutation.mutate()}
                   disabled={disconnectMutation.isPending}
@@ -916,6 +1052,309 @@ function GoogleDriveSection() {
                 >
                   {connectMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <HardDrive size={14} />}
                   Connect Google Drive
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </IntegrationCard>
+  );
+}
+
+// ── QuickBooks Online Section ───────────────────────────────────────────────
+
+function QuickBooksSection() {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [location] = useLocation();
+  const [editingCreds, setEditingCreds] = useState(false);
+  const [clientIdInput, setClientIdInput] = useState("");
+  const [clientSecretInput, setClientSecretInput] = useState("");
+  const [environment, setEnvironment] = useState<"sandbox" | "production">("sandbox");
+  const [showSecret, setShowSecret] = useState(false);
+  const [testCustomer, setTestCustomer] = useState("Test Student");
+  const [testAmount, setTestAmount] = useState<number>(100);
+
+  const { data: qbStatus, isLoading } = useQuery<{
+    credentialsConfigured: boolean;
+    clientId: string | null;
+    environment: "sandbox" | "production";
+    connected: boolean;
+    realmId: string | null;
+  }>({
+    queryKey: ["quickbooks-status"],
+    queryFn: () => axios.get(`${BASE}/api/quickbooks/status`).then(r => r.data),
+    retry: false,
+    throwOnError: false,
+  });
+
+  useEffect(() => {
+    if (qbStatus?.environment) setEnvironment(qbStatus.environment);
+  }, [qbStatus?.environment]);
+
+  // Handle OAuth redirect result
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("quickbooks");
+    if (result === "connected") {
+      toast({ title: "QuickBooks connected successfully" });
+      qc.invalidateQueries({ queryKey: ["quickbooks-status"] });
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (result === "error") {
+      const msg = params.get("msg") ?? "Unknown error";
+      toast({ title: "QuickBooks connection failed", description: msg, variant: "destructive" });
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [location]);
+
+  const saveCredsMutation = useMutation({
+    mutationFn: () => axios.put(`${BASE}/api/quickbooks/credentials`, {
+      clientId:     clientIdInput.trim(),
+      clientSecret: clientSecretInput.trim(),
+      environment,
+    }),
+    onSuccess: () => {
+      toast({ title: "QuickBooks credentials saved" });
+      qc.invalidateQueries({ queryKey: ["quickbooks-status"] });
+      setEditingCreds(false);
+      setClientSecretInput("");
+    },
+    onError: (e: any) => toast({
+      title: "Save failed",
+      description: e?.response?.data?.error ?? e?.response?.data?.message ?? `HTTP ${e?.response?.status ?? "?"} ${e?.message ?? ""}`,
+      variant: "destructive",
+    }),
+  });
+
+  const connectMutation = useMutation({
+    mutationFn: () => axios.get(`${BASE}/api/quickbooks/auth-url`).then(r => r.data.url as string),
+    onSuccess: (url) => { window.location.href = url; },
+    onError: (e: any) => {
+      const msg = e?.response?.data?.error ?? e?.response?.data?.message ?? `HTTP ${e?.response?.status ?? "?"} ${e?.message ?? ""}`;
+      toast({ title: "QuickBooks Error", description: msg, variant: "destructive" });
+    },
+  });
+
+  const disconnectMutation = useMutation({
+    mutationFn: () => axios.post(`${BASE}/api/quickbooks/disconnect`),
+    onSuccess: () => { toast({ title: "QuickBooks disconnected" }); qc.invalidateQueries({ queryKey: ["quickbooks-status"] }); },
+    onError: () => toast({ title: "Error disconnecting", variant: "destructive" }),
+  });
+
+  const companyInfoMutation = useMutation({
+    mutationFn: () => axios.get(`${BASE}/api/quickbooks/company-info`).then(r => r.data),
+    onSuccess: (data) => {
+      const name = data?.companyInfo?.CompanyName ?? "(unknown)";
+      const country = data?.companyInfo?.Country ?? "";
+      toast({ title: "QuickBooks connection OK", description: `${name}${country ? ` — ${country}` : ""}` });
+    },
+    onError: (e: any) => toast({
+      title: "QuickBooks check failed",
+      description: e?.response?.data?.error ?? e?.response?.data?.message ?? `HTTP ${e?.response?.status ?? "?"} ${e?.message ?? ""}`,
+      variant: "destructive",
+    }),
+  });
+
+  const testInvoiceMutation = useMutation({
+    mutationFn: () => axios.post(`${BASE}/api/quickbooks/test-invoice`, {
+      customerName: testCustomer.trim(),
+      amount:       Number(testAmount),
+      description:  "Edubee CRM PoC test invoice",
+    }).then(r => r.data),
+    onSuccess: (data) => {
+      toast({ title: "Test invoice created", description: `Invoice #${data?.docNumber ?? data?.invoiceId}, total ${data?.totalAmt}` });
+    },
+    onError: (e: any) => toast({
+      title: "Test invoice failed",
+      description: e?.response?.data?.error ?? e?.response?.data?.message ?? `HTTP ${e?.response?.status ?? "?"} ${e?.message ?? ""}`,
+      variant: "destructive",
+    }),
+  });
+
+  if (isLoading) return <div className="flex justify-center py-6"><Loader2 size={20} className="animate-spin text-[#A8A29E]" /></div>;
+
+  const credentialsConfigured = qbStatus?.credentialsConfigured ?? false;
+  const connected = qbStatus?.connected ?? false;
+
+  return (
+    <IntegrationCard
+      icon={Receipt}
+      iconBg="bg-[#ECFDF5]"
+      iconColor="text-emerald-600"
+      name="QuickBooks Online"
+      description="Sync invoices, payments, and customers to QuickBooks for bookkeeping"
+      badge={<StatusBadge connected={connected} />}
+    >
+      <div className="space-y-5">
+
+        {/* ── Step 1: Credentials ── */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className={label}>Step 1 — Your QuickBooks App Credentials</p>
+            {credentialsConfigured && !editingCreds && (
+              <button
+                onClick={() => { setClientIdInput(qbStatus?.clientId?.replace("...", "") ?? ""); setEditingCreds(true); }}
+                className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+              >
+                <Edit2 size={11} /> Edit
+              </button>
+            )}
+          </div>
+
+          {credentialsConfigured && !editingCreds ? (
+            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+              <CheckCircle2 size={14} className="shrink-0" />
+              <span>
+                Credentials saved — Client ID: <code className="font-mono text-xs">{qbStatus?.clientId}</code>
+                {" · "}
+                Environment: <strong>{qbStatus?.environment}</strong>
+              </span>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="bg-[#FFF7ED] border border-[#FDDCB5] rounded-lg p-3 text-xs text-[#92400E] space-y-1">
+                <p className="font-semibold">One-time setup at Intuit Developer:</p>
+                <p>1. <a className="underline" href="https://developer.intuit.com" target="_blank" rel="noreferrer">developer.intuit.com</a> → Dashboard → Create an app</p>
+                <p>2. Choose scope: <strong>Accounting</strong> (com.intuit.quickbooks.accounting)</p>
+                <p>3. Add Redirect URI:</p>
+                <p className="font-mono bg-white/60 px-2 py-0.5 rounded">https://api.edubee.co/api/quickbooks/callback</p>
+                <p>4. Copy <strong>Client ID</strong> and <strong>Client Secret</strong> from the Keys tab (sandbox or production)</p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="space-y-1">
+                  <label className={label}>Environment</label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEnvironment("sandbox")}
+                      className={`h-9 px-3 rounded-lg border text-sm ${environment === "sandbox" ? "border-(--e-orange) bg-[#FFF7ED] text-[#92400E]" : "border-[#E8E6E2] text-[#57534E]"}`}
+                    >Sandbox</button>
+                    <button
+                      type="button"
+                      onClick={() => setEnvironment("production")}
+                      className={`h-9 px-3 rounded-lg border text-sm ${environment === "production" ? "border-(--e-orange) bg-[#FFF7ED] text-[#92400E]" : "border-[#E8E6E2] text-[#57534E]"}`}
+                    >Production</button>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className={label}>Client ID</label>
+                  <input
+                    className={inp}
+                    value={clientIdInput}
+                    onChange={e => setClientIdInput(e.target.value)}
+                    placeholder="ABxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className={label}>Client Secret</label>
+                  <div className="relative">
+                    <input
+                      className={inp}
+                      type={showSecret ? "text" : "password"}
+                      value={clientSecretInput}
+                      onChange={e => setClientSecretInput(e.target.value)}
+                      placeholder="••••••••••••••••••••••••••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSecret(s => !s)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-[#57534E]"
+                    >
+                      {showSecret ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => saveCredsMutation.mutate()}
+                  disabled={saveCredsMutation.isPending || !clientIdInput || !clientSecretInput}
+                  className="flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold text-white transition disabled:opacity-50"
+                  style={{ background: "var(--e-orange)" }}
+                >
+                  {saveCredsMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  Save Credentials
+                </button>
+                {editingCreds && (
+                  <button onClick={() => setEditingCreds(false)} className="h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E]">Cancel</button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Step 2: Connect ── */}
+        {credentialsConfigured && (
+          <div className="space-y-3 pt-3 border-t border-[#E8E6E2]">
+            <p className={label}>Step 2 — Connect Your QuickBooks Company</p>
+
+            {connected ? (
+              <>
+                <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+                  <CheckCircle2 size={14} className="shrink-0" />
+                  <span>Connected to QuickBooks. Realm ID: <code className="font-mono text-xs">{qbStatus?.realmId}</code></span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => companyInfoMutation.mutate()}
+                    disabled={companyInfoMutation.isPending}
+                    className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#E8E6E2] text-sm text-[#57534E] hover:bg-[#F4F3F1]"
+                  >
+                    {companyInfoMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                    Verify Connection
+                  </button>
+                  <button
+                    onClick={() => disconnectMutation.mutate()}
+                    disabled={disconnectMutation.isPending}
+                    className="flex items-center gap-1.5 text-sm text-red-500 border border-red-200 px-3 h-9 rounded-lg hover:bg-red-50 transition"
+                  >
+                    {disconnectMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                    Disconnect
+                  </button>
+                </div>
+
+                {/* PoC test invoice */}
+                <div className="space-y-2 pt-3 border-t border-[#E8E6E2]">
+                  <p className={label}>PoC — Send Test Invoice</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className={label}>Customer Name</label>
+                      <input className={inp} value={testCustomer} onChange={e => setTestCustomer(e.target.value)} placeholder="Test Student" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className={label}>Amount</label>
+                      <input className={inp} type="number" min={1} value={testAmount} onChange={e => setTestAmount(Number(e.target.value))} />
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => testInvoiceMutation.mutate()}
+                    disabled={testInvoiceMutation.isPending || !testCustomer || !testAmount}
+                    className="flex items-center gap-2 h-9 px-4 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700 transition disabled:opacity-50"
+                  >
+                    {testInvoiceMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Receipt size={14} />}
+                    Create Test Invoice
+                  </button>
+                  <p className="text-xs text-[#A8A29E]">
+                    Creates the customer if needed and uses the first available QBO Service item. Sandbox companies usually include "Services" by default.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-[#57534E]">
+                  Connect your QuickBooks company to enable bookkeeping sync (invoices, payments, customers).
+                </p>
+                <button
+                  onClick={() => connectMutation.mutate()}
+                  disabled={connectMutation.isPending}
+                  className="flex items-center gap-2 h-9 px-4 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700 transition"
+                >
+                  {connectMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Receipt size={14} />}
+                  Connect QuickBooks
                 </button>
               </div>
             )}
@@ -1100,6 +1539,12 @@ export default function TenantIntegrations() {
       <section className="space-y-3">
         <h2 className="text-xs font-bold text-[#A8A29E] uppercase tracking-widest">File Storage</h2>
         <GoogleDriveSection />
+      </section>
+
+      {/* ── Accounting / Bookkeeping ────────────────────────────────────────── */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-bold text-[#A8A29E] uppercase tracking-widest">Accounting / Bookkeeping</h2>
+        <QuickBooksSection />
       </section>
 
       {/* ── Coming Soon ─────────────────────────────────────────────────────── */}

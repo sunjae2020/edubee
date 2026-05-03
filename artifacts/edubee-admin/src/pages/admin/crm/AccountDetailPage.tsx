@@ -818,6 +818,18 @@ function GoogleDriveFolderWidget({ accountId, account, onUpdate }: {
   const [showManual, setShowManual] = useState(false);
 
   const hasDrive = !!(account?.googleDriveFolderUrl || account?.googleDriveFolderId);
+  const [showFiles, setShowFiles] = useState(false);
+
+  const filesQuery = useQuery<{
+    folderId: string | null;
+    folderUrl: string | null;
+    files: Array<{ id: string; name: string; mimeType: string; webViewLink?: string; iconLink?: string; modifiedTime?: string; size?: string }>;
+  }>({
+    queryKey: ["google-drive-files", accountId],
+    queryFn: () => axios.get(`${BASE}/api/google-drive/accounts/${accountId}/files`).then(r => r.data),
+    enabled: hasDrive && showFiles,
+    retry: false,
+  });
 
   const createMutation = useMutation({
     mutationFn: () => axios.post(`${BASE}/api/google-drive/accounts/${accountId}/folder`).then(r => r.data),
@@ -862,7 +874,44 @@ function GoogleDriveFolderWidget({ accountId, account, onUpdate }: {
             {unlinkMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
           </button>
         </div>
-      ) : (
+      ) : null}
+
+      {hasDrive && (
+        <div className="space-y-1.5">
+          <button
+            onClick={() => setShowFiles((v) => !v)}
+            className="text-xs text-[#57534E] hover:text-[#1C1917] flex items-center gap-1"
+          >
+            {showFiles ? "Hide files" : "Show files"} in folder
+          </button>
+          {showFiles && (
+            <div className="border border-[#E8E6E2] rounded-lg max-h-56 overflow-y-auto divide-y divide-[#F4F3F1] bg-white">
+              {filesQuery.isLoading && (
+                <div className="px-3 py-2 text-xs text-[#A8A29E] flex items-center gap-2">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Loading…
+                </div>
+              )}
+              {!filesQuery.isLoading && (filesQuery.data?.files?.length ?? 0) === 0 && (
+                <div className="px-3 py-2 text-xs text-[#A8A29E]">Folder is empty.</div>
+              )}
+              {filesQuery.data?.files?.map((f) => (
+                <a
+                  key={f.id}
+                  href={f.webViewLink ?? `https://drive.google.com/file/d/${f.id}/view`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[#F9F8F6]"
+                >
+                  {f.iconLink && <img src={f.iconLink} alt="" className="w-4 h-4 shrink-0" />}
+                  <span className="flex-1 truncate text-[#1C1917]">{f.name}</span>
+                  {f.modifiedTime && <span className="text-[#A8A29E] shrink-0">{new Date(f.modifiedTime).toLocaleDateString()}</span>}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!hasDrive && (
         <div className="flex items-center gap-2">
           <Button
             size="sm" variant="outline"

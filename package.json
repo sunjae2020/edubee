@@ -7,10 +7,14 @@
     "build": "bash scripts/build.sh",
     "start": "node artifacts/api-server/dist/index.cjs",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "dev:api": "cd artifacts/api-server && env $(grep -v '^#' ../../.env | grep -v '^$' | xargs) pnpm run dev",
+    "dev:admin": "pnpm --filter @workspace/edubee-admin run dev",
+    "dev": "concurrently -n api,admin -c blue,green \"pnpm dev:api\" \"pnpm dev:admin\""
   },
   "private": true,
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2"
   },

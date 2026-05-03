@@ -73,6 +73,9 @@
 2. 🔴 documents.ts fileFilter 추가
 3. 🟠 correction_requests 테이블 생성
 4. 🟠 menu_categories 테이블 생성
-5. 🟡 TypeScript 오류 해결 (edubee-website 기존 오류 다수 존재)
-6. 🟡 edubee.co 루트 도메인 Vercel 검증 완료 확인
-7. 🟡 portal.edubee.co 포털 계정 생성 (partner@browns.com.au 등 테스트 계정)
+5. 🟠 Airtable → Package Groups Program Partners 동기화 검증·배포
+   - `airtableService.ts syncPackageGroups()` 에 Institute/Accommodation/Tour Company/Pickup Driver 4개 linked record → `accounts.id` 매핑 로직 추가 완료 (로컬, 타입체크 통과)
+   - 남은 작업: 로컬 API에서 sync 트리거 → DB 반영·UI 확인 → 사용자 승인 후 배포
+6. 🟡 TypeScript 오류 해결 (edubee-website 기존 오류 다수 존재)
+7. 🟡 edubee.co 루트 도메인 Vercel 검증 완료 확인
+8. 🟡 portal.edubee.co 포털 계정 생성 (partner@browns.com.au 등 테스트 계정)

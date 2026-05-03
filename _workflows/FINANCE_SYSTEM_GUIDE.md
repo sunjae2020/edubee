@@ -96,7 +96,7 @@ Lead(QUALIFIED) → Quote(1:N QP) → Contract(1:N CP, 1:1 Account) → Invoice(
 | Invoice Status 자동 갱신 (scheduled→invoiced→partial→paid) | ⚠️ 앱 레벨 | `invoices.ar_status` |
 | Payment Header 1:1 Receipt | ✅★ | `receipts.payment_header_id` FK (Migration 0015) |
 | Payment Header → Journal Entry 자동 | ✅ | `journal_entries.payment_header_id`, `auto_generated=true` |
-| AR 완납 시 AP Status `pending→ready` 자동 전환 | ✅★ | `contract_products.ap_trigger='on_ar_paid'` (Migration 0015) — **실행 로직은 앱 레벨 구현 필요** |
+| AR 완납 시 AP Status `pending→ready` 자동 전환 | ✅ | `contract_products.ap_trigger='on_ar_paid'` (Migration 0015) — 실행 로직: `accounting-payments.ts` POST 핸들러 트랜잭션 내에서 자동 전환 (2026-05-01 구현) |
 | 학교 송금 (AP): `payment_type='trust_transfer'` | ✅ | `payment_headers.payment_type` |
 | AP 송금 시 `product_cost_lines` `pending→paid` 갱신 | ✅ | `product_cost_lines.payment_header_id`, `status` |
 
@@ -110,8 +110,9 @@ Lead(QUALIFIED) → Quote(1:N QP) → Contract(1:N CP, 1:1 Account) → Invoice(
 | `accommodation_mgt.billing_cycle` (monthly / per_term) | ✅★ | `accommodation_mgt.billing_cycle` (Migration 0015) |
 | 반복 Invoice → 부모 Invoice 추적 | ✅ | `invoices.parent_invoice_id` (self-ref) |
 | 반복 플래그 | ✅ | `invoices.is_recurring`, `invoices.recurring_cycle`, `invoices.recurring_seq` |
-| `service_end_date` 도달 시 스케줄러 중지 | ⚠️ | 스케줄러 미구현 (Phase C) |
-| 월별 독립 처리 (미납 해당월만 Overdue) | ⚠️ | `invoices.ar_status='overdue'` — cron은 있으나 자동 생성 없음 |
+| `service_end_date` 도달 시 스케줄러 중지 | ✅ | `invoice_schedules.end_date` / `max_runs` (Migration 0017, 2026-05-01) |
+| 월별 독립 처리 (미납 해당월만 Overdue) | ⚠️ | `invoices.ar_status='overdue'` — Overdue 마킹 cron 별도 |
+| 반복 청구 자동 발행 | ✅ | `invoice_schedules` + `jobs/invoiceScheduler.ts` (매일 02:00 AEST, Migration 0017) |
 
 ★ Migration 0015 적용
 
@@ -121,8 +122,8 @@ Lead(QUALIFIED) → Quote(1:N QP) → Contract(1:N CP, 1:1 Account) → Invoice(
 |----|------|------|
 | `contracts.account_id` NOT NULL 미적용 | nullable로 계약 생성 가능 | 기존 데이터 backfill 후 NOT NULL 추가 필요 |
 | `UNIQUE(contact_id, account_type)` 미설정 | 동일 Type Account 중복 DB 레벨 방지 없음 | `account_contacts`에 unique constraint 추가 필요 |
-| `ap_trigger` 실행 로직 미구현 | 컬럼은 추가됐으나 AR 완납 감지 → AP 전환 앱 로직 없음 | AR payment 처리 route에 자동 전환 로직 추가 필요 |
-| 반복 청구 스케줄러 미구현 | `is_recurring=true` Invoice 자동 생성 없음 | Phase C 예정 |
+| ~~`ap_trigger` 실행 로직 미구현~~ | ✅ 2026-05-01 해소 — `accounting-payments.ts` POST 트랜잭션 내 자동 전환 |
+| ~~반복 청구 스케줄러 미구현~~ | ✅ 2026-05-01 해소 — `invoice_schedules` + `jobs/invoiceScheduler.ts` (Migration 0017) |
 
 ---
 
@@ -463,63 +464,57 @@ journal_entries (
 )
 ```
 
-### 4.2 ⚠️ CRITICAL — DR/CR 매핑이 **두 군데에 다르게** 정의됨
+### 4.2 ✅ DR/CR 매핑 — 단일 출처 (DB 테이블)
 
-> **이것은 이 문서 전체에서 가장 중요한 주의사항입니다.**
+> **변경 (2026-05-01):** 이전에 `journalEntryService.ts` (DR_CR_MAP) 와 `accounting-payments.ts` (JE_MAP) 두 곳에 다르게 정의되어 있던 매핑을 **`journal_entry_mappings` 테이블로 단일화**했습니다. 이중화 이슈는 해소되었습니다.
 
-두 개의 서로 다른 매핑 엔진이 공존합니다:
+#### 구조
 
-#### ① `journalEntryService.ts`의 `DR_CR_MAP` (세분화 - Service Layer)
+매핑은 **DB 테이블** `journal_entry_mappings` 에서 관리합니다 (migration `0016_journal_entry_mappings.sql`).
 
-키 형식: `${paymentType}:${splitType}` — 조합 기반
-
-```typescript
-// 위치: artifacts/api-server/src/services/journalEntryService.ts
-const DR_CR_MAP = {
-  "trust_receipt:tuition":        { debit: "1200", credit: "2100", entryType: "trust_receipt" },
-  "trust_receipt:accommodation":  { debit: "1200", credit: "2300", entryType: "trust_receipt" },
-  "trust_receipt:pickup":         { debit: "1200", credit: "2400", entryType: "trust_receipt" },
-  "trust_receipt:insurance":      { debit: "1200", credit: "2200", entryType: "trust_receipt" },
-  "direct:service_fee":           { debit: "1100", credit: "3400", entryType: "service_fee" },
-  "direct:visa_fee":              { debit: "1100", credit: "3400", entryType: "service_fee" },
-  "trust_transfer:*":             { debit: "2100", credit: "1200", entryType: "school_transfer" },
-  "commission:pre_deduct":        { debit: "1200", credit: "3100", entryType: "commission_received" },
-  "commission:invoice":           { debit: "1100", credit: "1300", entryType: "commission_received" },
-  "cost_payment:sub_agent":       { debit: "4100", credit: "1100", entryType: "cost_payment" },
-  "cost_payment:super_agent":     { debit: "4200", credit: "1100", entryType: "cost_payment" },
-  "cost_payment:referral":        { debit: "4300", credit: "1100", entryType: "cost_payment" },
-  "cost_payment:salary":          { debit: "5200", credit: "1100", entryType: "cost_payment" },
-  "cost_payment:incentive":       { debit: "5300", credit: "1100", entryType: "cost_payment" },
-};
+```sql
+journal_entry_mappings (
+  payment_type  varchar(50) NOT NULL,
+  split_type    varchar(50) NOT NULL DEFAULT '*',  -- '*' = wildcard
+  debit_coa     varchar(10) NOT NULL,
+  credit_coa    varchar(10) NOT NULL,
+  entry_type    varchar(50) NOT NULL,
+  is_active     boolean NOT NULL DEFAULT true,
+  UNIQUE (payment_type, split_type)
+)
 ```
 
-#### ② `accounting-payments.ts`의 `JE_MAP` (단순화 - Route Layer)
+#### 현재 시드 데이터 (14건)
 
-키 형식: `paymentType` — 단독 기반
+| paymentType | splitType | DR | CR | entry_type |
+|-------------|-----------|----|----|------------|
+| trust_receipt | tuition | 1200 | 2100 | trust_receipt |
+| trust_receipt | accommodation | 1200 | 2300 | trust_receipt |
+| trust_receipt | pickup | 1200 | 2400 | trust_receipt |
+| trust_receipt | insurance | 1200 | 2200 | trust_receipt |
+| direct | service_fee | 1100 | 3400 | service_fee |
+| direct | visa_fee | 1100 | 3400 | service_fee |
+| trust_transfer | * | 2100 | 1200 | school_transfer |
+| commission | pre_deduct | 1200 | 3100 | commission_received |
+| commission | invoice | 1100 | 1300 | commission_received |
+| cost_payment | sub_agent | 4100 | 1100 | cost_payment |
+| cost_payment | super_agent | 4200 | 1100 | cost_payment |
+| cost_payment | referral | 4300 | 1100 | cost_payment |
+| cost_payment | salary | 5200 | 1100 | cost_payment |
+| cost_payment | incentive | 5300 | 1100 | cost_payment |
 
-```typescript
-// 위치: artifacts/api-server/src/routes/accounting-payments.ts
-const JE_MAP = {
-  trust_receipt:      { debit: "1200", credit: "1300" },  // ⚠️ CR=1300 (service와 다름!)
-  trust_transfer:     { debit: "2100", credit: "1200" },
-  commission:         { debit: "1100", credit: "3100" },
-  direct:             { debit: "4700", credit: "1100" },
-  service_fee_camp:   { debit: "1100", credit: "3500" },
-  camp_tour_ap:       { debit: "4600", credit: "1100" },
-  camp_institute_ap:  { debit: "4700", credit: "1100" },
-};
-```
+#### 코드 측 동작
 
-#### ⚠️ 불일치 포인트 (미해결 이슈)
+- [services/journalEntryService.ts](../artifacts/api-server/src/services/journalEntryService.ts) — DB 매핑을 **60초 TTL 캐시**로 read-through. DB 비어있/장애 시 in-code `FALLBACK_DR_CR_MAP` 사용.
+- [routes/accounting-payments.ts](../artifacts/api-server/src/routes/accounting-payments.ts) — `JE_MAP` 제거. 모든 분개는 `createJournalEntriesForPaymentLine()` 라인별 호출로 통일.
 
-| paymentType | Service 매핑 (splitType별) | Route 매핑 (단독) |
-|-------------|---------------------------|------------------|
-| `trust_receipt` | CR: 2100/2200/2300/2400 (splitType별) | CR: **1300** |
-| `trust_transfer` | CR: 1200 (동일) | CR: 1200 (동일) |
-| `commission` | DR: 1200 또는 1100 (splitType별) | DR: **1100** (고정) |
-| `direct` | DR: 1100 (service_fee) | DR: **4700** (반대!) |
+#### 매핑 변경 절차 (코드 배포 불필요)
 
-**→ Claude Code 작업 시 새 paymentType 추가하거나 매핑 수정 시 반드시 두 곳 모두 업데이트할 것.**
+1. `POST /api/accounting/je-mappings` 또는 `PATCH /api/accounting/je-mappings/:id` 로 DB 행 수정 (admin only).
+2. `POST /api/accounting/je-mappings/refresh-cache` 로 캐시 즉시 무효화 (또는 60초 TTL 만료 대기).
+3. 신규 `paymentType:splitType` 조합 시 INSERT 만으로 적용 — 코드 수정 불필요.
+
+> **반드시 지킬 것**: 새 paymentType 추가 시 코드의 `FALLBACK_DR_CR_MAP` 도 함께 업데이트해야 DB 장애 시 안전합니다.
 
 ### 4.3 실제 JE 생성 호출 경로
 
@@ -755,11 +750,13 @@ generateTaxInvoice({
 |------|------|
 | `staff_id` 귀속 (`journal_entries`, `payment_lines`) | ✅ 스키마 존재 |
 | 실시간 귀속 매출 쿼리 가능 | ✅ 가능 |
-| `staff_kpi_periods` 캐시 테이블 | ❌ **미구현** |
-| `incentive_tiers` 티어 구조 | ❌ **미구현** |
-| KPI 집계 크론잡 | ❌ 미구현 |
-| 인센티브 자동 계산 | ❌ 미구현 |
-| 승인 워크플로우 | ❌ 미구현 |
+| `staff_kpi_periods` 캐시 테이블 | ✅ 스키마 존재 (`lib/db/src/schema/kpi.ts`) |
+| `kpi_targets` (직원/팀 목표·인센티브 정책) | ✅ 스키마 존재 |
+| `team_kpi_periods` (팀 롤업) | ✅ 스키마 존재 |
+| `incentive_tiers` 티어 구조 | ✅ 2026-05-01 — Migration 0018 (역할·구간·기간 매트릭스, effective_from/to 정책 이력) |
+| KPI 집계 크론잡 | ✅ `jobs/kpiScheduler.ts` (매월 1일 00:05 + 분기말, AEST) |
+| 인센티브 자동 계산 | ✅ 2026-05-01 — `kpi_targets` 우선 → `incentive_tiers` 폴백 (role-specific & 최고 구간 우선) |
+| 승인 워크플로우 | ⚠️ `staff_kpi_periods.status` (draft/submitted/approved/paid) 컬럼은 있으나 전용 라우트 미구현 |
 
 ### 6.2 현재 가능한 귀속 추적 (실시간 쿼리)
 
@@ -788,76 +785,94 @@ WHERE staff_id = $1
 GROUP BY staff_id;
 ```
 
-### 6.3 🎯 TO-BE — 도입 예정 구조
+### 6.3 ✅ 구현된 구조 (2026-05-01)
 
-**`staff_kpi_periods` 캐시 테이블 (도입 필요):**
+**`staff_kpi_periods` (`lib/db/src/schema/kpi.ts`):**
+- 직원별 월/분기/반기/연간 KPI 스냅샷
+- 활동 KPI: lead_count, conversion_count, conversion_rate, payment_processed_count, visa_granted_count
+- 파이낸스 KPI: ar_scheduled / ar_collected / ar_overdue / ap_scheduled / ap_paid / net_revenue (= ar_collected − ap_paid)
+- 목표·성과급: target_amount, excess_amount, incentive_type, incentive_rate, incentive_fixed, incentive_amount, **incentive_tier**
+- 승인 흐름: status (draft / submitted / approved / paid / rejected), approved_by, approved_at, paid_at
 
-```sql
-CREATE TABLE staff_kpi_periods (
-  id                       UUID PRIMARY KEY,
-  staff_id                 UUID NOT NULL FK → users,
-  period_type              VARCHAR(20) NOT NULL,   -- monthly | term
-  period_start             DATE NOT NULL,
-  period_end               DATE NOT NULL,
-  -- KPI 집계
-  lead_count               INTEGER DEFAULT 0,
-  conversion_count         INTEGER DEFAULT 0,
-  conversion_rate          DECIMAL(8,4),
-  attributed_revenue       DECIMAL(12,2) DEFAULT 0,
-  payment_processed_count  INTEGER DEFAULT 0,
-  visa_granted_count       INTEGER DEFAULT 0,
-  -- 인센티브
-  incentive_rate           DECIMAL(8,4),
-  incentive_amount         DECIMAL(12,2) DEFAULT 0,
-  bonus_tier               VARCHAR(50),            -- standard | silver | gold | platinum
-  -- 승인 흐름
-  status                   VARCHAR(20) DEFAULT 'draft',
-  approved_by              UUID FK → users,
-  approved_at              TIMESTAMP,
-  paid_at                  TIMESTAMP,
-  UNIQUE (staff_id, period_type, period_start)
-);
-```
+**`kpi_targets` — 직원 또는 팀별 목표·인센티브 정책 (Active 기간 관리):**
+- staff_id XOR team_id (둘 중 하나만 set)
+- target_amount + incentive_type (percentage / fixed / none)
+- valid_from / valid_to 로 정책 이력 관리
 
-**`incentive_tiers` 티어 테이블 (도입 필요):**
+**`team_kpi_periods` — 팀 단위 롤업 (users.team_id 기준).**
+
+**`incentive_tiers` (Migration 0018, `lib/db/src/schema/kpi.ts`) — 매출 구간별 티어 정책:**
 
 ```sql
 CREATE TABLE incentive_tiers (
-  id          UUID PRIMARY KEY,
-  account_id  UUID FK → accounts,        -- 지사별 또는 개인별
-  from_amount DECIMAL(12,2),
-  to_amount   DECIMAL(12,2),
-  rate        DECIMAL(8,4),
-  tier_name   VARCHAR(50)                -- 'Tier 1' | 'Silver' | 'Gold'
+  id              uuid PRIMARY KEY,
+  tier_name       varchar(50) NOT NULL,        -- 'Bronze' | 'Silver' | 'Gold' | 'Platinum'
+  applies_to_role varchar(50),                  -- null = all roles, e.g. 'admission'
+  period_type     varchar(20) NOT NULL DEFAULT 'monthly',
+  min_revenue     decimal(12,2) NOT NULL DEFAULT 0,
+  max_revenue     decimal(12,2),                -- null = no upper bound
+  incentive_type  varchar(20) NOT NULL,         -- 'percentage' | 'fixed'
+  incentive_rate  decimal(8,4),                 -- 0.0500 = 5%
+  incentive_fixed decimal(12,2),
+  applies_to      varchar(20) NOT NULL DEFAULT 'excess',
+                                                -- 'excess' = (revenue - min) * rate
+                                                -- 'total'  = revenue * rate
+  effective_from  date NOT NULL,
+  effective_to    date,
+  status          varchar(20) NOT NULL DEFAULT 'Active',
+  UNIQUE (tier_name, applies_to_role, period_type, effective_from)
 );
 ```
 
-### 6.4 KPI 집계 크론잡 의사코드 (향후 구현)
+### 6.4 KPI 집계 크론잡 — 구현됨
 
-```ts
-// artifacts/api-server/src/jobs/aggregate-kpi.ts (신규 필요)
-// 매일 자정 + 월말 최종 확정
+위치: [`artifacts/api-server/src/jobs/kpiScheduler.ts`](../artifacts/api-server/src/jobs/kpiScheduler.ts)
 
-async function aggregateStaffKPI(
-  staffId: string,
-  periodStart: Date,
-  periodEnd: Date
-) {
-  // 1. Lead 수 (leads.assigned_staff_id)
-  const leadCount = await countLeads(staffId, periodStart, periodEnd);
+스케줄:
+- **월간**: 매월 1일 00:05 (Australia/Sydney) — 전월 KPI 집계
+- **분기**: 3/6/9/12월 1일 00:10 — 직전 분기 KPI 집계
 
-  // 2. 계약 전환 수 (contracts.owner_id)
-  const conversionCount = await countContracts(staffId, periodStart, periodEnd);
+처리 흐름 (직원당):
+```
+1. Lead 수 (leads.assigned_staff_id, status NOT IN closed/lost/disqualified)
+2. 계약 전환 수 (contracts.owner_id)
+3. Visa 승인 수 (study_abroad_mgt.assigned_staff_id, visa_granted=true)
+4. Payment 처리 건수 (payment_lines.staff_id OR payment_headers.created_by)
+5. AR/AP 집계 (contract_products: ar_scheduled, ar_collected, ar_overdue, ap_scheduled, ap_paid)
+6. net_revenue = ar_collected - ap_paid
+7. 인센티브 정책 lookup (우선순위):
+   ① kpi_targets WHERE staff_id = ? AND status='Active' AND valid period
+   ② kpi_targets WHERE team_id = (user.team_id) AND status='Active' AND valid period
+   ③ incentive_tiers (폴백) — applies_to_role 매칭 + 매출 구간 매칭
+                              role-specific 우선, 최고 구간 우선
+8. incentive_amount 계산:
+   - tier.applies_to='excess': (net_revenue − min_revenue) × rate
+   - tier.applies_to='total' : net_revenue × rate
+   - incentive_type='fixed'  : incentive_fixed
+9. staff_kpi_periods UPSERT (status='approved'/'paid' 인 경우 skip → 과거 정산 무결성 보호)
+```
 
-  // 3. 귀속 매출 (journal_entries.staff_id + credit_coa LIKE '3%')
-  const attributedRevenue = await sumAttributedRevenue(staffId, periodStart, periodEnd);
+### 6.5 인센티브 티어 관리 API
 
-  // 4. Tier 계산 (incentive_tiers 조회)
-  const tier = await calculateTier(attributedRevenue, staffId);
-  const incentive = await calculateTieredIncentive(attributedRevenue, staffId);
+```
+GET   /api/incentive-tiers              # finance/admin/team_manager
+POST  /api/incentive-tiers              # super_admin/admin
+PATCH /api/incentive-tiers/:id          # super_admin/admin
+```
 
-  // 5. Upsert staff_kpi_periods
-  await db.staff_kpi_periods.upsert({ ... });
+예: 입학상담사 월간 Gold 티어 (50K 초과분에 5%):
+```json
+POST /api/incentive-tiers
+{
+  "tierName": "Gold",
+  "appliesToRole": "admission",
+  "periodType": "monthly",
+  "minRevenue": 50000,
+  "maxRevenue": 100000,
+  "incentiveType": "percentage",
+  "incentiveRate": 0.05,
+  "appliesTo": "excess",
+  "effectiveFrom": "2026-05-01"
 }
 ```
 
@@ -1016,7 +1031,7 @@ cat artifacts/api-server/src/routes/finance.ts
 | 1 | **Legacy는 건드리지 않음** — Camp, Agent Invoice 관련 코드는 유지만 |
 | 2 | **새 Finance 기능은 New Accounting 시스템에 추가** |
 | 3 | CoA 코드는 `COA` 상수로 추출 후 사용 (하드코딩 금지) |
-| 4 | DR_CR_MAP 수정 시 **journalEntryService.ts + accounting-payments.ts 양쪽 모두** 업데이트 |
+| 4 | DR/CR 매핑은 **`journal_entry_mappings` DB 테이블**에서만 관리. 코드의 `FALLBACK_DR_CR_MAP` 은 폴백용으로만 동기화 유지. |
 | 5 | Payment 저장 시 **반드시 `db.transaction()`** 사용 (원자적 보장) |
 | 6 | `financeDelegationGuard` — camp_coordinator 역할 재무 작업 시 필수 검증 |
 | 7 | Split 합계 = header total_amount (DB 레벨 제약은 없으나 앱 레벨 검증 필수) |
@@ -1029,7 +1044,7 @@ cat artifacts/api-server/src/routes/finance.ts
 | 1 | `chart_of_accounts` 코드 임의 삭제 | FK 연쇄 오류 |
 | 2 | `journal_entries` 수동 INSERT | 분개 정합성 파괴 |
 | 3 | `ar_amount`, `ap_amount` 직접 수정 | `contract_products`가 원천 |
-| 4 | DR_CR_MAP 한 곳만 수정 | 이중 매핑 불일치 악화 |
+| 4 | DR/CR 매핑을 코드에 하드코딩 | DB 단일 출처(journal_entry_mappings) 우회 → 캐시/실DB 불일치 |
 | 5 | `contract_finance_items` 스키마 변경 | Legacy Camp 시스템 깨짐 |
 | 6 | `payment_lines` 저장 시 트랜잭션 누락 | JE 부분 생성으로 DR≠CR |
 | 7 | `financeDelegationGuard` 우회 | 권한 통제 무너짐 |
@@ -1046,9 +1061,12 @@ Step 2: CoA 코드 필요 여부 확인
   ├─ 기존 코드로 충분? → 그대로 사용
   └─ 신규 코드 필요?  → chart_of_accounts INSERT (admin 승인)
 
-Step 3: paymentType 필요 여부 확인
-  ├─ 기존 type 재사용? → DR_CR_MAP 확인 후 사용
-  └─ 신규 type 필요?  → DR_CR_MAP + JE_MAP **양쪽 모두** 추가
+Step 3: paymentType / splitType 필요 여부 확인
+  ├─ 기존 매핑 재사용? → SELECT * FROM journal_entry_mappings 로 확인
+  └─ 신규 매핑 필요?
+       1) journal_entry_mappings INSERT (또는 POST /api/accounting/je-mappings)
+       2) FALLBACK_DR_CR_MAP 에도 동일하게 추가 (DB 장애 폴백용)
+       3) POST /api/accounting/je-mappings/refresh-cache 로 캐시 무효화
 
 Step 4: 트랜잭션 경계 설계
   ├─ Payment Header + Lines + JE: 반드시 한 트랜잭션
@@ -1095,30 +1113,26 @@ HAVING ABS(ph.total_amount - COALESCE(SUM(pl.amount), 0)) > 0.01;
 <a id="9-로드맵"></a>
 ## 9. 마이그레이션 로드맵
 
-### 9.1 Phase A — KPI 캐시 도입 (우선)
-
-**목표:** 실시간 쿼리 부담 해소, 인센티브 자동 계산 기반 마련
+### 9.1 Phase A — KPI 캐시 도입 (✅ 2026-05-01 완료)
 
 ```
-Phase A 작업:
-  1. staff_kpi_periods 테이블 마이그레이션 생성
-  2. incentive_tiers 테이블 마이그레이션 생성
-  3. aggregate-kpi.ts 크론잡 구현
-  4. /api/kpi/* 라우트 신설
-  5. KPI Dashboard UI (/kpi/my-dashboard)
+Phase A 결과:
+  1. ✅ staff_kpi_periods (Migration 0007)
+  2. ✅ incentive_tiers   (Migration 0018, 2026-05-01)
+  3. ✅ kpiScheduler.ts   (월간 + 분기 cron, 인센티브 자동 계산)
+  4. ✅ /api/incentive-tiers (CRUD)
+  5. ⚠️  /api/kpi/* 일반 조회 + KPI Dashboard UI 는 별도 진행 필요
 ```
 
-### 9.2 Phase B — DR_CR 매핑 통합
-
-**목표:** 두 매핑 엔진 일원화
+### 9.2 Phase B — DR_CR 매핑 통합 (✅ 2026-05-01 완료)
 
 ```
-Phase B 작업:
-  1. accounting-payments.ts의 JE_MAP 제거
-  2. 모든 JE 생성을 createJournalEntriesForPaymentLine 호출로 통일
-  3. journalEntryService.ts에 Camp 전용 paymentType 추가
-     - service_fee_camp, camp_tour_ap, camp_institute_ap
-  4. 기존 이중 매핑으로 생성된 JE 감사 및 정합성 검증
+Phase B 결과:
+  1. ✅ accounting-payments.ts의 JE_MAP 제거
+  2. ✅ 모든 JE 생성을 createJournalEntriesForPaymentLine 호출로 통일
+  3. ✅ journal_entry_mappings DB 테이블로 매핑 단일화 (Migration 0016, 14건 seed)
+  4. ⚠️  Camp 전용 paymentType 시드 미완료 (§10.3 참조 — 운영 재개 시점에 INSERT 필요)
+  5. ⚠️  과거 이중 매핑으로 생성된 JE 감사 리포트는 별도 진행 필요
 ```
 
 ### 9.3 Phase C — Payable Items 큐 도입
@@ -1150,15 +1164,17 @@ Phase D 작업 (장기 로드맵):
 <a id="10-경고"></a>
 ## 10. ⚠️ 알려진 이슈 및 경고
 
-### 10.1 🔴 CRITICAL — DR_CR 매핑 이중화
+### 10.1 ✅ RESOLVED — DR_CR 매핑 이중화 (2026-05-01)
 
-**문제:** 동일한 `paymentType='trust_receipt'`에 대해:
-- `journalEntryService.ts`: CR = `2100` (AP Tuition)
-- `accounting-payments.ts`: CR = `1300` (AR Commission)
+**과거 문제:** `journalEntryService.ts` (DR_CR_MAP) vs `accounting-payments.ts` (JE_MAP) 두 곳에 매핑이 다르게 정의되어 있었음.
 
-**영향:** 어느 경로로 Payment가 처리되느냐에 따라 분개 결과가 다름
-**조치 필요:** Phase B에서 통합
-**우회법 (현재):** `trust_receipt`는 `journalEntryService`로만 처리, `accounting-payments.ts`의 해당 매핑은 참고용으로만 존재
+**해소 방법:**
+- migration `0016_journal_entry_mappings.sql` 로 `journal_entry_mappings` DB 테이블 신설 + 14건 seed
+- `accounting-payments.ts` 의 `JE_MAP` 제거, 모든 JE 생성을 `createJournalEntriesForPaymentLine()` 라인별 호출로 통일
+- `journalEntryService.ts` 가 DB 매핑을 60초 TTL 캐시로 read-through, 폴백 in-code 맵 제공
+- 신규 라우트 `/api/accounting/je-mappings/*` (CRUD + refresh-cache)
+
+**상세:** §4.2 참조
 
 ### 10.2 🟡 WARNING — 이중 분개 검증이 강제되지 않음
 
@@ -1168,22 +1184,49 @@ Phase D 작업 (장기 로드맵):
 - 새 Payment 관련 라우트 작성 시 **반드시 validateDoubleEntry 호출 추가**
 - 저장 전 DR ≠ CR 검증
 
-### 10.3 🟡 WARNING — Camp 전용 paymentType 존재
+### 10.3 🟡 WARNING — Camp 전용 paymentType 미시드
 
-**이유:** Camp 워크플로우 특수성 (institute, tour 등)
-**매핑:**
-- `service_fee_camp`, `camp_tour_ap`, `camp_institute_ap`
-- 오직 `accounting-payments.ts`의 `JE_MAP`에만 정의됨
+**Camp 워크플로우 특수 paymentType:** `service_fee_camp`, `camp_tour_ap`, `camp_institute_ap`
 
-**조치:**
-- Camp 관련 작업 시 이 paymentType 사용
-- 일반 유학 상담에서는 사용 금지
+**현재 상태 (2026-05-01):** `JE_MAP` 제거 시 함께 빠졌고, `journal_entry_mappings` seed에는 미포함. Camp 결제 처리 시 매핑 누락 에러 발생.
 
-### 10.4 🟡 WARNING — Invoice 자동 발행 미구현
+**조치:** Camp 운영 재개 시점에 `journal_entry_mappings` 에 INSERT 필요:
+```sql
+INSERT INTO journal_entry_mappings (payment_type, split_type, debit_coa, credit_coa, entry_type, description) VALUES
+  ('service_fee_camp',  '*', '1100', '3500', 'service_fee', 'Camp service fee receipt'),
+  ('camp_tour_ap',      '*', '4600', '1100', 'cost_payment', 'Camp tour cost'),
+  ('camp_institute_ap', '*', '4700', '1100', 'cost_payment', 'Camp institute cost');
+```
+이후 `POST /api/accounting/je-mappings/refresh-cache`.
 
-**현재:** AR due_date 기반 자동 발행 없음 → 스태프 수동 발행
-**영향:** 정기 청구(guardian 등) 서비스의 반복 인보이스 수동 처리
-**조치 필요:** 별도 크론잡 구현 (Phase C 근처)
+### 10.4 ✅ RESOLVED — 반복 청구 자동 발행 (2026-05-01)
+
+**과거 문제:** `invoices.is_recurring` 컬럼만 존재, 자동 발행 스케줄러 부재.
+
+**해소 방법:**
+- migration `0017_invoice_schedules.sql` — `invoice_schedules` (스케줄 마스터) + `invoice_schedule_runs` (멱등 로그, UNIQUE(schedule, run_date))
+- `jobs/invoiceScheduler.ts` — 매일 02:00 Australia/Sydney cron
+- 라우트 `/api/invoice-schedules/*` (CRUD + 수동 실행 `POST /run-now`)
+- frequency: `weekly | monthly | quarterly | termly`
+- end_date / max_runs 도달 시 자동 status='completed'
+
+### 10.4-A ✅ RESOLVED — `ap_trigger='on_ar_paid'` 자동 전환 (2026-05-01)
+
+**과거 문제:** `contract_products.ap_trigger` 컬럼은 Migration 0015에 있었으나 실행 로직 부재.
+
+**해소 방법:** `routes/accounting-payments.ts` POST 핸들러 트랜잭션 내에서, `paymentType='trust_receipt'` 처리 시 동일 cpIds 중 `ap_trigger='on_ar_paid' AND ap_status='pending'` 인 행을 자동으로 `ap_status='ready'` 로 전환.
+
+### 10.4-B ✅ RESOLVED — KPI / 인센티브 자동 계산 (2026-05-01)
+
+**과거 문제:** `staff_kpi_periods.incentive_tier` 컬럼만 존재, 마스터 테이블·계산 로직 부재.
+
+**해소 방법:**
+- migration `0018_incentive_tiers.sql` — `incentive_tiers` 마스터 (역할 × 매출구간 × 기간 × `effective_from` 정책 이력)
+- `jobs/kpiScheduler.ts` 확장 — `kpi_targets`(직원→팀) 우선 → `incentive_tiers` 폴백 (role-specific 우선, 최고 매칭 구간 우선). 결과를 `staff_kpi_periods.incentive_tier` 에 기록
+- 라우트 `/api/incentive-tiers` (CRUD)
+- 정책 변경 시에도 과거 정산은 변경되지 않음 (`status='approved'/'paid'` 스냅샷은 skip)
+
+**상세:** §6.3, §6.4, §6.5 참조
 
 ### 10.5 🟡 WARNING — BK ≠ MGR 규칙이 DB 제약으로 강제되지 않음
 
@@ -1249,25 +1292,48 @@ Phase D 작업 (장기 로드맵):
 | `receipts` | `finance.ts` | `payment_header_id` | Payment Header 1:1 Receipt 연결 |
 | `accommodation_mgt` | `services.ts` | `billing_cycle` | monthly / per_term 반복 청구 |
 
-### A.4 🎯 TO-BE — 향후 도입 예정 테이블
+### A.4 신규 도입 테이블 (2026-05-01)
+
+| 테이블 | 목적 | Migration |
+|--------|------|-----------|
+| `journal_entry_mappings` | DR/CR 매핑 단일 출처 (paymentType × splitType → DR/CR) | 0016 |
+| `invoice_schedules` | 반복 청구 스케줄 마스터 | 0017 |
+| `invoice_schedule_runs` | 스케줄 실행 이력 (멱등 보장) | 0017 |
+| `incentive_tiers` | 매출 구간별 인센티브 티어 (역할·기간·effective_from) | 0018 |
+
+### A.5 향후 도입 예정 테이블
 
 | 테이블 | 목적 | Phase |
 |--------|------|-------|
-| `staff_kpi_periods` | KPI 집계 캐시 | Phase A |
-| `incentive_tiers` | 티어별 인센티브 구간 | Phase A |
 | `payable_items` | 지급 대기 큐 | Phase C |
+| `je_audit_log` | 분개 감사 로그 (정합성 일배치 검증용) | 별도 |
 
-### A.4 핵심 서비스 파일
+### A.6 핵심 서비스/잡 파일
 
 | 파일 | 역할 | 시스템 |
 |------|------|-------|
-| `services/journalEntryService.ts` | DR/CR 자동 생성 엔진 | New |
+| `services/journalEntryService.ts` | DR/CR 자동 생성 엔진 (DB 매핑 + 60s TTL 캐시 + 폴백) | New |
 | `services/contractFinanceService.ts` | 계약 → 재무 자동 생성 | Legacy |
 | `services/taxInvoiceService.ts` | Tax Invoice 생성 (GST 포함) | New |
 | `services/ledgerService.ts` | `account_ledger_entries` 조작 | 공유 |
 | `services/receiptPdfService.ts` | Receipt PDF + GCS 업로드 | Legacy |
 | `services/exchangeRateSync.ts` | 환율 동기화 | 공유 |
 | `lib/financeDelegationGuard.ts` | 권한 위임 검증 | New |
+| `jobs/invoiceScheduler.ts` | 반복 청구 자동 발행 (매일 02:00 AEST) | New (2026-05-01) |
+| `jobs/kpiScheduler.ts` | KPI 집계 + 인센티브 자동 계산 (월간/분기) | New |
+| `jobs/taxInvoiceScheduler.ts` | Tax Invoice 자동 발행 | New |
+| `jobs/exchangeRateSync` (cron in `index.ts`) | 환율 자동 동기화 (매일 자정 AEST) | 공유 |
+
+### A.7 신규 라우트 (2026-05-01)
+
+| 라우트 | 권한 | 용도 |
+|--------|------|------|
+| `GET/POST/PATCH /api/accounting/je-mappings` | finance/admin | DR/CR 매핑 CRUD |
+| `POST /api/accounting/je-mappings/refresh-cache` | admin | 매핑 캐시 무효화 |
+| `GET/POST/PATCH /api/invoice-schedules` | finance | 반복청구 스케줄 CRUD |
+| `GET /api/invoice-schedules/:id/runs` | finance | 실행 이력 |
+| `POST /api/invoice-schedules/run-now` | admin | 수동 실행 |
+| `GET/POST/PATCH /api/incentive-tiers` | finance/admin | 인센티브 티어 정책 CRUD |
 
 ---
 
