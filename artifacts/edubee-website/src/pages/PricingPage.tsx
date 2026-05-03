@@ -4,120 +4,146 @@ import { Check, X } from 'lucide-react'
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, '')
 function link(path: string) { return `${BASE}${path}` }
 
-const STATIC_PLANS = [
+type Plan = {
+  planName: string
+  badge: string
+  price: string
+  priceSub: string
+  isContact: boolean
+  isFree: boolean
+  studentsPerMonth: string
+  storage: string
+  highlighted: boolean
+  comingSoon: boolean
+  ctaUrl: string
+  ctaLabel: string
+  // 11 feature flags from platform_plans table
+  featureFinance: boolean
+  featureCommission: boolean
+  featureAccounting: boolean
+  featureServiceModules: boolean
+  featureCamp: boolean
+  featureVisa: boolean
+  featureMultiBranch: boolean
+  featureAvetmiss: boolean
+  featureAiAssistant: boolean
+  featureApiAccess: boolean
+  featureWhiteLabel: boolean
+}
+
+const STATIC_PLANS: Plan[] = [
   {
-    planName: 'LITE',
-    badge: '',
-    price: 'Free',
-    priceSub: '',
-    isContact: false,
-    isFree: true,
-    studentsPerMonth: '50/mo',
-    storage: '10 MB',
-    schoolDB: false,
-    remote: false,
-    partnerList: true,
-    highlighted: false,
-    comingSoon: false,
-    ctaUrl: '/admin/register',
-    ctaLabel: 'Get Started Free',
+    planName: 'SOLO',     badge: '',             price: '$79',  priceSub: '', isContact: false, isFree: false,
+    studentsPerMonth: '100/mo',  storage: '10 GB',  highlighted: false, comingSoon: false,
+    ctaUrl: '/admin/register', ctaLabel: 'Get SOLO',
+    featureFinance: true,  featureCommission: false, featureAccounting: false,
+    featureServiceModules: false, featureCamp: false, featureVisa: false,
+    featureMultiBranch: false, featureAvetmiss: false,
+    featureAiAssistant: false, featureApiAccess: false, featureWhiteLabel: false,
   },
   {
-    planName: 'PLUS',
-    badge: 'Most Popular',
-    price: 'Free',
-    priceSub: 'Free during Beta',
-    isContact: false,
-    isFree: true,
-    studentsPerMonth: 'Unlimited',
-    storage: '100 MB',
-    schoolDB: true,
-    remote: false,
-    partnerList: true,
-    highlighted: true,
-    comingSoon: false,
-    ctaUrl: '/admin/register',
-    ctaLabel: 'Get Started Free',
+    planName: 'STARTER',  badge: 'Most Popular', price: '$199', priceSub: '', isContact: false, isFree: false,
+    studentsPerMonth: '500/mo',  storage: '50 GB',  highlighted: true,  comingSoon: false,
+    ctaUrl: '/admin/register', ctaLabel: 'Get STARTER',
+    featureFinance: true,  featureCommission: true,  featureAccounting: false,
+    featureServiceModules: true,  featureCamp: true,  featureVisa: true,
+    featureMultiBranch: false, featureAvetmiss: false,
+    featureAiAssistant: false, featureApiAccess: false, featureWhiteLabel: false,
   },
   {
-    planName: 'BUSINESS',
-    badge: '',
-    price: '$19.90',
-    priceSub: '',
-    isContact: false,
-    isFree: false,
-    studentsPerMonth: 'Unlimited',
-    storage: '500 MB',
-    schoolDB: true,
-    remote: false,
-    partnerList: true,
-    highlighted: false,
-    comingSoon: true,
-    ctaUrl: '/admin/register',
-    ctaLabel: 'Coming Soon',
+    planName: 'GROWTH',   badge: '',             price: '$449', priceSub: '', isContact: false, isFree: false,
+    studentsPerMonth: '2000/mo', storage: '200 GB', highlighted: false, comingSoon: false,
+    ctaUrl: '/admin/register', ctaLabel: 'Get GROWTH',
+    featureFinance: true,  featureCommission: true,  featureAccounting: false,
+    featureServiceModules: true,  featureCamp: true,  featureVisa: true,
+    featureMultiBranch: true,  featureAvetmiss: false,
+    featureAiAssistant: true,  featureApiAccess: false, featureWhiteLabel: false,
   },
   {
-    planName: 'ENTERPRISE',
-    badge: '',
-    price: '$39.90',
-    priceSub: '',
-    isContact: false,
-    isFree: false,
-    studentsPerMonth: 'Unlimited',
-    storage: '1 GB',
-    schoolDB: true,
-    remote: true,
-    partnerList: true,
-    highlighted: false,
-    comingSoon: true,
-    ctaUrl: '/support/contact',
-    ctaLabel: 'Coming Soon',
+    planName: 'ENTERPRISE', badge: '',           price: 'Custom', priceSub: '', isContact: true, isFree: false,
+    studentsPerMonth: 'Unlimited', storage: 'Unlimited', highlighted: false, comingSoon: false,
+    ctaUrl: '/support/contact', ctaLabel: 'Contact Sales',
+    featureFinance: true,  featureCommission: true,  featureAccounting: true,
+    featureServiceModules: true,  featureCamp: true,  featureVisa: true,
+    featureMultiBranch: true,  featureAvetmiss: true,
+    featureAiAssistant: true,  featureApiAccess: true,  featureWhiteLabel: true,
   },
 ]
-
-
-type Plan = typeof STATIC_PLANS[0]
 
 function mapApiPlan(p: any): Plan {
   const monthly = parseFloat(p.priceMonthly ?? '0') || 0
   const maxStudents = p.maxStudents ?? 0
   const storageGb = p.storageGb ?? 0
   const unlimited = maxStudents >= 9999
-  const isFree = monthly === 0
-  const storageMb = storageGb * 1024
+  const isContact = unlimited && monthly === 0
+  const isFree = monthly === 0 && !isContact
   const storageLabel =
     storageGb >= 9999 ? 'Unlimited'
-    : storageGb >= 1 ? `${storageGb} GB`
-    : storageMb > 0 ? `${storageMb} MB`
-    : '10 MB'
+    : storageGb >= 1000 ? `${(storageGb/1000).toFixed(0)} TB`
+    : `${storageGb} GB`
   const studentsLabel = unlimited ? 'Unlimited' : `${maxStudents}/mo`
   const planName = (p.name || p.code || '').toUpperCase()
   const priceSub = isFree && p.isPopular ? 'Free during Beta' : ''
   return {
     planName,
     badge: p.isPopular ? 'Most Popular' : '',
-    price: isFree ? 'Free' : `$${monthly % 1 === 0 ? monthly.toFixed(0) : monthly.toFixed(2)}`,
+    price: isContact ? 'Custom' : isFree ? 'Free' : `$${monthly % 1 === 0 ? monthly.toFixed(0) : monthly.toFixed(2)}`,
     priceSub,
-    isContact: false,
+    isContact,
     isFree,
     studentsPerMonth: studentsLabel,
     storage: storageLabel,
-    schoolDB: !!(p.featureCommission || p.featureServiceModules || p.featureVisa),
-    remote: !!(p.featureAiAssistant || p.featureApiAccess || p.featureWhiteLabel),
-    partnerList: true,
     highlighted: !!p.isPopular,
     comingSoon: false,
-    ctaUrl: '/admin/register',
-    ctaLabel: isFree ? 'Get Started Free' : `Get ${planName}`,
+    ctaUrl: isContact ? '/support/contact' : '/admin/register',
+    ctaLabel: isContact ? 'Contact Sales' : isFree ? 'Get Started Free' : `Get ${planName}`,
+    featureFinance:        !!p.featureFinance,
+    featureCommission:     !!p.featureCommission,
+    featureAccounting:     !!p.featureAccounting,
+    featureServiceModules: !!p.featureServiceModules,
+    featureCamp:           !!p.featureCamp,
+    featureVisa:           !!p.featureVisa,
+    featureMultiBranch:    !!p.featureMultiBranch,
+    featureAvetmiss:       !!p.featureAvetmiss,
+    featureAiAssistant:    !!p.featureAiAssistant,
+    featureApiAccess:      !!p.featureApiAccess,
+    featureWhiteLabel:     !!p.featureWhiteLabel,
   }
 }
 
-const FEATURES = [
-  { key: 'studentsPerMonth', label: 'Active Students', bool: false },
-  { key: 'storage',          label: 'Storage',         bool: false },
-  { key: 'schoolDB',         label: 'School Database', bool: true  },
-  { key: 'remote',           label: 'Remote Support',  bool: true  },
-  { key: 'partnerList',      label: 'Partner Supplier List', bool: true },
+// Categorised feature display. `comingSoon` flags features that exist as labels
+// but are not yet implemented in the product (Multi-Branch, AVETMISS, AI Assistant, API Access).
+type FeatureRow = { key: keyof Plan; label: string; comingSoon?: boolean }
+type FeatureCategory = { icon: string; title: string; rows: FeatureRow[] }
+
+const FEATURE_CATEGORIES: FeatureCategory[] = [
+  {
+    icon: '💰', title: 'Finance', rows: [
+      { key: 'featureFinance',    label: 'Finance Module' },
+      { key: 'featureCommission', label: 'Commission Tracking' },
+      { key: 'featureAccounting', label: 'Accounting Module' },
+    ],
+  },
+  {
+    icon: '📦', title: 'Service & Package', rows: [
+      { key: 'featureServiceModules', label: 'Service Modules' },
+      { key: 'featureCamp',           label: 'Camp Management' },
+      { key: 'featureVisa',           label: 'Visa Processing' },
+    ],
+  },
+  {
+    icon: '🏢', title: 'Operations', rows: [
+      { key: 'featureMultiBranch', label: 'Multi-Branch',     comingSoon: true },
+      { key: 'featureAvetmiss',    label: 'AVETMISS Reports', comingSoon: true },
+    ],
+  },
+  {
+    icon: '🤖', title: 'AI & Integration', rows: [
+      { key: 'featureAiAssistant', label: 'AI Assistant', comingSoon: true },
+      { key: 'featureApiAccess',   label: 'API Access',   comingSoon: true },
+      { key: 'featureWhiteLabel',  label: 'White Label' },
+    ],
+  },
 ]
 
 const ALL_INCLUDED = [
@@ -442,30 +468,69 @@ function PlanCard({ plan }: { plan: Plan }) {
         style={{ background: plan.highlighted ? 'rgba(255,255,255,0.25)' : '#F0E8DC' }}
       />
 
-      <ul className="space-y-3 flex-1 mb-7">
-        {FEATURES.map(f => {
-          const val = (plan as any)[f.key]
-          const active = f.bool ? !!val : true
-          return (
-            <li key={f.key} className="flex items-center gap-2.5 text-sm">
-              {f.bool ? (
-                active
-                  ? <Check size={15} strokeWidth={2.5} style={{ color: plan.highlighted ? '#fff' : '#FF9039', flexShrink: 0 }} />
-                  : <X    size={15} strokeWidth={2}   style={{ color: plan.highlighted ? 'rgba(255,255,255,0.35)' : '#D1D5DB', flexShrink: 0 }} />
-              ) : (
-                <Check size={15} strokeWidth={2.5} style={{ color: plan.highlighted ? '#fff' : '#FF9039', flexShrink: 0 }} />
-              )}
-              <span style={{
-                color: plan.highlighted
-                  ? (f.bool && !active ? 'rgba(255,255,255,0.35)' : '#fff')
-                  : (f.bool && !active ? '#C4B5A5' : '#3B1A06'),
-                fontWeight: 300,
-              }}>
-                {f.bool ? f.label : val}
-              </span>
-            </li>
-          )
-        })}
+      <ul className="space-y-2.5 flex-1 mb-6 text-sm">
+        <li className="flex items-center gap-2.5">
+          <Check size={15} strokeWidth={2.5} style={{ color: plan.highlighted ? '#fff' : '#FF9039', flexShrink: 0 }} />
+          <span style={{ color: plan.highlighted ? '#fff' : '#3B1A06', fontWeight: 400 }}>
+            <strong>{plan.studentsPerMonth}</strong> active students
+          </span>
+        </li>
+        <li className="flex items-center gap-2.5">
+          <Check size={15} strokeWidth={2.5} style={{ color: plan.highlighted ? '#fff' : '#FF9039', flexShrink: 0 }} />
+          <span style={{ color: plan.highlighted ? '#fff' : '#3B1A06', fontWeight: 400 }}>
+            <strong>{plan.storage}</strong> storage
+          </span>
+        </li>
+
+        {FEATURE_CATEGORIES.map(cat => (
+          <li key={cat.title} className="pt-3">
+            <p
+              className="font-bold uppercase tracking-wider mb-1.5"
+              style={{
+                fontSize: 11,
+                color: plan.highlighted ? 'rgba(255,255,255,0.85)' : '#9C6A3A',
+              }}
+            >
+              {cat.icon} {cat.title}
+            </p>
+            <ul className="space-y-1.5">
+              {cat.rows.map(r => {
+                const active = !!plan[r.key]
+                return (
+                  <li key={String(r.key)} className="flex items-start gap-2 pl-1">
+                    {active
+                      ? <Check size={13} strokeWidth={2.5} style={{ color: plan.highlighted ? '#fff' : '#FF9039', flexShrink: 0, marginTop: 3 }} />
+                      : <X    size={13} strokeWidth={2}   style={{ color: plan.highlighted ? 'rgba(255,255,255,0.35)' : '#D1D5DB', flexShrink: 0, marginTop: 3 }} />
+                    }
+                    <span style={{
+                      color: plan.highlighted
+                        ? (active ? '#fff' : 'rgba(255,255,255,0.45)')
+                        : (active ? '#3B1A06' : '#C4B5A5'),
+                      fontWeight: 300,
+                      fontSize: 13,
+                      lineHeight: 1.35,
+                    }}>
+                      {r.label}
+                      {r.comingSoon && (
+                        <span
+                          className="inline-block ml-1.5 px-1.5 py-0.5 rounded font-semibold align-middle"
+                          style={{
+                            fontSize: 9,
+                            background: plan.highlighted ? 'rgba(255,255,255,0.25)' : '#F0E8DC',
+                            color: plan.highlighted ? '#fff' : '#9C6A3A',
+                            letterSpacing: 0.3,
+                          }}
+                        >
+                          SOON
+                        </span>
+                      )}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          </li>
+        ))}
       </ul>
 
       {dim ? (
