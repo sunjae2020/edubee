@@ -2,8 +2,9 @@ import { db } from "@workspace/db";
 import {
   journalEntries,
   contractProducts,
+  journalEntryMappings,
 } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,7 @@ export interface PaymentLineRow {
 
 export interface PaymentHeaderRow {
   id:          string;
+  organisationId: string;
   paymentRef:  string | null;
   paymentDate: string;
   paymentType: string;
@@ -35,9 +37,13 @@ export interface PaymentHeaderRow {
 }
 
 // ── DR/CR mapping ──────────────────────────────────────────────────────────
-// Key: `${payment_type}:${split_type}` (split_type = "*" = match any)
+// Source of truth: `journal_entry_mappings` table (see migration 0016).
+// Fallback map below is used only if the DB table is empty or unreachable
+// — keep it in sync with the seeded rows for safety.
 
-const DR_CR_MAP: Record<string, { debit: string; credit: string; entryType: string }> = {
+type DrCrRule = { debit: string; credit: string; entryType: string };
+
+const FALLBACK_DR_CR_MAP: Record<string, DrCrRule> = {
   "trust_receipt:tuition":        { debit: "1200", credit: "2100", entryType: "trust_receipt" },
   "trust_receipt:accommodation":  { debit: "1200", credit: "2300", entryType: "trust_receipt" },
   "trust_receipt:pickup":         { debit: "1200", credit: "2400", entryType: "trust_receipt" },
@@ -54,16 +60,71 @@ const DR_CR_MAP: Record<string, { debit: string; credit: string; entryType: stri
   "cost_payment:incentive":       { debit: "5300", credit: "1100", entryType: "cost_payment" },
 };
 
-function resolveDrCr(
-  paymentType: string,
-  splitType: string | null
-): { debit: string; credit: string; entryType: string } {
-  const exactKey  = `${paymentType}:${splitType ?? ""}`;
-  const wildcardKey = `${paymentType}:*`;
+const CACHE_TTL_MS = 60_000;
+// Per-tenant cache: each org has its own DR/CR map.
+const cachedMapByOrg = new Map<string, { map: Record<string, DrCrRule>; cachedAt: number }>();
 
-  const match = DR_CR_MAP[exactKey] ?? DR_CR_MAP[wildcardKey];
+async function loadMappingsFromDb(orgId: string): Promise<Record<string, DrCrRule>> {
+  const rows = await db
+    .select({
+      paymentType: journalEntryMappings.paymentType,
+      splitType:   journalEntryMappings.splitType,
+      debit:       journalEntryMappings.debitCoa,
+      credit:      journalEntryMappings.creditCoa,
+      entryType:   journalEntryMappings.entryType,
+    })
+    .from(journalEntryMappings)
+    .where(and(
+      eq(journalEntryMappings.organisationId, orgId),
+      eq(journalEntryMappings.isActive, true),
+    ));
+  const map: Record<string, DrCrRule> = {};
+  for (const r of rows) {
+    map[`${r.paymentType}:${r.splitType}`] = {
+      debit: r.debit, credit: r.credit, entryType: r.entryType,
+    };
+  }
+  return map;
+}
+
+async function getMap(orgId: string): Promise<Record<string, DrCrRule>> {
+  const now = Date.now();
+  const cached = cachedMapByOrg.get(orgId);
+  if (cached && now - cached.cachedAt < CACHE_TTL_MS) return cached.map;
+  try {
+    const dbMap = await loadMappingsFromDb(orgId);
+    if (Object.keys(dbMap).length === 0) {
+      console.warn(`[journalEntryService] journal_entry_mappings empty for org ${orgId} — using fallback`);
+      cachedMapByOrg.set(orgId, { map: FALLBACK_DR_CR_MAP, cachedAt: now });
+      return FALLBACK_DR_CR_MAP;
+    }
+    cachedMapByOrg.set(orgId, { map: dbMap, cachedAt: now });
+    return dbMap;
+  } catch (err) {
+    console.error(`[journalEntryService] failed to load mappings for org ${orgId}; using fallback:`, err);
+    return FALLBACK_DR_CR_MAP;
+  }
+}
+
+export function invalidateMappingCache(orgId?: string): void {
+  if (orgId) {
+    cachedMapByOrg.delete(orgId);
+  } else {
+    cachedMapByOrg.clear();
+  }
+}
+
+async function resolveDrCr(
+  orgId: string,
+  paymentType: string,
+  splitType: string | null,
+): Promise<DrCrRule> {
+  const map = await getMap(orgId);
+  const exactKey    = `${paymentType}:${splitType ?? ""}`;
+  const wildcardKey = `${paymentType}:*`;
+  const match = map[exactKey] ?? map[wildcardKey];
   if (!match) {
-    const msg = `No DR/CR mapping for paymentType="${paymentType}" splitType="${splitType}"`;
+    const msg = `No DR/CR mapping for org="${orgId}" paymentType="${paymentType}" splitType="${splitType}"`;
     console.error(`[journalEntryService] ${msg}`);
     throw new Error(msg);
   }
@@ -95,10 +156,11 @@ export async function createJournalEntriesForPaymentLine(
     throw new Error(`Journal entry requires amount > 0 (got ${amount})`);
   }
 
-  // Step 1 — resolve DR/CR codes
-  const { debit, credit, entryType } = resolveDrCr(
+  // Step 1 — resolve DR/CR codes (per-tenant)
+  const { debit, credit, entryType } = await resolveDrCr(
+    paymentHeader.organisationId,
     paymentHeader.paymentType,
-    paymentLine.splitType
+    paymentLine.splitType,
   );
 
   // Step 2 — validate (single-line is always balanced, but call for consistency)
@@ -122,6 +184,7 @@ export async function createJournalEntriesForPaymentLine(
 
   // Step 5 — INSERT journal entry (uses tx if provided, so rollback is atomic)
   await client.insert(journalEntries).values({
+    organisationId:   paymentHeader.organisationId,
     entryDate:        paymentHeader.paymentDate,
     paymentHeaderId:  paymentHeader.id,
     paymentLineId:    paymentLine.id,

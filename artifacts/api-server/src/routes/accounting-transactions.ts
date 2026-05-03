@@ -147,7 +147,12 @@ router.put("/transactions/:id", authenticate, requireRole(...ADMIN_ROLES), async
 
 router.post("/transactions/:id/post", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
-    const [tx] = await db.select().from(transactions).where(eq(transactions.id, req.params.id as string));
+    const tenantId = req.tenantId;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context required" });
+    const [tx] = await db.select().from(transactions).where(and(
+      eq(transactions.id, req.params.id as string),
+      eq(transactions.organisationId, tenantId),
+    ));
     if (!tx) return res.status(404).json({ error: "Transaction not found" });
     if (tx.status === "posted") return res.status(400).json({ error: "Already posted to journal" });
 
@@ -167,6 +172,7 @@ router.post("/transactions/:id/post", authenticate, requireRole(...ADMIN_ROLES),
     const userId = (req as any).user?.id ?? "00000000-0000-0000-0000-000000000000";
 
     const [je] = await db.insert(journalEntries).values({
+      organisationId: tenantId,
       entryDate:     tx.transactionDate ?? today,
       debitCoa,
       creditCoa,

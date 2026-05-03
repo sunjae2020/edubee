@@ -7,6 +7,7 @@ import {
 } from "@workspace/db/schema";
 import { eq, and, gte, lte, inArray, ilike, asc, desc, sql, SQL } from "drizzle-orm";
 import { generateTaxInvoice } from "../services/taxInvoiceService.js";
+import { createJournalEntriesForPaymentLine } from "../services/journalEntryService.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
 import {
@@ -18,16 +19,8 @@ const router = Router();
 const STAFF_ROLES  = ["super_admin", "admin", "finance", "admission", "team_manager", "camp_coordinator"];
 const ADMIN_ROLES  = ["super_admin", "admin"];
 
-// ─── JE mapping ─────────────────────────────────────────────────────────────
-const JE_MAP: Record<string, { debit: string; credit: string }> = {
-  trust_receipt:      { debit: "1200", credit: "1300" },
-  trust_transfer:     { debit: "2100", credit: "1200" },
-  commission:         { debit: "1100", credit: "3100" },
-  direct:             { debit: "4700", credit: "1100" },
-  service_fee_camp:   { debit: "1100", credit: "3500" },
-  camp_tour_ap:       { debit: "4600", credit: "1100" },
-  camp_institute_ap:  { debit: "4700", credit: "1100" },
-};
+// DR/CR mapping is centralized in services/journalEntryService.ts.
+// Do not duplicate it here — see FINANCE_SYSTEM_GUIDE.md §4.2.
 
 function genPayRef(): string {
   return "PAY-" + Date.now().toString(36).toUpperCase().padStart(8, "0");
@@ -37,6 +30,15 @@ function userId(req: any): string {
   return req.user?.id ?? "00000000-0000-0000-0000-000000000000";
 }
 
+function requireTenant(req: any, res: any): string | null {
+  const tid = req.tenantId as string | undefined;
+  if (!tid) {
+    res.status(400).json({ error: "Tenant context required" });
+    return null;
+  }
+  return tid;
+}
+
 // ─── GET /api/accounting/journal-entries ────────────────────────────────────
 router.get(
   "/accounting/journal-entries",
@@ -44,6 +46,8 @@ router.get(
   requireRole(...STAFF_ROLES),
   async (req, res) => {
     try {
+      const tenantId = requireTenant(req, res);
+      if (!tenantId) return;
       const rows = await db
         .select({
           id:              journalEntries.id,
@@ -60,7 +64,13 @@ router.get(
           paymentStatus:   paymentHeaders.status,
         })
         .from(journalEntries)
-        .leftJoin(paymentHeaders, eq(journalEntries.paymentHeaderId, paymentHeaders.id))
+        .innerJoin(
+          paymentHeaders,
+          and(
+            eq(journalEntries.paymentHeaderId, paymentHeaders.id),
+            eq(paymentHeaders.organisationId, tenantId),
+          ),
+        )
         .orderBy(desc(journalEntries.createdOn))
         .limit(200);
 
@@ -69,7 +79,10 @@ router.get(
       const coaRows = allCodes.length
         ? await db.select({ code: chartOfAccounts.code, name: chartOfAccounts.name })
             .from(chartOfAccounts)
-            .where(inArray(chartOfAccounts.code, allCodes))
+            .where(and(
+              eq(chartOfAccounts.organisationId, tenantId),
+              inArray(chartOfAccounts.code, allCodes),
+            ))
         : [];
       const coaMap = Object.fromEntries(coaRows.map(c => [c.code, c.name]));
 
@@ -94,13 +107,15 @@ router.get(
   requireRole(...STAFF_ROLES),
   async (req, res) => {
     try {
+      const tenantId = requireTenant(req, res);
+      if (!tenantId) return;
       const { paymentType, status, date_from, date_to } = req.query as Record<string, string>;
-      const conds: SQL[] = [];
+      const conds: SQL[] = [eq(paymentHeaders.organisationId, tenantId)];
       if (paymentType) conds.push(eq(paymentHeaders.paymentType, paymentType));
       if (status)      conds.push(eq(paymentHeaders.status, status));
       if (date_from)   conds.push(gte(paymentHeaders.paymentDate, date_from));
       if (date_to)     conds.push(lte(paymentHeaders.paymentDate, date_to));
-      const where = conds.length ? and(...conds) : undefined;
+      const where = and(...conds);
 
       const rows = await db
         .select()
@@ -124,16 +139,24 @@ router.get(
   requireRole(...STAFF_ROLES),
   async (req, res) => {
     try {
+      const tenantId = requireTenant(req, res);
+      if (!tenantId) return;
       const [header] = await db
         .select()
         .from(paymentHeaders)
-        .where(eq(paymentHeaders.id, req.params.id as string));
+        .where(and(
+          eq(paymentHeaders.id, req.params.id as string),
+          eq(paymentHeaders.organisationId, tenantId),
+        ));
       if (!header) return res.status(404).json({ error: "Payment not found" });
 
       const lines = await db
         .select()
         .from(paymentLines)
-        .where(eq(paymentLines.paymentHeaderId, req.params.id as string));
+        .where(and(
+          eq(paymentLines.paymentHeaderId, req.params.id as string),
+          eq(paymentLines.organisationId, tenantId),
+        ));
 
       const entries = await db
         .select()
@@ -155,6 +178,8 @@ router.post(
   requireRole(...STAFF_ROLES),
   async (req, res) => {
     try {
+      const tenantId = requireTenant(req, res);
+      if (!tenantId) return;
       const {
         contractId,
         invoiceId,
@@ -179,9 +204,8 @@ router.post(
         return res.status(400).json({ error: "paymentDate and paymentType are required" });
       }
 
-      const jeMap = JE_MAP[paymentType];
-      if (!jeMap) {
-        return res.status(400).json({ error: `Unknown paymentType: ${paymentType}` });
+      if (!Array.isArray(lineItems) || lineItems.length === 0) {
+        return res.status(400).json({ error: "At least one payment line is required" });
       }
 
       // Total from lines (server-side calculation)
@@ -213,22 +237,22 @@ router.post(
           notes:         notesPayload,
           createdBy:     userId(req),
           status:        "Active",
+          organisationId: tenantId,
         }).returning();
 
         // 2. Insert payment lines
-        const insertedLines: any[] = [];
-        if (Array.isArray(lineItems) && lineItems.length > 0) {
-          const vals = lineItems.map((l: any) => ({
-            paymentHeaderId:   header.id,
-            contractProductId: l.contractProductId ?? null,
-            coaCode:           l.coaCode ?? null,
-            splitType:         l.splitType ?? null,
-            amount:            String(Number(l.amount ?? 0).toFixed(2)),
-            description:       l.description ?? null,
-          }));
-          const lines = await tx.insert(paymentLines).values(vals).returning();
-          insertedLines.push(...lines);
-        }
+        const lineVals = (lineItems as any[]).map((l: any) => ({
+          paymentHeaderId:   header.id,
+          contractProductId: l.contractProductId ?? null,
+          invoiceId:         l.invoiceId ?? null,
+          coaCode:           l.coaCode ?? null,
+          splitType:         l.splitType ?? null,
+          staffId:           l.staffId ?? null,
+          amount:            String(Number(l.amount ?? 0).toFixed(2)),
+          description:       l.description ?? null,
+          organisationId:    tenantId,
+        }));
+        const insertedLines = await tx.insert(paymentLines).values(lineVals).returning();
 
         // 3. Update AR/AP status on linked contract_products
         const cpIds = (lineItems as any[])
@@ -241,6 +265,16 @@ router.post(
               .update(contractProducts)
               .set({ arStatus: "paid" })
               .where(inArray(contractProducts.id, cpIds));
+
+            // ap_trigger='on_ar_paid': flip pending AP to 'ready' so finance can remit.
+            await tx
+              .update(contractProducts)
+              .set({ apStatus: "ready" })
+              .where(and(
+                inArray(contractProducts.id, cpIds),
+                eq(contractProducts.apTrigger, "on_ar_paid"),
+                eq(contractProducts.apStatus, "pending"),
+              ));
           } else if (paymentType === "trust_transfer") {
             await tx
               .update(contractProducts)
@@ -249,20 +283,41 @@ router.post(
           }
         }
 
-        // 4. Auto-generate journal entry
-        const [je] = await tx.insert(journalEntries).values({
-          entryDate:       paymentDate,
-          paymentHeaderId: header.id,
-          debitCoa:        jeMap.debit,
-          creditCoa:       jeMap.credit,
-          amount:          String(totalAmount.toFixed(2)),
-          description:     `Auto-generated JE for ${paymentType} — ${header.paymentRef}`,
-          entryType:       paymentType,
-          autoGenerated:   true,
-          createdBy:       userId(req),
-        }).returning();
+        // 4. Auto-generate journal entries (one per line, via centralized service).
+        //    DR/CR mapping uses paymentType + splitType (see journalEntryService.ts).
+        for (const line of insertedLines) {
+          await createJournalEntriesForPaymentLine(
+            {
+              id:                line.id,
+              paymentHeaderId:   header.id,
+              invoiceId:         line.invoiceId ?? null,
+              contractProductId: line.contractProductId ?? null,
+              splitType:         line.splitType ?? null,
+              amount:            line.amount as unknown as string,
+              staffId:           line.staffId ?? null,
+              description:       line.description ?? null,
+              createdOn:         (line.createdOn as Date) ?? new Date(),
+            },
+            {
+              id:             header.id,
+              organisationId: header.organisationId ?? tenantId,
+              paymentRef:     header.paymentRef ?? null,
+              paymentDate:    header.paymentDate as unknown as string,
+              paymentType:    header.paymentType,
+              receivedFrom:   header.receivedFrom ?? null,
+              paidTo:         header.paidTo ?? null,
+            },
+            userId(req),
+            tx as any,
+          );
+        }
 
-        return { header, lines: insertedLines, journalEntry: je };
+        const journalRows = await tx
+          .select()
+          .from(journalEntries)
+          .where(eq(journalEntries.paymentHeaderId, header.id));
+
+        return { header, lines: insertedLines, journalEntries: journalRows };
       });
 
       // === BRIDGE: auto-create transaction record ===
@@ -293,6 +348,7 @@ router.post(
           invoiceId:        firstLine?.invoiceId  ?? null,
           createdBy:        userId(req),
           status:           "Active",
+          organisationId:   tenantId,
         });
       } catch (bridgeError) {
         // Bridge failure does not affect the payment_header save — treat as success
@@ -336,10 +392,15 @@ router.patch(
   requireRole(...ADMIN_ROLES),
   async (req, res) => {
     try {
+      const tenantId = requireTenant(req, res);
+      if (!tenantId) return;
       const [existing] = await db
         .select({ id: paymentHeaders.id, status: paymentHeaders.status })
         .from(paymentHeaders)
-        .where(eq(paymentHeaders.id, req.params.id as string));
+        .where(and(
+          eq(paymentHeaders.id, req.params.id as string),
+          eq(paymentHeaders.organisationId, tenantId),
+        ));
 
       if (!existing) return res.status(404).json({ error: "Payment not found" });
       if (existing.status === "Void") return res.status(400).json({ error: "Payment already voided" });
@@ -347,7 +408,10 @@ router.patch(
       const [updated] = await db
         .update(paymentHeaders)
         .set({ status: "Void", modifiedOn: new Date() })
-        .where(eq(paymentHeaders.id, req.params.id as string))
+        .where(and(
+          eq(paymentHeaders.id, req.params.id as string),
+          eq(paymentHeaders.organisationId, tenantId),
+        ))
         .returning();
 
       // Cascade: also deactivate any linked transaction records
@@ -357,6 +421,7 @@ router.patch(
           .set({ status: "Inactive" })
           .where(and(
             eq(transactions.paymentInfoId, req.params.id as string),
+            eq(transactions.organisationId, tenantId),
             eq(transactions.status, "Active"),
           ));
       } catch (cascadeErr) {
@@ -374,13 +439,15 @@ router.patch(
 // ─── LOOKUP: accounts search ─────────────────────────────────────────────────
 router.get("/accounting/payments-lookup/accounts", authenticate, async (req, res) => {
   try {
+    const tenantId = requireTenant(req, res);
+    if (!tenantId) return;
     const { search = "" } = req.query as Record<string, string>;
-    const conds: SQL[] = [];
+    const conds: SQL[] = [eq(accounts.organisationId, tenantId)];
     if (search) conds.push(ilike(accounts.name, `%${search}%`));
     const rows = await db
       .select({ id: accounts.id, name: accounts.name, accountType: accounts.accountType })
       .from(accounts)
-      .where(conds.length ? and(...conds) : undefined)
+      .where(and(...conds))
       .orderBy(asc(accounts.name))
       .limit(20);
     return res.json(rows);
@@ -393,6 +460,8 @@ router.get("/accounting/payments-lookup/accounts", authenticate, async (req, res
 // ─── LOOKUP: contract search ──────────────────────────────────────────────────
 router.get("/accounting/payments-lookup/contracts", authenticate, async (req, res) => {
   try {
+    const tenantId = requireTenant(req, res);
+    if (!tenantId) return;
     const { search = "" } = req.query as Record<string, string>;
     const r = (x: any) => x.rows ?? (x as any[]);
     const rows = await db.execute(sql`
@@ -402,6 +471,7 @@ router.get("/accounting/payments-lookup/contracts", authenticate, async (req, re
       FROM contracts c
       LEFT JOIN accounts a ON a.id = c.account_id
       WHERE c.status IN ('active', 'signed')
+        AND c.organisation_id = ${tenantId}::uuid
         AND (
           ${search} = ''
           OR c.contract_number ILIKE ${'%' + search + '%'}
@@ -421,6 +491,8 @@ router.get("/accounting/payments-lookup/contracts", authenticate, async (req, re
 // ─── LOOKUP: contract products ────────────────────────────────────────────────
 router.get("/accounting/payments-lookup/contracts/:id/products", authenticate, async (req, res) => {
   try {
+    const tenantId = requireTenant(req, res);
+    if (!tenantId) return;
     const r = (x: any) => x.rows ?? (x as any[]);
     const rows = await db.execute(sql`
       SELECT id,
@@ -430,6 +502,7 @@ router.get("/accounting/payments-lookup/contracts/:id/products", authenticate, a
              service_module_type
       FROM contract_products
       WHERE contract_id = ${req.params.id as string}::uuid
+        AND organisation_id = ${tenantId}::uuid
       ORDER BY COALESCE(sort_index, 0), created_at
     `);
     return res.json(r(rows));
@@ -442,6 +515,8 @@ router.get("/accounting/payments-lookup/contracts/:id/products", authenticate, a
 // ─── PAYMENTS BY CONTRACT ─────────────────────────────────────────────────────
 router.get("/accounting/payments/by-contract/:contractId", authenticate, async (req, res) => {
   try {
+    const tenantId = requireTenant(req, res);
+    if (!tenantId) return;
     const { contractId } = req.params as Record<string, string>;
     const r = (x: any) => x.rows ?? (x as any[]);
     const rows = await db.execute(sql`
@@ -472,6 +547,8 @@ router.get("/accounting/payments/by-contract/:contractId", authenticate, async (
       LEFT JOIN accounts rf ON rf.id = ph.received_from
       LEFT JOIN accounts pt ON pt.id = ph.paid_to
       WHERE cp.contract_id = ${contractId}::uuid
+        AND ph.organisation_id = ${tenantId}::uuid
+        AND cp.organisation_id = ${tenantId}::uuid
         AND ph.status != 'Void'
       ORDER BY ph.payment_date DESC, ph.created_on DESC
     `);
@@ -485,6 +562,8 @@ router.get("/accounting/payments/by-contract/:contractId", authenticate, async (
 // ─── LEDGER BY ACCOUNT ────────────────────────────────────────────────────────
 router.get("/accounting/ledger/by-account/:accountId", authenticate, async (req, res) => {
   try {
+    const tenantId = requireTenant(req, res);
+    if (!tenantId) return;
     const { accountId } = req.params as Record<string, string>;
     const r = (x: any) => x.rows ?? (x as any[]);
     const rows = await db.execute(sql`
@@ -509,6 +588,7 @@ router.get("/accounting/ledger/by-account/:accountId", authenticate, async (req,
       LEFT JOIN accounts rf ON rf.id = ph.received_from
       LEFT JOIN accounts pt ON pt.id = ph.paid_to
       WHERE (ph.received_from = ${accountId}::uuid OR ph.paid_to = ${accountId}::uuid)
+        AND ph.organisation_id = ${tenantId}::uuid
         AND ph.status != 'Void'
 
       UNION ALL
@@ -529,6 +609,7 @@ router.get("/accounting/ledger/by-account/:accountId", authenticate, async (req,
         NULL                AS paid_to_name
       FROM transactions t
       WHERE t.account_id = ${accountId}::uuid
+        AND t.organisation_id = ${tenantId}::uuid
 
       ORDER BY entry_date DESC NULLS LAST
       LIMIT 200

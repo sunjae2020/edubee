@@ -130,10 +130,13 @@ router.get("/teams/:id/performance", authenticate, requireRole(...ADMIN_ROLES, "
 // ── POST /api/teams ───────────────────────────────────────────────────────────
 router.post("/teams", authenticate, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
+    const tenantId = req.tenantId;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context required" });
     const { name, description, type = "agent_team", color = "#F5821F", teamLeadId, status = "active" } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: "Team name is required" });
 
     const [team] = await db.insert(teams).values({
+      organisationId: tenantId,
       name: name.trim(),
       description: description ?? null,
       type,

@@ -70,9 +70,19 @@ router.get(
   authenticate,
   async (req: Request, res: Response) => {
     try {
+      const tenantId = req.tenantId;
+      if (!tenantId) return res.status(400).json({ success: false, error: "Tenant context required" });
       const { staffId }   = req.params as Record<string, string>;
       const currentUser   = (req as any).user as { id: string; role: string };
       const role          = currentUser?.role ?? "";
+
+      // Cross-tenant guard: staff must belong to this tenant.
+      const tenantCheck = await db.execute(sql`
+        SELECT 1 FROM users WHERE id = ${staffId} AND organisation_id = ${tenantId}::uuid LIMIT 1
+      `);
+      if (tenantCheck.rows.length === 0) {
+        return res.status(404).json({ success: false, error: "Staff not found" });
+      }
 
       // ── Access control ────────────────────────────────────────────────────────
       if (!ADMIN_ROLES.includes(role)) {
@@ -119,7 +129,18 @@ router.get(
   requireRole(...ADMIN_ROLES, "camp_coordinator"),
   async (req: Request, res: Response) => {
     try {
+      const tenantId = req.tenantId;
+      if (!tenantId) return res.status(400).json({ success: false, error: "Tenant context required" });
       const { teamId }  = req.params as Record<string, string>;
+
+      // Cross-tenant guard: at least one member must belong to this tenant.
+      const tenantCheck = await db.execute(sql`
+        SELECT 1 FROM users WHERE team_id = ${teamId} AND organisation_id = ${tenantId}::uuid LIMIT 1
+      `);
+      if (tenantCheck.rows.length === 0) {
+        return res.status(404).json({ success: false, error: "Team not found" });
+      }
+
       const periodType  = (req.query.periodType as string) || "monthly";
       const yearMonth   = req.query.yearMonth as string | undefined;
       const period      = resolvePeriod(periodType, yearMonth);
@@ -143,12 +164,15 @@ router.get(
   requireRole(...ADMIN_ROLES),
   async (req: Request, res: Response) => {
     try {
+      const tenantId = req.tenantId;
+      if (!tenantId) return res.status(400).json({ success: false, error: "Tenant context required" });
       const periodType = (req.query.periodType as string) || "monthly";
       const yearMonth  = req.query.yearMonth as string | undefined;
       const period     = resolvePeriod(periodType, yearMonth);
 
       const staffRes = await db.execute(sql`
-        SELECT id FROM users WHERE status = 'active'
+        SELECT id FROM users
+        WHERE status = 'active' AND organisation_id = ${tenantId}::uuid
       `);
       const staffIds = (staffRes.rows as any[]).map((r) => r.id as string);
 
@@ -238,6 +262,8 @@ router.get(
   requireRole(...ADMIN_ROLES),
   async (req: Request, res: Response) => {
     try {
+      const tenantId = req.tenantId;
+      if (!tenantId) return res.status(400).json({ success: false, error: "Tenant context required" });
       const { staffId, teamId } = req.query as Record<string, string>;
 
       let result;
@@ -247,7 +273,9 @@ router.get(
           FROM kpi_targets kt
           LEFT JOIN users u ON kt.staff_id = u.id
           LEFT JOIN teams t ON kt.team_id  = t.id
-          WHERE kt.staff_id = ${staffId as string} AND kt.status = 'Active'
+          WHERE kt.staff_id = ${staffId as string}
+            AND kt.organisation_id = ${tenantId}::uuid
+            AND kt.status = 'Active'
           ORDER BY kt.created_on DESC
         `);
       } else if (teamId) {
@@ -256,7 +284,9 @@ router.get(
           FROM kpi_targets kt
           LEFT JOIN users u ON kt.staff_id = u.id
           LEFT JOIN teams t ON kt.team_id  = t.id
-          WHERE kt.team_id = ${teamId as string} AND kt.status = 'Active'
+          WHERE kt.team_id = ${teamId as string}
+            AND kt.organisation_id = ${tenantId}::uuid
+            AND kt.status = 'Active'
           ORDER BY kt.created_on DESC
         `);
       } else {
@@ -265,7 +295,8 @@ router.get(
           FROM kpi_targets kt
           LEFT JOIN users u ON kt.staff_id = u.id
           LEFT JOIN teams t ON kt.team_id  = t.id
-          WHERE kt.status = 'Active'
+          WHERE kt.organisation_id = ${tenantId}::uuid
+            AND kt.status = 'Active'
           ORDER BY kt.created_on DESC
         `);
       }
@@ -287,6 +318,8 @@ router.post(
   requireRole(...ADMIN_ROLES),
   async (req: Request, res: Response) => {
     try {
+      const tenantId = req.tenantId;
+      if (!tenantId) return res.status(400).json({ success: false, error: "Tenant context required" });
       const {
         staffId, teamId, periodType,
         targetAmount, incentiveType, incentiveRate, incentiveFixed,
@@ -310,11 +343,13 @@ router.post(
 
       const inserted = await db.execute(sql`
         INSERT INTO kpi_targets (
+          organisation_id,
           staff_id, team_id, period_type,
           target_amount, incentive_type, incentive_rate, incentive_fixed,
           valid_from, valid_to, description,
           status, created_by, created_on, modified_on
         ) VALUES (
+          ${tenantId}::uuid,
           ${staffId    || null},
           ${teamId     || null},
           ${periodType},
@@ -349,6 +384,8 @@ router.put(
   requireRole(...ADMIN_ROLES),
   async (req: Request, res: Response) => {
     try {
+      const tenantId = req.tenantId;
+      if (!tenantId) return res.status(400).json({ success: false, error: "Tenant context required" });
       const { id } = req.params as Record<string, string>;
       const {
         targetAmount, incentiveType, incentiveRate, incentiveFixed,
@@ -367,6 +404,7 @@ router.put(
           status          = COALESCE(${status         ?? null}, status),
           modified_on     = NOW()
         WHERE id = ${id}
+          AND organisation_id = ${tenantId}::uuid
       `);
 
       res.json({ success: true, message: "KPI target updated successfully." });
@@ -388,6 +426,8 @@ router.patch(
   requireRole(...ADMIN_ROLES),
   async (req: Request, res: Response) => {
     try {
+      const tenantId = req.tenantId;
+      if (!tenantId) return res.status(400).json({ success: false, error: "Tenant context required" });
       const { kpiPeriodId } = req.params as Record<string, string>;
       const { type, approvedBy } = req.body;
       const approverId = approvedBy || (req as any).user?.id;
@@ -401,6 +441,7 @@ router.patch(
           approved_at = NOW(),
           modified_on = NOW()
         WHERE id     = ${kpiPeriodId}
+          AND organisation_id = ${tenantId}::uuid
           AND status IN ('draft', 'submitted')
       `);
 
@@ -423,6 +464,8 @@ router.patch(
   requireRole(...ADMIN_ROLES),
   async (req: Request, res: Response) => {
     try {
+      const tenantId = req.tenantId;
+      if (!tenantId) return res.status(400).json({ success: false, error: "Tenant context required" });
       const { kpiPeriodId } = req.params as Record<string, string>;
       const { type } = req.body;
 
@@ -434,6 +477,7 @@ router.patch(
           paid_at     = NOW(),
           modified_on = NOW()
         WHERE id     = ${kpiPeriodId}
+          AND organisation_id = ${tenantId}::uuid
           AND status  = 'approved'
       `);
 

@@ -10,6 +10,7 @@ import { seedMenuAllocation } from "./seeds/seed-menu-allocation.js";
 import { importDevDataIfNeeded } from "./seeds/import-dev-data.js";
 import { startTaxInvoiceScheduler } from "./jobs/taxInvoiceScheduler.js";
 import { startKpiScheduler } from "./jobs/kpiScheduler.js";
+import { startInvoiceScheduler } from "./jobs/invoiceScheduler.js";
 import { startDelegationExpiryScheduler } from "./jobs/delegationExpiryScheduler.js";
 import { startAirtableScheduler } from "./jobs/airtableScheduler.js";
 import { syncAllTenantSchemas } from "./seeds/provision-tenant.js";
@@ -28,21 +29,71 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+// ── Startup gates ────────────────────────────────────────────────────────────
+// These flags MUST be off in production. They were previously running on every
+// API server boot — including against production DB — which corrupted tenant
+// data and reset user passwords. Re-enable ONLY against an isolated dev DB.
+//
+//   RUN_DEV_SEEDS=true      → seedUsers / seedCoA / seedMenu (overwrites data)
+//   RUN_SCHEMA_SYNC=true    → applies public schema to every tenant schema
+//   FORCE_DEV_DATA_IMPORT   → still respected by importDevDataIfNeeded()
+//
+// Fence: if DATABASE_URL points at a known production host, refuse to run
+// destructive seeds even if the flags are accidentally set.
+const PROD_DB_HOST_PATTERNS = [
+  "aws-1-ap-northeast-1.pooler.supabase.com",  // current prod
+];
+const dbUrl = process.env.DATABASE_URL ?? "";
+const isProdDb = PROD_DB_HOST_PATTERNS.some(p => dbUrl.includes(p));
+if (isProdDb) {
+  console.warn("[startup] ⚠️  DATABASE_URL points at PRODUCTION — destructive seeds force-disabled");
+}
+const RUN_DEV_SEEDS   = !isProdDb && process.env.RUN_DEV_SEEDS    === "true";
+const RUN_SCHEMA_SYNC = !isProdDb && process.env.RUN_SCHEMA_SYNC  === "true";
+
 const server = app.listen(port, async () => {
   console.log(`Server listening on port ${port}`);
-  await importDevDataIfNeeded();
-  seedUsersIfEmpty();
-  seedChartOfAccounts();
-  seedMenuAllocation();
+
+  if (RUN_DEV_SEEDS) {
+    console.log("[startup] RUN_DEV_SEEDS=true — running dev seeds (DB will be modified)");
+    await importDevDataIfNeeded();
+    seedUsersIfEmpty();
+    // Per-tenant CoA — seed for each active organisation
+    {
+      const { staticDb } = await import("@workspace/db");
+      const { organisations } = await import("@workspace/db/schema");
+      const { eq } = await import("drizzle-orm");
+      const orgs = await staticDb.select({ id: organisations.id })
+        .from(organisations)
+        .where(eq(organisations.status, "Active"));
+      for (const o of orgs) await seedChartOfAccounts(o.id);
+    }
+    seedMenuAllocation();
+  } else {
+    console.log("[startup] RUN_DEV_SEEDS not set — dev seeds skipped (safe for production)");
+  }
+
+  // Production-safe maintenance tasks (idempotent, read-mostly)
   markOverdueArItems();
+
+  // Schedulers — cron-based, independent of seed gating
   startTaxInvoiceScheduler();
   startKpiScheduler();
   startDelegationExpiryScheduler();
   startAirtableScheduler();
-  // Auto-sync all tenant schemas against public schema (automatically applies schema changes on deploy)
-  syncAllTenantSchemas().catch(err =>
-    console.error("[SchemaSync] Fatal error:", err)
-  );
+  startInvoiceScheduler();
+
+  // Tenant schema sync — applies platform schema changes to every tenant schema.
+  // Risky against prod (can drop columns, alter types). Should be a deploy-time
+  // migration step, not an every-boot operation.
+  if (RUN_SCHEMA_SYNC) {
+    console.log("[startup] RUN_SCHEMA_SYNC=true — syncing tenant schemas now");
+    syncAllTenantSchemas().catch(err =>
+      console.error("[SchemaSync] Fatal error:", err)
+    );
+  } else {
+    console.log("[startup] RUN_SCHEMA_SYNC not set — schema sync skipped");
+  }
 });
 
 // CHECK 1.3 — Replit: prevent 120s reverse-proxy hard-cut

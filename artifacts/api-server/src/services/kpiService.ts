@@ -294,12 +294,20 @@ export async function calcStaffKpi(
 export async function saveStaffKpi(
   data: StaffKpiResult
 ): Promise<{ id: string; status: string }> {
+  // Resolve org from the staff member — KPI is per-tenant.
+  const orgRes = await db.execute(sql`
+    SELECT organisation_id FROM users WHERE id = ${data.staffId} LIMIT 1
+  `);
+  const orgId = (orgRes.rows[0] as any)?.organisation_id as string | undefined;
+  if (!orgId) throw new Error(`organisationId not resolvable for staff ${data.staffId}`);
+
   const existing = await db.execute(sql`
     SELECT id, status
     FROM staff_kpi_periods
-    WHERE staff_id    = ${data.staffId}
-      AND period_type  = ${data.periodType}
-      AND period_start = ${data.periodStart}::date
+    WHERE staff_id        = ${data.staffId}
+      AND organisation_id = ${orgId}
+      AND period_type     = ${data.periodType}
+      AND period_start    = ${data.periodStart}::date
     LIMIT 1
   `);
   const row = existing.rows[0] as any;
@@ -340,6 +348,7 @@ export async function saveStaffKpi(
     // INSERT
     const inserted = await db.execute(sql`
       INSERT INTO staff_kpi_periods (
+        organisation_id,
         staff_id, period_type, period_start, period_end,
         lead_count, conversion_count, conversion_rate,
         payment_processed_count, visa_granted_count,
@@ -350,6 +359,7 @@ export async function saveStaffKpi(
         attributed_revenue,
         status, created_on, modified_on
       ) VALUES (
+        ${orgId},
         ${data.staffId}, ${data.periodType}, ${data.periodStart}::date, ${data.periodEnd}::date,
         ${data.leadCount}, ${data.conversionCount}, ${data.conversionRate},
         ${data.paymentProcessedCount}, ${data.visaGrantedCount},
@@ -474,11 +484,18 @@ export async function saveTeamKpi(
   const pEnd   = data.members[0]?.periodEnd   ?? "";
   const pType  = data.members[0]?.periodType  ?? "";
 
+  const orgRes = await db.execute(sql`
+    SELECT organisation_id FROM teams WHERE id = ${data.teamId} LIMIT 1
+  `);
+  const orgId = (orgRes.rows[0] as any)?.organisation_id as string | undefined;
+  if (!orgId) throw new Error(`organisationId not resolvable for team ${data.teamId}`);
+
   const existing = await db.execute(sql`
     SELECT id, status FROM team_kpi_periods
-    WHERE team_id    = ${data.teamId}
-      AND period_type = ${pType}
-      AND period_start = ${pStart}::date
+    WHERE team_id        = ${data.teamId}
+      AND organisation_id = ${orgId}
+      AND period_type     = ${pType}
+      AND period_start    = ${pStart}::date
     LIMIT 1
   `);
   const row = existing.rows[0] as any;
@@ -514,6 +531,7 @@ export async function saveTeamKpi(
   } else {
     const ins = await db.execute(sql`
       INSERT INTO team_kpi_periods (
+        organisation_id,
         team_id, period_type, period_start, period_end,
         member_count, lead_count, conversion_count, conversion_rate,
         ar_scheduled, ar_collected, ar_overdue,
@@ -522,6 +540,7 @@ export async function saveTeamKpi(
         incentive_type, incentive_rate, incentive_fixed, incentive_amount,
         status, created_on, modified_on
       ) VALUES (
+        ${orgId},
         ${data.teamId}, ${pType}, ${pStart}::date, ${pEnd}::date,
         ${data.memberCount}, ${data.leadCount}, ${data.conversionCount}, ${data.conversionRate},
         ${data.arScheduled}, ${data.arCollected}, ${data.arOverdue},

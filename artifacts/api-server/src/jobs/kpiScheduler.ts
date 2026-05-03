@@ -17,10 +17,10 @@ async function calcAndSaveAllStaffKpi(
   console.log(`[KPI Scheduler] Aggregation started: ${periodStart} ~ ${periodEnd}`);
 
   const staffRes = await db.execute(sql`
-    SELECT id, full_name FROM users
+    SELECT id, full_name, role FROM users
     WHERE status = 'active'
   `);
-  const staffList = staffRes.rows as { id: string; full_name: string }[];
+  const staffList = staffRes.rows as { id: string; full_name: string; role: string | null }[];
 
   let successCount = 0;
   let skipCount    = 0;
@@ -127,19 +127,61 @@ async function calcAndSaveAllStaffKpi(
       }
 
       const targetAmount   = Number(targetRow?.target_amount  ?? 0);
-      const incentiveType  = targetRow?.incentive_type  ?? null;
-      const incentiveRate  = targetRow?.incentive_rate
+      let   incentiveType  = (targetRow?.incentive_type  ?? null) as string | null;
+      let   incentiveRate  = targetRow?.incentive_rate
                                ? Number(targetRow.incentive_rate)  : null;
-      const incentiveFixed = targetRow?.incentive_fixed
+      let   incentiveFixed = targetRow?.incentive_fixed
                                ? Number(targetRow.incentive_fixed) : null;
       const excessAmount   = Math.max(0, netRevenue - targetAmount);
 
       let incentiveAmount = 0;
+      let incentiveSource: "target" | "tier" | "none" = "none";
+
       if (excessAmount > 0 && incentiveType) {
         if (incentiveType === "percentage" && incentiveRate)
           incentiveAmount = Math.round(excessAmount * incentiveRate * 100) / 100;
         if (incentiveType === "fixed" && incentiveFixed)
           incentiveAmount = incentiveFixed;
+        if (incentiveAmount > 0) incentiveSource = "target";
+      }
+
+      // ── Tier fallback (incentive_tiers) ─────────────────────
+      // Applied when no kpi_targets policy or it produced 0.
+      // Picks the bracket where: role match (or null=any), period_type match,
+      // effective at periodStart, and min_revenue <= netRevenue < max_revenue.
+      let tierName: string | null = null;
+      if (incentiveAmount === 0 && netRevenue > 0) {
+        const tierRes = await db.execute(sql`
+          SELECT tier_name, incentive_type, incentive_rate,
+                 incentive_fixed, applies_to, min_revenue
+          FROM incentive_tiers
+          WHERE status = 'Active'
+            AND period_type = ${periodType}
+            AND (applies_to_role IS NULL OR applies_to_role = ${staff.role ?? ""})
+            AND effective_from  <= ${periodStart}
+            AND (effective_to IS NULL OR effective_to >= ${periodEnd})
+            AND min_revenue     <= ${netRevenue}
+            AND (max_revenue IS NULL OR ${netRevenue} < max_revenue)
+          ORDER BY (applies_to_role IS NOT NULL) DESC,  -- role-specific wins over generic
+                   min_revenue DESC                      -- highest matching bracket wins
+          LIMIT 1
+        `);
+        const tier = tierRes.rows[0] as any | undefined;
+        if (tier) {
+          tierName        = tier.tier_name as string;
+          incentiveType   = tier.incentive_type as string;
+          incentiveRate   = tier.incentive_rate  ? Number(tier.incentive_rate)  : null;
+          incentiveFixed  = tier.incentive_fixed ? Number(tier.incentive_fixed) : null;
+          const tierMinRevenue = Number(tier.min_revenue ?? 0);
+          const base = tier.applies_to === "total"
+            ? netRevenue
+            : Math.max(0, netRevenue - tierMinRevenue); // 'excess' default
+          if (incentiveType === "percentage" && incentiveRate)
+            incentiveAmount = Math.round(base * incentiveRate * 100) / 100;
+          else if (incentiveType === "fixed" && incentiveFixed)
+            incentiveAmount = incentiveFixed;
+          if (incentiveAmount > 0) incentiveSource = "tier";
+        }
       }
 
       const existRes = await db.execute(sql`
@@ -177,6 +219,7 @@ async function calcAndSaveAllStaffKpi(
             incentive_rate           = ${incentiveRate},
             incentive_fixed          = ${incentiveFixed},
             incentive_amount         = ${incentiveAmount},
+            incentive_tier           = ${tierName},
             attributed_revenue       = ${netRevenue},
             modified_on              = NOW()
           WHERE id = ${existing.id}
@@ -191,7 +234,7 @@ async function calcAndSaveAllStaffKpi(
             ap_scheduled, ap_paid, net_revenue,
             target_amount, excess_amount,
             incentive_type, incentive_rate, incentive_fixed,
-            incentive_amount, attributed_revenue,
+            incentive_amount, incentive_tier, attributed_revenue,
             status, created_on, modified_on
           ) VALUES (
             ${staff.id}, ${periodType}, ${periodStart}, ${periodEnd},
@@ -201,7 +244,7 @@ async function calcAndSaveAllStaffKpi(
             ${apScheduled}, ${apPaid}, ${netRevenue},
             ${targetAmount}, ${excessAmount},
             ${incentiveType}, ${incentiveRate}, ${incentiveFixed},
-            ${incentiveAmount}, ${netRevenue},
+            ${incentiveAmount}, ${tierName}, ${netRevenue},
             'draft', NOW(), NOW()
           )
         `);
@@ -210,7 +253,8 @@ async function calcAndSaveAllStaffKpi(
       successCount++;
       console.log(
         `[KPI Scheduler] ✅ ${staff.full_name}: ` +
-        `net=${netRevenue}, incentive=${incentiveAmount}`
+        `net=${netRevenue}, incentive=${incentiveAmount} ` +
+        `(source=${incentiveSource}${tierName ? `, tier=${tierName}` : ""})`
       );
 
     } catch (err) {

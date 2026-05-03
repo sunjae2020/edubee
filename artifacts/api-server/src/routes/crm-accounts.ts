@@ -1,10 +1,12 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
+import { db, staticDb } from "@workspace/db";
 import { accounts, contacts, authLogs, account_contacts } from "@workspace/db/schema";
 import { eq, ilike, and, or, count, ne, asc, desc, SQL, sql, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { authenticate } from "../middleware/authenticate.js";
 import { requireRole } from "../middleware/requireRole.js";
+import { organisations } from "@workspace/db/schema";
+import { createAccountFolderForOrg } from "./google-drive.js";
 
 // ── Auto-naming helper for Student accounts ──────────────────────────────────
 // Rule: LASTNAME_Firstname  (Primary Contact, LASTNAME in uppercase)
@@ -211,6 +213,23 @@ router.post("/crm/accounts", authenticate, requireRole(...ADMIN_ROLES), async (r
       status:                     (body.status as string | undefined) ?? "Active",
       organisationId:             req.tenant?.id ?? null,
     }).returning();
+
+    // Auto-create Google Drive folder if tenant enabled it (Student accounts only)
+    const tenantOrgId = req.tenant?.id ?? (req as any).user?.organisationId ?? null;
+    if (tenantOrgId && created.accountType === "Student") {
+      try {
+        // Use staticDb (public schema) — organisations is platform-level, schema column drift would break tenant-routed queries
+        const [org] = await staticDb.select().from(organisations).where(eq(organisations.id, tenantOrgId));
+        const g = ((org?.integrations as any) ?? {}).google ?? {};
+        if (g.autoCreateOnAccount && g.connected && g.accessToken) {
+          // Fire-and-forget: do not block account creation if Drive fails
+          createAccountFolderForOrg(tenantOrgId, created.id, (req as any).user?.id ?? null)
+            .catch((err) => console.error("[crm/accounts auto-create folder]", err));
+        }
+      } catch (err) {
+        console.error("[crm/accounts auto-create folder lookup]", err);
+      }
+    }
 
     return res.status(201).json(created);
   } catch (err) {

@@ -194,10 +194,14 @@ router.get("/tenant-integrations", authenticate, async (req, res) => {
         fromEmail: integrations.smtp?.fromEmail ?? "",
         fromName:  integrations.smtp?.fromName  ?? "",
       },
-      zapier:   { enabled: integrations.zapier?.enabled ?? false, webhookUrl: integrations.zapier?.webhookUrl ?? "" },
-      slack:    { enabled: false, comingSoon: true },
-      google:   { enabled: false, comingSoon: true },
-      hubspot:  { enabled: false, comingSoon: true },
+      zapier: { enabled: integrations.zapier?.enabled ?? false, webhookUrl: integrations.zapier?.webhookUrl ?? "" },
+      slack:  {
+        enabled:    integrations.slack?.enabled    ?? false,
+        webhookUrl: integrations.slack?.webhookUrl ?? "",
+        events:     integrations.slack?.events     ?? { newContract: true, contractStatus: true, newStudent: true, paymentReceived: false },
+      },
+      google:  { enabled: false, comingSoon: true },
+      hubspot: { enabled: false, comingSoon: true },
     });
   } catch (err) {
     console.error("[GET /tenant-integrations]", err);
@@ -212,15 +216,17 @@ router.put("/tenant-integrations", authenticate, async (req, res) => {
     if (!org) return res.status(404).json({ error: "Organisation not found" });
 
     const existing   = (org as any).integrations ?? {};
-    const { smtp, zapier } = req.body as {
+    const { smtp, zapier, slack } = req.body as {
       smtp?:   Record<string, any>;
       zapier?: Record<string, any>;
+      slack?:  Record<string, any>;
     };
 
     const updated = {
       ...existing,
       ...(smtp   !== undefined && { smtp   }),
       ...(zapier !== undefined && { zapier }),
+      ...(slack  !== undefined && { slack  }),
     };
 
     await db
@@ -232,6 +238,37 @@ router.put("/tenant-integrations", authenticate, async (req, res) => {
   } catch (err) {
     console.error("[PUT /tenant-integrations]", err);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ─── POST /api/slack/test ────────────────────────────────────────────────────
+router.post("/slack/test", authenticate, async (req, res) => {
+  try {
+    const org = req.tenant;
+    if (!org) return res.status(404).json({ error: "Organisation not found" });
+
+    const webhookUrl: string = req.body.webhookUrl ?? (org as any).integrations?.slack?.webhookUrl ?? "";
+    if (!webhookUrl) return res.status(400).json({ error: "No Slack webhook URL configured" });
+
+    const payload = {
+      text: `✅ *Edubee CRM* — Slack integration test successful!\n>Workspace: *${(org as any).name ?? "Your Organisation"}*\n>This confirms your webhook is connected correctly.`,
+    };
+
+    const r = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!r.ok) {
+      const text = await r.text();
+      return res.status(400).json({ error: `Slack returned ${r.status}: ${text}` });
+    }
+
+    return res.json({ ok: true });
+  } catch (err: any) {
+    console.error("[POST /slack/test]", err);
+    return res.status(500).json({ error: err?.message ?? "Internal Server Error" });
   }
 });
 

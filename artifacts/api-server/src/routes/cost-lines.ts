@@ -81,6 +81,8 @@ router.get("/cost-lines/lookup/staff", authenticate, async (req, res) => {
 // ─── POST /api/cost-lines ────────────────────────────────────────────────────
 router.post("/cost-lines", authenticate, requireRole(...STAFF_ROLES), async (req, res) => {
   try {
+    const tenantId = req.tenantId;
+    if (!tenantId) return res.status(400).json({ error: "Tenant context required" });
     const {
       contractProductId, costType, partnerId, staffId,
       calcType, rate, baseAmount, calculatedAmount,
@@ -94,6 +96,7 @@ router.post("/cost-lines", authenticate, requireRole(...STAFF_ROLES), async (req
     const [row] = await db
       .insert(productCostLines)
       .values({
+        organisationId:   tenantId,
         contractProductId,
         costType,
         partnerId:        partnerId   || null,

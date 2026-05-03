@@ -553,6 +553,7 @@ router.post("/receipts", authenticate, requireRole(...ADMIN_ROLES), async (req, 
       if (receipt.invoiceId && receipt.amount && parseFloat(receipt.amount) > 0) {
         try {
           await db.insert(journalEntries).values({
+            organisationId: receipt.organisationId ?? req.tenantId!,
             entryDate:     receipt.receiptDate ?? today,
             debitCoa:      "1200",
             creditCoa:     "2100",

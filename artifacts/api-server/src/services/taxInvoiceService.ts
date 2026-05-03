@@ -48,6 +48,7 @@ export async function generateTaxInvoice(
   const [cp] = await db
     .select({
       id:               contractProducts.id,
+      organisationId:   contractProducts.organisationId,
       contractId:       contractProducts.contractId,
       name:             contractProducts.name,
       commissionAmount: contractProducts.commissionAmount,
@@ -62,6 +63,8 @@ export async function generateTaxInvoice(
 
   if (!cp) throw new Error(`contract_product not found: ${contractProductId}`);
   if (!cp.contractId) throw new Error("contractId missing on contract_product");
+  if (!cp.organisationId) throw new Error("organisationId missing on contract_product");
+  const orgId = cp.organisationId;
 
   // 2. Load contract
   const [ctr] = await db
@@ -211,6 +214,7 @@ export async function generateTaxInvoice(
       .where(eq(contractProducts.id, contractProductId));
 
     await db.insert(journalEntries).values({
+      organisationId:   orgId,
       entryDate:        today,
       paymentHeaderId:  paymentHeaderId ?? undefined,
       debitCoa:         "1300",
@@ -225,6 +229,7 @@ export async function generateTaxInvoice(
 
     if (!isGstFree && gstAmt > 0) {
       await db.insert(journalEntries).values({
+        organisationId:  orgId,
         entryDate:       today,
         paymentHeaderId: paymentHeaderId ?? undefined,
         debitCoa:        "1300",
@@ -242,6 +247,7 @@ export async function generateTaxInvoice(
   // 15. For NET: additional journal entries (commission + GST retained from trust)
   if (invoiceType === "net") {
     await db.insert(journalEntries).values({
+      organisationId:   orgId,
       entryDate:        today,
       paymentHeaderId:  paymentHeaderId ?? undefined,
       debitCoa:         "1200",
@@ -256,6 +262,7 @@ export async function generateTaxInvoice(
 
     if (!isGstFree && gstAmt > 0) {
       await db.insert(journalEntries).values({
+        organisationId:  orgId,
         entryDate:       today,
         paymentHeaderId: paymentHeaderId ?? undefined,
         debitCoa:        "1200",

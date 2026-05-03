@@ -788,11 +788,27 @@ async function syncPackageGroups(
       const status = statusMap[statusRaw] ?? "draft";
       const country = countryMap[f["Country"]] ?? f["Country"] ?? null;
 
-      // Resolve linked account names (Institute, Accommodation, Tour Company, Pickup Driver)
-      const instituteName  = Array.isArray(f["Institute"])  ? null : null; // linked IDs, store display name via lookup
-      const accommodation  = f["Accommodation (from Package Group)"]?.[0] ?? null;
-      const tourCompany    = f["Tour Company"]  ? String(f["Tour Company"]).trim() : null;
-      const pickupDriver   = f["Pickup Driver"] ? String(f["Pickup Driver"]).trim() : null;
+      // Resolve a Program Partner field that may be a linked record (Partner table)
+      // OR a lookup array OR a plain text. Returns { accountId, manualName }.
+      const resolvePartner = async (raw: any): Promise<{ accountId: string | null; manualName: string | null }> => {
+        if (raw == null || raw === "") return { accountId: null, manualName: null };
+        if (Array.isArray(raw)) {
+          const first = raw[0];
+          if (typeof first === "string" && /^rec[A-Za-z0-9]{14,}$/.test(first)) {
+            const accountId = await findCrmId(baseId, "Partner", first);
+            return { accountId, manualName: null };
+          }
+          return { accountId: null, manualName: first != null ? String(first).trim() || null : null };
+        }
+        return { accountId: null, manualName: String(raw).trim() || null };
+      };
+
+      const institute     = await resolvePartner(f["Institute"]);
+      const accommodation = (f["Accommodation (from Package Group)"] != null)
+        ? { accountId: null, manualName: (Array.isArray(f["Accommodation (from Package Group)"]) ? f["Accommodation (from Package Group)"][0] : f["Accommodation (from Package Group)"]) ?? null }
+        : await resolvePartner(f["Accommodation"]);
+      const tourCompany   = await resolvePartner(f["Tour Company"]);
+      const pickupDriver  = await resolvePartner(f["Pickup Driver"]);
 
       const upsertData = {
         nameEn:            name,
@@ -809,6 +825,14 @@ async function syncPackageGroups(
         packageCode:       f["Package ID"] ?? null,
         localManual:       f["Local Manual"] ?? null,
         departureOt:       f["Departure OT"] ?? null,
+        instituteId:       institute.accountId,
+        instituteName:     institute.manualName,
+        accommodationId:   accommodation.accountId,
+        accommodation:     accommodation.manualName,
+        tourCompanyId:     tourCompany.accountId,
+        tourCompany:       tourCompany.manualName,
+        pickupDriverId:    pickupDriver.accountId,
+        pickupDriver:      pickupDriver.manualName,
         organisationId,
         updatedAt:         new Date(),
       };

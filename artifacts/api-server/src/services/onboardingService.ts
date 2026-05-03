@@ -22,7 +22,7 @@ import {
   costCenters,
   paymentInfos,
 } from "@workspace/db/schema";
-import { eq, count, sql } from "drizzle-orm";
+import { eq, and, count, sql } from "drizzle-orm";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -137,8 +137,9 @@ async function seedProductTypes(tx: any, pgIds: Record<string, string>): Promise
 
 const COA_REQUIRED_COUNT = 18;
 
-async function seedChartOfAccountsIfNeeded(tx: any): Promise<number> {
-  const [{ cnt }] = await tx.select({ cnt: count() }).from(chartOfAccounts);
+async function seedChartOfAccountsIfNeeded(tx: any, organisationId: string): Promise<number> {
+  const [{ cnt }] = await tx.select({ cnt: count() }).from(chartOfAccounts)
+    .where(eq(chartOfAccounts.organisationId, organisationId));
   if (Number(cnt) >= COA_REQUIRED_COUNT) return Number(cnt);
 
   const required = [
@@ -161,9 +162,12 @@ async function seedChartOfAccountsIfNeeded(tx: any): Promise<number> {
     { code: "3800", name: "Service Fee — Internship",       accountType: "revenue"   },
     { code: "3900", name: "Service Fee — Other",            accountType: "revenue"   },
   ];
-  await tx.insert(chartOfAccounts).values(required).onConflictDoNothing();
+  await tx.insert(chartOfAccounts)
+    .values(required.map((r) => ({ ...r, organisationId })))
+    .onConflictDoNothing({ target: [chartOfAccounts.organisationId, chartOfAccounts.code] });
 
-  const [{ cnt: after }] = await tx.select({ cnt: count() }).from(chartOfAccounts);
+  const [{ cnt: after }] = await tx.select({ cnt: count() }).from(chartOfAccounts)
+    .where(eq(chartOfAccounts.organisationId, organisationId));
   return Number(after);
 }
 
@@ -172,14 +176,18 @@ async function seedChartOfAccountsIfNeeded(tx: any): Promise<number> {
 // No UNIQUE on name → keep select-then-insert guard
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function seedDefaultTeam(tx: any): Promise<void> {
+async function seedDefaultTeam(tx: any, organisationId: string): Promise<void> {
   const exists = await tx
     .select({ id: teams.id })
     .from(teams)
-    .where(sql`LOWER(${teams.name}) = 'admin team'`)
+    .where(and(
+      eq(teams.organisationId, organisationId),
+      sql`LOWER(${teams.name}) = 'admin team'`,
+    ))
     .limit(1);
   if (!exists.length) {
     await tx.insert(teams).values({
+      organisationId,
       name: "Admin Team",
       description: "Default admin team — auto-created on onboarding",
       type: "internal",
@@ -240,11 +248,11 @@ export async function onboardTenant(organisationId: string): Promise<void> {
     console.log(`[Onboarding] Product Types: seeded`);
 
     // ④ Chart of Accounts (global, runs coa-seed equivalent)
-    const coaCount = await seedChartOfAccountsIfNeeded(tx);
+    const coaCount = await seedChartOfAccountsIfNeeded(tx, organisationId);
     console.log(`[Onboarding] Chart of Accounts: ${coaCount} total records`);
 
     // ⑤ Default Team
-    await seedDefaultTeam(tx);
+    await seedDefaultTeam(tx, organisationId);
     console.log(`[Onboarding] Teams: default team ensured`);
 
     // ⑥ Cost Centers
@@ -279,7 +287,8 @@ export async function getSeedStatus(organisationId: string): Promise<SeedStatus>
   const [taxCount]     = await db.select({ cnt: count() }).from(taxRates);
   const [pgCount]      = await db.select({ cnt: count() }).from(productGroups);
   const [ptCount]      = await db.select({ cnt: count() }).from(productTypes);
-  const [coaCount]     = await db.select({ cnt: count() }).from(chartOfAccounts);
+  const [coaCount]     = await db.select({ cnt: count() }).from(chartOfAccounts)
+    .where(eq(chartOfAccounts.organisationId, organisationId));
   const [teamCount]    = await db.select({ cnt: count() }).from(teams);
   const [ccCount]      = await db.select({ cnt: count() }).from(costCenters);
   const [piCount]      = await db.select({ cnt: count() }).from(paymentInfos);
